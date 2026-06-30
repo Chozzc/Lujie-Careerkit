@@ -96,6 +96,7 @@ export function InterviewWorkspace({
   const [selectedResumeId, setSelectedResumeId] = useState("main");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
   const [uploadError, setUploadError] = useState("");
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [jdDraft, setJdDraft] = useState("");
   const [mode, setMode] = useState<InterviewMode>("comprehensive");
   const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
@@ -131,7 +132,7 @@ export function InterviewWorkspace({
     resumeSource === "upload"
       ? uploadedResume?.fileName ?? "上传简历"
       : selectedResumeOption?.name ?? mainResumeName;
-  const canStart = Boolean(selectedResume && hasResumeContent(selectedResume) && jdDraft.trim().length >= 10 && !isWorking);
+  const canStart = Boolean(selectedResume && hasResumeContent(selectedResume) && jdDraft.trim().length >= 10 && !isWorking && !isUploadingResume);
   const activeQuestion = activeSession?.questions[activeSession.currentQuestionIndex];
   const report = activeSession?.feedback ?? null;
 
@@ -199,13 +200,19 @@ export function InterviewWorkspace({
 
   async function uploadResume(file: File) {
     setUploadError("");
+    setIsUploadingResume(true);
+    setMessage("正在解析简历，可能需要一些时间...");
     try {
       const draft = await buildUploadedResumeDraft(file);
       setUploadedResume(draft);
       setResumeSource("upload");
+      setMessage(`简历解析已完成，已导入 ${draft.fileName}。`);
     } catch (error) {
       setUploadedResume(null);
       setUploadError(error instanceof Error ? error.message : "文件读取失败。");
+      setMessage("");
+    } finally {
+      setIsUploadingResume(false);
     }
   }
 
@@ -378,6 +385,7 @@ export function InterviewWorkspace({
           resumeOptions={resumeOptions}
           uploadedResume={uploadedResume}
           uploadError={uploadError}
+          isUploadingResume={isUploadingResume}
           onResumeSourceChange={setResumeSource}
           onResumeSelect={setSelectedResumeId}
           onUploadResume={(file) => void uploadResume(file)}
@@ -436,6 +444,7 @@ function SetupScreen(props: {
   resumeOptions: ResumePickerOption[];
   uploadedResume: UploadedResumeDraft | null;
   uploadError: string;
+  isUploadingResume: boolean;
   onResumeSourceChange: (source: "library" | "upload") => void;
   onResumeSelect: (id: string) => void;
   onUploadResume: (file: File) => void;
@@ -459,6 +468,7 @@ function SetupScreen(props: {
         options: props.resumeOptions,
         uploadedResume: props.uploadedResume,
         uploadError: props.uploadError,
+        isUploading: props.isUploadingResume,
         onSourceChange: props.onResumeSourceChange,
         onSelect: props.onResumeSelect,
         onUploadFile: props.onUploadResume,

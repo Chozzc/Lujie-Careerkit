@@ -29,6 +29,7 @@ export function contentToJadeResume(content: ResumeContent): Resume {
   const resumeId = "local-main-resume";
   const internships = content.internships ?? [];
   const skills = content.skills ?? [];
+  const customSections = content.customSections ?? [];
   const editor = content.editor ?? {};
   const selfEvaluationText = [content.profile.summary, content.selfReview]
     .map((item) => item.trim())
@@ -93,6 +94,20 @@ export function contentToJadeResume(content: ResumeContent): Resume {
     );
   }
 
+  customSections.forEach((item) => {
+    sections.push(
+      section<CustomContent>(resumeId, "custom", item.title, sections.length, {
+        items: [
+          {
+            id: generateId("custom"),
+            title: "",
+            description: item.content,
+          },
+        ],
+      }),
+    );
+  });
+
   return {
     id: resumeId,
     userId: "local-user",
@@ -117,7 +132,7 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
   const projects = getSection<ProjectsContent>(resume, "projects");
   const certifications = getSection<CertificationsContent>(resume, "certifications");
   const selfEvaluation = getSection<SummaryContent>(resume, "self_evaluation");
-  const custom = getSection<CustomContent>(resume, "custom");
+  const customSections = getSections<CustomContent>(resume, "custom");
 
   const links = [
     personalInfo?.website,
@@ -162,7 +177,11 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
       })) ?? [],
     skills: skills?.categories.flatMap((category) => category.skills) ?? [],
     awards: certifications?.items.map((item) => item.name).filter(Boolean) ?? [],
-    selfReview: selfEvaluation?.text ?? custom?.items[0]?.description ?? "",
+    customSections: customSections.map((section) => ({
+      title: section.title,
+      content: section.content.items.map(formatCustomItem).filter(Boolean).join("\n\n"),
+    })).filter((item) => item.title && item.content),
+    selfReview: selfEvaluation?.text ?? customSections[0]?.content.items[0]?.description ?? "",
   };
 }
 
@@ -220,4 +239,12 @@ function section<T>(resumeId: string, type: string, title: string, sortOrder: nu
 
 function getSection<T>(resume: Resume, type: string): T | null {
   return (resume.sections.find((item) => item.type === type)?.content as T | undefined) ?? null;
+}
+
+function getSections<T>(resume: Resume, type: string): Array<ResumeSection & { content: T }> {
+  return resume.sections.filter((item) => item.type === type) as Array<ResumeSection & { content: T }>;
+}
+
+function formatCustomItem(item: CustomContent["items"][number]) {
+  return [item.title, item.subtitle, item.date, item.description].filter(Boolean).join("\n");
 }

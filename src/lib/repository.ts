@@ -338,11 +338,11 @@ async function ensureSchema() {
     `CREATE TABLE IF NOT EXISTS "Settings" (
       "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'singleton',
       "provider" TEXT NOT NULL DEFAULT 'openai-compatible',
-        "model" TEXT NOT NULL DEFAULT 'deepseek-v4-flash',
-        "baseUrl" TEXT NOT NULL DEFAULT 'https://api.deepseek.com/v1',
-        "aiProvider" TEXT NOT NULL DEFAULT 'deepseek',
-        "aiModel" TEXT NOT NULL DEFAULT 'deepseek-v4-flash',
-        "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://api.deepseek.com/v1',
+        "model" TEXT NOT NULL DEFAULT 'qwen3.7-max',
+        "baseUrl" TEXT NOT NULL DEFAULT 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        "aiProvider" TEXT NOT NULL DEFAULT 'qwen',
+        "aiModel" TEXT NOT NULL DEFAULT 'qwen3.7-max',
+        "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://dashscope.aliyuncs.com/compatible-mode/v1',
       "aiApiKey" TEXT NOT NULL DEFAULT '',
       "aiEnabled" BOOLEAN NOT NULL DEFAULT false,
       "aiTemperature" REAL NOT NULL DEFAULT 0.3,
@@ -386,9 +386,9 @@ async function ensureSchema() {
   await prisma.$executeRawUnsafe(
     `UPDATE "InterviewSession" SET "updatedAt" = COALESCE("createdAt", CURRENT_TIMESTAMP) WHERE "updatedAt" = '1970-01-01 00:00:00'`,
   );
-  await ensureColumn("Settings", "aiProvider", `ALTER TABLE "Settings" ADD COLUMN "aiProvider" TEXT NOT NULL DEFAULT 'deepseek'`);
-  await ensureColumn("Settings", "aiModel", `ALTER TABLE "Settings" ADD COLUMN "aiModel" TEXT NOT NULL DEFAULT 'deepseek-v4-flash'`);
-  await ensureColumn("Settings", "aiBaseUrl", `ALTER TABLE "Settings" ADD COLUMN "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://api.deepseek.com/v1'`);
+  await ensureColumn("Settings", "aiProvider", `ALTER TABLE "Settings" ADD COLUMN "aiProvider" TEXT NOT NULL DEFAULT 'qwen'`);
+  await ensureColumn("Settings", "aiModel", `ALTER TABLE "Settings" ADD COLUMN "aiModel" TEXT NOT NULL DEFAULT 'qwen3.7-max'`);
+  await ensureColumn("Settings", "aiBaseUrl", `ALTER TABLE "Settings" ADD COLUMN "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://dashscope.aliyuncs.com/compatible-mode/v1'`);
   await ensureColumn("Settings", "aiApiKey", `ALTER TABLE "Settings" ADD COLUMN "aiApiKey" TEXT NOT NULL DEFAULT ''`);
   await ensureColumn("Settings", "aiEnabled", `ALTER TABLE "Settings" ADD COLUMN "aiEnabled" BOOLEAN NOT NULL DEFAULT false`);
   await ensureColumn("Settings", "aiTemperature", `ALTER TABLE "Settings" ADD COLUMN "aiTemperature" REAL NOT NULL DEFAULT 0.3`);

@@ -52,6 +52,10 @@ export type ResumeContent = {
   }>;
   skills: string[];
   awards: string[];
+  customSections?: Array<{
+    title: string;
+    content: string;
+  }>;
   selfReview: string;
 };
 

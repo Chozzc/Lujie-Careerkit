@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getAiSettingsMaintenancePatch } from "./settings-migration";
 
 describe("AI settings maintenance migration", () => {
-  it("does not rewrite an explicit DeepSeek flash selection to the provider default", () => {
+  it("moves an untouched DeepSeek default to the Qwen default", () => {
     expect(
       getAiSettingsMaintenancePatch({
         aiProvider: "deepseek",
@@ -11,6 +11,23 @@ describe("AI settings maintenance migration", () => {
         model: "deepseek-v4-flash",
         aiApiKey: "",
         aiEnabled: false,
+      }),
+    ).toMatchObject({
+      aiProvider: "qwen",
+      aiModel: "qwen3.7-max",
+      aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      aiLastTestStatus: "untested",
+    });
+  });
+
+  it("does not rewrite a configured DeepSeek account", () => {
+    expect(
+      getAiSettingsMaintenancePatch({
+        aiProvider: "deepseek",
+        aiModel: "deepseek-v4-flash",
+        model: "deepseek-v4-flash",
+        aiApiKey: "encrypted-key",
+        aiEnabled: true,
       }),
     ).toBeNull();
   });

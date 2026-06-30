@@ -93,6 +93,37 @@ describe("resume content adapter", () => {
     expect(content.selfReview).toBe("工程基础扎实，习惯用数据复盘问题。");
   });
 
+  it("maps imported custom titled sections into editor custom modules", () => {
+    const jadeResume = contentToJadeResume({
+      ...baseResume,
+      customSections: [
+        {
+          title: "AIGC Strengths",
+          content: "AIGC full-stack creator\nTechnical art workflow",
+        },
+      ],
+    });
+    const custom = jadeResume.sections.find((section) => section.type === "custom");
+
+    expect(custom).toMatchObject({
+      title: "AIGC Strengths",
+      content: {
+        items: [
+          {
+            title: "",
+            description: "AIGC full-stack creator\nTechnical art workflow",
+          },
+        ],
+      },
+    });
+    expect(jadeResumeToContent(jadeResume).customSections).toEqual([
+      {
+        title: "AIGC Strengths",
+        content: "AIGC full-stack creator\nTechnical art workflow",
+      },
+    ]);
+  });
+
   it("keeps template and theme settings attached to the individual resume content", () => {
     const jadeResume = contentToJadeResume({
       ...baseResume,

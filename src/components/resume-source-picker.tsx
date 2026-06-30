@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEvent } from "react";
-import { Check, FileText, Upload } from "lucide-react";
+import { Check, FileText, LoaderCircle, Upload } from "lucide-react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { RESUME_UPLOAD_ACCEPT, type UploadedResumeDraft } from "@/lib/resume-upload";
@@ -21,6 +21,7 @@ export function ResumeSourcePicker({
   options,
   uploadedResume,
   uploadError,
+  isUploading = false,
   onSourceChange,
   onSelect,
   onUploadFile,
@@ -34,6 +35,7 @@ export function ResumeSourcePicker({
   options: ResumePickerOption[];
   uploadedResume: UploadedResumeDraft | null;
   uploadError: string;
+  isUploading?: boolean;
   onSourceChange: (source: "library" | "upload") => void;
   onSelect: (id: string) => void;
   onUploadFile: (file: File) => void;
@@ -42,6 +44,7 @@ export function ResumeSourcePicker({
 }) {
   function handleDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
+    if (isUploading) return;
     const file = event.dataTransfer.files?.[0];
     if (file) onUploadFile(file);
   }
@@ -107,24 +110,28 @@ export function ResumeSourcePicker({
           <label
             onDrop={handleDrop}
             onDragOver={(event) => event.preventDefault()}
-            className="flex min-h-80 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line bg-surface-low px-5 py-8 text-center transition hover:border-primary/60 hover:bg-primary-soft/40"
+            className={cn(
+              "flex min-h-80 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line bg-surface-low px-5 py-8 text-center transition hover:border-primary/60 hover:bg-primary-soft/40",
+              isUploading && "cursor-wait opacity-80",
+            )}
           >
             <input
               type="file"
               className="hidden"
+              disabled={isUploading}
               accept={RESUME_UPLOAD_ACCEPT}
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (file) onUploadFile(file);
+                if (file && !isUploading) onUploadFile(file);
                 event.currentTarget.value = "";
               }}
             />
             <span className="grid size-12 place-items-center rounded-lg bg-background text-primary shadow-sm">
-              <Upload className="size-5" />
+              {isUploading ? <LoaderCircle className="size-5 animate-spin" /> : <Upload className="size-5" />}
             </span>
-            <span className="mt-4 text-sm font-semibold text-foreground">上传文件</span>
-            <span className="mt-1 text-sm text-muted-foreground">拖拽或点击上传</span>
-            <span className="mt-3 text-xs text-muted-foreground">支持 PDF / DOC / DOCX / TXT / MD / JSON</span>
+            <span className="mt-4 text-sm font-semibold text-foreground">{isUploading ? "正在解析简历..." : "导入简历"}</span>
+            <span className="mt-1 text-sm text-muted-foreground">{isUploading ? "可能需要一些时间，请保持页面打开" : "拖拽或点击上传"}</span>
+            <span className="mt-3 text-xs text-muted-foreground">支持 PDF / DOC / DOCX / 图片 / TXT / MD / JSON</span>
             {uploadedResume ? (
               <span className="mt-4 max-w-full truncate rounded-md bg-background px-3 py-2 text-xs text-primary shadow-sm">
                 已选择 {uploadedResume.fileName} · {uploadedResume.characterCount} 字

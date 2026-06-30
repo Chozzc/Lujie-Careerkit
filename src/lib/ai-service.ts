@@ -1,63 +1,9 @@
-import { z } from "zod";
-
 import { getEffectiveAiRuntimeSettings } from "./repository";
 import { runAiObjectTask, type AiTaskResult } from "./ai/tasks";
 import { buildAiResumeSnapshot } from "./ai/resume-snapshot";
+import { resumeContentSchema } from "./resume-content";
 import { buildTailoredResumeVersion } from "./resume-versioning";
 import type { JobAnalysis, ResumeContent } from "./types";
-
-const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
-  editor: z.unknown().optional() as z.ZodType<ResumeContent["editor"] | undefined>,
-  basics: z.object({
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    city: z.string(),
-    links: z.array(z.string()),
-  }),
-  profile: z.object({
-    title: z.string(),
-    summary: z.string(),
-  }),
-  education: z.array(
-    z.object({
-      school: z.string(),
-      degree: z.string(),
-      major: z.string(),
-      start: z.string(),
-      end: z.string(),
-      highlights: z.array(z.string()),
-    }),
-  ),
-  experiences: z.array(
-    z.object({
-      company: z.string(),
-      role: z.string(),
-      start: z.string(),
-      end: z.string(),
-      highlights: z.array(z.string()),
-    }),
-  ),
-  internships: z.array(
-    z.object({
-      company: z.string(),
-      role: z.string(),
-      start: z.string(),
-      end: z.string(),
-      highlights: z.array(z.string()),
-    }),
-  ),
-  projects: z.array(
-    z.object({
-      name: z.string(),
-      role: z.string(),
-      highlights: z.array(z.string()),
-    }),
-  ),
-  skills: z.array(z.string()),
-  awards: z.array(z.string()),
-  selfReview: z.string(),
-});
 
 export async function tailorResumeWithAI(input: {
   resume: ResumeContent;
@@ -161,6 +107,7 @@ function normalizeTailoredResume(next: ResumeContent, original: ResumeContent): 
     projects: normalizeProjects(next.projects, original.projects),
     skills: normalizeSkills(next.skills, original.skills),
     awards: normalizeAwards(next.awards, original.awards),
+    customSections: original.customSections,
     selfReview: typeof next.selfReview === "string" ? next.selfReview : original.selfReview,
   };
 }

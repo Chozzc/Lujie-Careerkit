@@ -107,8 +107,8 @@ npm run dev
 ```env
 DATABASE_URL="file:./dev.db"
 LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
-OPENAI_BASE_URL="https://api.deepseek.com/v1"
-OPENAI_MODEL="deepseek-v4-flash"
+OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+OPENAI_MODEL="qwen3.7-max"
 ```
 
 `OPENAI_BASE_URL` 和 `OPENAI_MODEL` 只用于首次默认值。真实 API Key 请在应用内设置页配置。

@@ -21,6 +21,7 @@ import {
   Search,
   Trash2,
   Undo2,
+  Upload,
   X,
 } from "lucide-react";
 
@@ -55,6 +56,7 @@ import {
   resolveResumeContentTitle,
   shouldAutoRenameResumeTitle,
 } from "@/lib/resume-naming";
+import { buildUploadedResumeDraft, RESUME_UPLOAD_ACCEPT } from "@/lib/resume-upload";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type { ResumeContent } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -183,6 +185,7 @@ const exportOptions: Array<{
 ];
 
 const RESUME_SAVED_STATUS = "已保存到本地 SQLite";
+const RESUME_IMPORT_REVIEW_STATUS = "简历解析已完成，部分内容由 AI 自动归类，建议仔细甄别后再使用。";
 
 export function ResumeWorkbench({
   resume,
@@ -213,6 +216,9 @@ export function ResumeWorkbench({
   const [search, setSearch] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [isImportingResume, setIsImportingResume] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const importNoticeTimerRef = useRef<number | null>(null);
   const saveContextRef = useRef({ editingTarget, editingTitle, saveResume, setResume });
 
   const currentResume = useResumeStore((state) => state.currentResume);
@@ -263,6 +269,12 @@ export function ResumeWorkbench({
   useEffect(() => {
     saveContextRef.current = { editingTarget, editingTitle, saveResume, setResume };
   }, [editingTarget, editingTitle, saveResume, setResume]);
+
+  useEffect(() => {
+    return () => {
+      if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const store = useResumeStore.getState();
@@ -427,6 +439,36 @@ export function ResumeWorkbench({
     openEditor(blankResume, "未命名简历", { kind: "new" });
   }
 
+  function showImportReviewStatus() {
+    if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
+    setStatus(RESUME_IMPORT_REVIEW_STATUS);
+    importNoticeTimerRef.current = window.setTimeout(() => {
+      setStatus((current) => (current === RESUME_IMPORT_REVIEW_STATUS ? RESUME_SAVED_STATUS : current));
+      importNoticeTimerRef.current = null;
+    }, 6500);
+  }
+
+  async function handleImportResume(file?: File) {
+    if (!file || isImportingResume) return;
+    setIsImportingResume(true);
+    setStatus("正在解析并导入简历，可能需要一些时间...");
+    try {
+      const draft = await buildUploadedResumeDraft(file);
+      const title = resolveResumeContentTitle(draft.content);
+      const result = await saveResume(draft.content, { kind: "new" }, title);
+      if (result.kind === "version") {
+        openEditor(result.version.content, versionTitle(result.version), { kind: "version", id: result.version.id });
+      } else {
+        openEditor(draft.content, title, { kind: "new" });
+      }
+      showImportReviewStatus();
+    } catch (error) {
+      setStatus(`导入失败：${error instanceof Error ? error.message : "请稍后重试"}`);
+    } finally {
+      setIsImportingResume(false);
+    }
+  }
+
   function handleTemplateChange(template: string) {
     setTemplate(template);
   }
@@ -478,9 +520,24 @@ export function ResumeWorkbench({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={onOpenMatch} className="gap-2">
-                <FileSearch className="h-4 w-4" />
-                JD匹配优化
+              <input
+                ref={importInputRef}
+                type="file"
+                className="hidden"
+                accept={RESUME_UPLOAD_ACCEPT}
+                onChange={(event) => {
+                  void handleImportResume(event.currentTarget.files?.[0]);
+                  event.currentTarget.value = "";
+                }}
+              />
+              <Button
+                variant="outline"
+                onClick={() => importInputRef.current?.click()}
+                className="gap-2"
+                disabled={isImportingResume}
+              >
+                <Upload className="h-4 w-4" />
+                {isImportingResume ? "解析中..." : "导入简历"}
               </Button>
               <Button onClick={handleCreateResume} className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -596,12 +653,14 @@ export function ResumeWorkbench({
                   aria-label="简历名称"
                   title="修改简历名称"
                 />
-                <Badge variant="secondary" className="text-[0.6875rem]">
-                  {formatEditorSaveStatus(isDirty, isSaving, status)}
+                <Badge variant="secondary" className="text-[0.6875rem]" title={status}>
+                  {status === RESUME_IMPORT_REVIEW_STATUS ? "解析完成" : formatEditorSaveStatus(isDirty, isSaving, status)}
                 </Badge>
               </div>
               <p className="text-[0.6875rem] text-muted-foreground">
-                模板 {templateLabels[activeResume.template] ?? activeResume.template} · {editingTarget.kind === "main" ? "主简历" : "版本简历"}
+                {status === RESUME_IMPORT_REVIEW_STATUS
+                  ? status
+                  : `模板 ${templateLabels[activeResume.template] ?? activeResume.template} · ${editingTarget.kind === "main" ? "主简历" : "版本简历"}`}
               </p>
             </div>
           </div>

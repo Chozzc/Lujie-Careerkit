@@ -107,8 +107,8 @@ Open [http://localhost:3000](http://localhost:3000). The app creates the local s
 ```env
 DATABASE_URL="file:./dev.db"
 LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
-OPENAI_BASE_URL="https://api.deepseek.com/v1"
-OPENAI_MODEL="deepseek-v4-flash"
+OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+OPENAI_MODEL="qwen3.7-max"
 ```
 
 `OPENAI_BASE_URL` and `OPENAI_MODEL` only set first-run defaults. Configure the actual API key from the in-app Settings page.

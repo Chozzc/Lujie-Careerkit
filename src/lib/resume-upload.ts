@@ -1,6 +1,7 @@
+import { isResumeContentLike, normalizeResumeContent } from "./resume-content";
 import type { ResumeContent } from "./types";
 
-export type ResumeUploadKind = "json" | "text" | "pdf" | "word";
+export type ResumeUploadKind = "json" | "text" | "pdf" | "word" | "image";
 
 export type UploadedResumeDraft = {
   fileName: string;
@@ -15,12 +16,19 @@ export const RESUME_UPLOAD_ACCEPT = [
   ".pdf",
   ".doc",
   ".docx",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
   "application/json",
   "text/plain",
   "text/markdown",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
 ].join(",");
 
 export function getResumeUploadKind(fileName: string): ResumeUploadKind | null {
@@ -29,68 +37,45 @@ export function getResumeUploadKind(fileName: string): ResumeUploadKind | null {
   if (extension === "txt" || extension === "md") return "text";
   if (extension === "pdf") return "pdf";
   if (extension === "doc" || extension === "docx") return "word";
+  if (extension === "png" || extension === "jpg" || extension === "jpeg" || extension === "webp") return "image";
   return null;
 }
 
 export async function buildUploadedResumeDraft(file: File): Promise<UploadedResumeDraft> {
   const uploadKind = getResumeUploadKind(file.name);
-  if (!uploadKind) throw new Error("请上传 PDF、DOC、DOCX、TXT、MD 或 JSON 文件。");
-
-  const text = uploadKind === "pdf" || uploadKind === "word" ? await extractResumeText(file) : await file.text();
-  const trimmed = text.trim();
-  if (!trimmed) throw new Error("文件内容为空。");
+  if (!uploadKind) throw new Error("请上传 PDF、DOC、DOCX、图片、TXT、MD 或 JSON 文件。");
 
   if (uploadKind === "json") {
-    const parsed = JSON.parse(trimmed) as unknown;
-    if (!isResumeContentLike(parsed)) throw new Error("JSON 不是有效的录阶简历结构。");
-    return { fileName: file.name, content: parsed, characterCount: trimmed.length };
+    const trimmed = (await file.text()).trim();
+    if (!trimmed) throw new Error("文件内容为空。");
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (!isResumeContentLike(parsed)) return importResumeWithAI(file);
+      return {
+        fileName: file.name,
+        content: normalizeResumeContent(parsed, file.name.replace(/\.[^.]+$/, "")),
+        characterCount: trimmed.length,
+      };
+    } catch {
+      return importResumeWithAI(file);
+    }
   }
 
-  return {
-    fileName: file.name,
-    content: resumeContentFromPlainText(file.name, trimmed),
-    characterCount: trimmed.length,
-  };
+  return importResumeWithAI(file);
 }
 
-export function isResumeContentLike(value: unknown): value is ResumeContent {
-  if (!value || typeof value !== "object") return false;
-  const resume = value as Partial<ResumeContent>;
-  return Boolean(
-    resume.basics &&
-      typeof resume.basics.name === "string" &&
-      resume.profile &&
-      typeof resume.profile.summary === "string" &&
-      Array.isArray(resume.projects) &&
-      Array.isArray(resume.skills),
-  );
-}
-
-function resumeContentFromPlainText(fileName: string, text: string): ResumeContent {
-  return {
-    basics: {
-      name: fileName.replace(/\.[^.]+$/, ""),
-      email: "",
-      phone: "",
-      city: "",
-      links: [],
-    },
-    profile: { title: "上传简历", summary: text.slice(0, 1200) },
-    education: [],
-    experiences: [],
-    internships: [],
-    projects: [],
-    skills: [],
-    awards: [],
-    selfReview: text.slice(0, 12000),
-  };
-}
-
-async function extractResumeText(file: File) {
+async function importResumeWithAI(file: File): Promise<UploadedResumeDraft> {
   const formData = new FormData();
   formData.set("file", file);
-  const response = await fetch("/api/files/resume-text", { method: "POST", body: formData });
-  const result = (await response.json().catch(() => null)) as { text?: string; error?: string } | null;
-  if (!response.ok) throw new Error(result?.error || "文件解析失败，请稍后重试。");
-  return result?.text ?? "";
+  const response = await fetch("/api/ai/resume-import", { method: "POST", body: formData });
+  const result = (await response.json().catch(() => null)) as (UploadedResumeDraft & { error?: string }) | null;
+  if (!response.ok) throw new Error(result?.error || "简历导入失败，请稍后重试。");
+  if (!result?.content) throw new Error("简历导入失败，未返回有效结构。");
+  return {
+    fileName: result.fileName,
+    content: result.content,
+    characterCount: result.characterCount,
+  };
 }
+
+export { isResumeContentLike };

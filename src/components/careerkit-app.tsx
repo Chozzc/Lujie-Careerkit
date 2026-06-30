@@ -1248,6 +1248,7 @@ function MatchView({
   const [selectedResumeKey, setSelectedResumeKey] = useState("main");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
   const [uploadError, setUploadError] = useState("");
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [jdDraft, setJdDraft] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [screen, setScreen] = useState<"input" | "result">("input");
@@ -1293,7 +1294,7 @@ function MatchView({
       ? { resumeContent: uploadedResume?.content }
       : { resumeVersionId: selectedLibraryKey && selectedLibraryKey !== "main" ? selectedLibraryKey : undefined };
   const resumeReady = resumeSource === "upload" ? Boolean(uploadedResume) : Boolean(selectedBaseResume);
-  const canOptimize = resumeReady && Boolean(jdDraft.trim()) && !isGenerating;
+  const canOptimize = resumeReady && Boolean(jdDraft.trim()) && !isGenerating && !isUploadingResume;
   const currentBaseLabel =
     resumeSource === "upload" ? uploadedResume?.fileName ?? "等待上传文件" : selectedResumeOption?.name ?? "请选择简历";
 
@@ -1310,13 +1311,19 @@ function MatchView({
 
   async function handleUploadFile(file: File) {
     setUploadError("");
+    setIsUploadingResume(true);
+    setSaveStatus("正在解析简历，可能需要一些时间...");
     try {
       const draft = await buildUploadedResumeDraft(file);
       setUploadedResume(draft);
       setResumeSource("upload");
+      setSaveStatus(`简历解析已完成，已导入 ${draft.fileName}。`);
     } catch (error) {
       setUploadedResume(null);
       setUploadError(error instanceof Error ? error.message : "文件读取失败。");
+      setSaveStatus("");
+    } finally {
+      setIsUploadingResume(false);
     }
   }
 
@@ -1517,6 +1524,7 @@ function MatchView({
             options: resumeOptions,
             uploadedResume,
             uploadError,
+            isUploading: isUploadingResume,
             onSourceChange: setResumeSource,
             onSelect: setSelectedResumeKey,
             onUploadFile: (file) => void handleUploadFile(file),
