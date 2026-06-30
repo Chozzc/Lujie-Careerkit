@@ -1,0 +1,11 @@
+LuJie CareerKit
+Copyright 2026 Chozzc
+
+LuJie CareerKit is licensed under the Apache License, Version 2.0.
+
+The resume editor reuses design and implementation ideas from JadeAI:
+https://github.com/LingyiChen-AI/JadeAI
+
+JadeAI is licensed under the Apache License, Version 2.0. A copy of the
+JadeAI license is included at third-party/JadeAI-LICENSE.txt. LuJie CareerKit
+is not affiliated with or endorsed by the JadeAI project maintainers.

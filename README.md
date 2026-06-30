@@ -1,0 +1,164 @@
+<p align="center">
+  <img src="public/brand/lujie-mark.svg" alt="LuJie CareerKit mark" width="72" />
+</p>
+
+<h1 align="center">LuJie CareerKit</h1>
+
+<p align="center">
+  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, application tracking, mock interviews, and interview review.</strong>
+</p>
+
+<p align="center">
+  English · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" />
+  <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
+  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
+  <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
+  <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
+</p>
+
+<p align="center">
+  <img src="public/brand/lujie-cover_16x9.png" alt="LuJie CareerKit cover" width="900" />
+</p>
+
+## Overview
+
+LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview practice, and AI review into one AI-powered career workspace. You can maintain different resume versions for different roles, turn a JD into sharper role-specific wording, track every application, and keep refining answers, feedback, and review notes before and after interviews.
+
+## Online Preview
+
+Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
+
+## Preview
+
+| **Control Center** | **Resume Library** |
+| --- | --- |
+| ![Control Center](public/images/01-dashboard.png) | ![Resume Library](public/images/02-resume-library.png) |
+| **Resume Editor** | **JD Matching** |
+| ![Resume Editor](public/images/03-resume-editor.png) | ![JD Matching](public/images/04-jd-match.png) |
+| **JD-Optimized Resume** | **Interview Assistant** |
+| ![JD-Optimized Resume](public/images/05-jd-optimized-resume.png) | ![Interview Assistant](public/images/06-interview-assistant.png) |
+| **Mock Interview** | **AI Review** |
+| ![Mock Interview](public/images/07-mock-interview.png) | ![AI Review](public/images/08-ai-review.png) |
+| **Application Tracking** | **Pipeline Status** |
+| ![Application Tracking](public/images/09-application-pipeline.png) | ![Pipeline Status](public/images/10-pipeline-status.png) |
+
+## Highlights
+
+- **Structured resume editing**: maintain multiple resume versions, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
+- **JD matching**: paste a target job description and let AI reorder emphasis and improve wording without inventing experience.
+- **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, priorities, notes, JD text, and linked resume versions.
+- **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
+- **Data and privacy controls**: resumes, jobs, applications, interviews, and settings are stored in a local SQLite database for long-term personal use.
+- **OpenAI-compatible setup**: configure Base URL, model, API key, and generation parameters from the Settings page.
+- **Voice input**: use browser speech recognition where available for JD fields and interview answers.
+
+## Data and Privacy
+
+- Resume content, resume versions, jobs, applications, interviews, and settings are stored in `prisma/dev.db`.
+- API keys are configured from the in-app Settings page. They are encrypted before being saved to SQLite.
+- `LUJIE_SETTINGS_SECRET` is the local encryption secret for saved AI keys. Use a long random value in `.env.local`.
+
+## Quick Start
+
+### Requirements
+
+- Node.js 20.9 or later
+- npm
+- Chrome or Edge for the best browser speech experience
+
+### Run Locally
+
+```bash
+git clone https://github.com/Chozzc/Lujie-Careerkit.git
+cd Lujie-Careerkit
+npm ci
+```
+
+Create a local environment file and generate an encryption secret:
+
+```bash
+cp .env.example .env.local
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Put the generated value into `.env.local` as `LUJIE_SETTINGS_SECRET`.
+
+Start the app:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The app creates the local schema and demo workflow data on first use.
+
+## Environment Variables
+
+```env
+DATABASE_URL="file:./dev.db"
+LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
+OPENAI_BASE_URL="https://api.deepseek.com/v1"
+OPENAI_MODEL="deepseek-v4-flash"
+```
+
+`OPENAI_BASE_URL` and `OPENAI_MODEL` only set first-run defaults. Configure the actual API key from the in-app Settings page.
+
+## AI Provider Setup
+
+1. Open the Settings page in the app.
+2. Choose an OpenAI-compatible provider.
+3. Enter the Base URL, model name, and API key.
+4. Save and run the connection test.
+
+AI features stay disabled until the settings are saved and the connection test succeeds.
+
+## FAQ
+
+### Do I need an API key to use it?
+
+No. Resume editing and application tracking work locally. AI features such as JD matching, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
+
+### Where is my data stored?
+
+By default, data is stored on your machine in `prisma/dev.db`. This is local runtime data and should not be committed to GitHub.
+
+### What is `LUJIE_SETTINGS_SECRET`?
+
+It is the local encryption secret used to encrypt API keys saved in SQLite. If you change it, API keys already saved in the old database may no longer decrypt, so you may need to save the key again in Settings.
+
+### Can I use another model provider?
+
+Yes. Any OpenAI-compatible provider can be configured by entering its Base URL, model name, and API key in Settings.
+
+## Project Structure
+
+```text
+prisma/                 Prisma schema and local SQLite runtime data
+src/app/                Next.js pages and API routes
+src/components/         Workspace, resume, interview, and shared UI
+src/hooks/              Browser hooks such as speech recognition
+src/lib/                Repository, AI, export, parsing, and domain logic
+src/stores/             Resume editor state
+src/types/              Shared TypeScript declarations
+public/brand/           Brand mark and cover assets
+public/images/          README screenshots
+third-party/            Third-party license notices
+```
+
+## Credits
+
+The resume editor reuses and adapts design ideas and implementation concepts from [JadeAI](https://github.com/LingyiChen-AI/JadeAI). JadeAI is licensed under Apache License 2.0; a copy is kept in `third-party/JadeAI-LICENSE.txt`.
+
+## License
+
+LuJie CareerKit is released under the [Apache License 2.0](LICENSE). Third-party notices are listed in [NOTICE](NOTICE).

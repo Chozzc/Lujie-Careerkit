@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">LuJie CareerKit</title>
+  <desc id="desc">A folded resume page with career steps.</desc>
+  <path
+    d="M20 78V16h42l18 18v28"
+    fill="none"
+    stroke="#111111"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+    stroke-width="8"
+  />
+  <path d="M32 39h33v6H32v-6Zm0 14h27v6H32v-6Zm0 14h19v6H32v-6Z" fill="#111111" />
+  <path d="M56 78h24V56H69v10H56v12Z" fill="#111111" />
+</svg>

@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ApplicationStatus {
+  READY
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  REJECTED
+  ARCHIVED
+}
+
+model Resume {
+  id        String   @id @default(cuid())
+  name      String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions ResumeVersion[]
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  name      String
+  summary   String
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  resumeId String
+  resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobId    String?
+  job      Job?   @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  applications Application[]
+  interviews   InterviewSession[]
+}
+
+model Job {
+  id        String   @id @default(cuid())
+  company   String
+  title     String
+  city      String
+  source    String
+  jd        String
+  link      String
+  deadline  DateTime?
+  tags      Json
+  analysis  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions     ResumeVersion[]
+  applications Application[]
+  interviews   InterviewSession[]
+}
+
+model Application {
+  id               String            @id @default(cuid())
+  status           ApplicationStatus @default(READY)
+  appliedAt        DateTime?
+  stageDate        DateTime?
+  priority         String            @default("NORMAL")
+  nextFollowUpAt   DateTime?
+  notes            String            @default("")
+  interviewRound   String            @default("")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  jobId           String
+  job             Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId String?
+  resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+
+  followUps FollowUpLog[]
+}
+
+model FollowUpLog {
+  id        String   @id @default(cuid())
+  type      String
+  content   String
+  createdAt DateTime @default(now())
+
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model InterviewSession {
+  id                   String   @id @default(cuid())
+  mode                 String   @default("comprehensive")
+  status               String   @default("IN_PROGRESS")
+  context              Json?
+  questions            Json
+  answers              Json
+  feedback             Json
+  currentQuestionIndex Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  completedAt          DateTime?
+
+  jobId           String
+  job             Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId String?
+  resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+}
+
+model Settings {
+  id               String    @id @default("singleton")
+  provider         String    @default("openai-compatible")
+  model            String    @default("deepseek-v4-flash")
+  baseUrl          String    @default("https://api.deepseek.com/v1")
+  aiProvider       String    @default("deepseek")
+  aiModel          String    @default("deepseek-v4-flash")
+  aiBaseUrl        String    @default("https://api.deepseek.com/v1")
+  aiApiKey         String    @default("")
+  aiEnabled        Boolean   @default(false)
+  aiTemperature    Float     @default(0.3)
+  aiLastTestedAt   DateTime?
+  aiLastTestStatus String    @default("untested")
+  updatedAt        DateTime  @updatedAt
+}

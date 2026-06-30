@@ -1,0 +1,123 @@
+export const APP_NAME = "录阶";
+
+export const SECTION_TYPES = [
+  "personal_info",
+  "education",
+  "work_experience",
+  "internship_experience",
+  "projects",
+  "certifications",
+  "self_evaluation",
+  "summary",
+  "skills",
+  "languages",
+  "github",
+  "qr_codes",
+  "custom",
+] as const;
+
+export type SectionType = (typeof SECTION_TYPES)[number];
+
+export const DEFAULT_SECTIONS: { type: SectionType; titleZh: string; titleEn: string }[] = [
+  { type: "personal_info", titleZh: "个人信息", titleEn: "Personal Info" },
+  { type: "education", titleZh: "教育背景", titleEn: "Education" },
+  { type: "work_experience", titleZh: "工作经历", titleEn: "Work Experience" },
+  { type: "internship_experience", titleZh: "实习经历", titleEn: "Internship Experience" },
+  { type: "projects", titleZh: "项目经历", titleEn: "Projects" },
+  { type: "certifications", titleZh: "资格证书", titleEn: "Certifications" },
+  { type: "self_evaluation", titleZh: "自我评价", titleEn: "Self Evaluation" },
+  { type: "summary", titleZh: "个人简介", titleEn: "Summary" },
+  { type: "skills", titleZh: "技能特长", titleEn: "Skills" },
+  { type: "languages", titleZh: "语言能力", titleEn: "Languages" },
+  { type: "github", titleZh: "GitHub 项目", titleEn: "GitHub" },
+  { type: "qr_codes", titleZh: "二维码", titleEn: "QR Codes" },
+  { type: "custom", titleZh: "自定义模块", titleEn: "Custom" },
+];
+
+export const TEMPLATES = [
+  "classic",
+  "modern",
+  "minimal",
+  "professional",
+  "two-column",
+  "creative",
+  "ats",
+  "academic",
+  "elegant",
+  "executive",
+  "developer",
+  "designer",
+  "startup",
+  "formal",
+  "infographic",
+  "compact",
+  "euro",
+  "clean",
+  "bold",
+  "timeline",
+  "nordic",
+  "corporate",
+  "consultant",
+  "finance",
+  "medical",
+  "gradient",
+  "metro",
+  "material",
+  "coder",
+  "blocks",
+  "magazine",
+  "artistic",
+  "retro",
+  "neon",
+  "watercolor",
+  "swiss",
+  "japanese",
+  "berlin",
+  "luxe",
+  "rose",
+  "architect",
+  "legal",
+  "teacher",
+  "scientist",
+  "engineer",
+  "sidebar",
+  "card",
+  "zigzag",
+  "ribbon",
+  "mosaic",
+] as const;
+
+export type Template = (typeof TEMPLATES)[number];
+
+export const BACKGROUND_TEMPLATES: ReadonlySet<string> = new Set([
+  "modern",
+  "creative",
+  "two-column",
+  "executive",
+  "developer",
+  "designer",
+  "startup",
+  "infographic",
+  "compact",
+  "bold",
+  "corporate",
+  "finance",
+  "gradient",
+  "material",
+  "coder",
+  "artistic",
+  "neon",
+  "berlin",
+  "engineer",
+  "sidebar",
+  "ribbon",
+]);
+
+export const TWO_COLUMN_TEMPLATES: Record<string, { bg: string; width: string }> = {
+  "two-column": { bg: "#16213e", width: "35%" },
+  sidebar: { bg: "#1e40af", width: "35%" },
+  coder: { bg: "#0d1117", width: "32%" },
+};
+
+export const AUTOSAVE_DELAY = 500;
+export const MAX_UNDO_STACK = 50;
