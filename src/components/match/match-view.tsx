@@ -8,6 +8,7 @@ import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
 import { contentToJadeResume } from "@/lib/resume-adapter";
 import { hasResumeContent } from "@/lib/resume-library";
+import { buildResumeDisplayName } from "@/lib/resume-naming";
 import {
   buildUploadedResumeDraft,
   isResumeContentLike,
@@ -155,7 +156,7 @@ export function MatchView({
     if (hasResumeContent(resume)) {
       options.push({
         id: "main",
-        name: resumeDisplayName(resume, "原简历"),
+        name: buildResumeDisplayName(resume, "原简历"),
         detail: `原简历 · ${resume.skills.length} 项技能 · ${resume.projects.length} 个项目`,
       });
     }
@@ -414,7 +415,7 @@ export function MatchView({
         <section className="grid items-stretch gap-5 xl:grid-cols-2">
           <ResumeDocumentComparePane
             title="原简历"
-            subtitle={resumeDisplayName(resultBaseResume, "未命名简历")}
+                  subtitle={buildResumeDisplayName(resultBaseResume, "未命名简历")}
             resume={resultBaseResume}
           />
           <ResumeDocumentComparePane
@@ -637,12 +638,6 @@ function ResumeDocumentComparePane({
       />
     </section>
   );
-}
-
-function resumeDisplayName(resume: ResumeContent, fallback: string) {
-  const name = resume.basics.name.trim();
-  if (!name) return fallback;
-  return name.includes("简历") ? name : `${name}的简历`;
 }
 
 function readTailoringBaseResume(content: ResumeContent) {

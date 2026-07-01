@@ -21,3 +21,9 @@ export function resolveResumeContentTitle(content: ResumeContent, currentTitle?:
   if (explicitTitle && explicitTitle !== UNTITLED_RESUME_NAME) return explicitTitle;
   return buildAutomaticResumeTitle(content.basics.name);
 }
+
+export function buildResumeDisplayName(content: ResumeContent, fallback: string) {
+  const name = content.basics.name.trim();
+  if (!name) return fallback;
+  return name.includes("简历") ? name : `${name}的简历`;
+}
