@@ -16,15 +16,15 @@ import {
   UserRound,
 } from "lucide-react";
 
-import type { ResumePickerOption } from "@/components/resume-source-picker";
+import type { ResumePickerOption } from "@/components/resume/resume-source-picker";
 import {
   AiSetupRequiredDialog,
   PreparationOptionCard,
   RESUME_IMPORT_AI_SETUP_MESSAGE,
   ResumeJdPreparation,
-} from "@/components/resume-jd-preparation";
-import { SpeechTextarea } from "@/components/speech-textarea";
-import { WorkflowStepper } from "@/components/workflow-stepper";
+} from "@/components/resume/resume-jd-preparation";
+import { SpeechTextarea } from "@/components/shared/speech-textarea";
+import { WorkflowStepper } from "@/components/shared/workflow-stepper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";

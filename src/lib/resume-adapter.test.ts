@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { contentToJadeResume, jadeResumeToContent } from "./resume-adapter";
 import type { ResumeContent } from "./types";
+import type { PersonalInfoContent, WorkExperienceContent } from "@/types/resume";
 
 const baseResume: ResumeContent = {
   basics: {
@@ -91,6 +92,48 @@ describe("resume content adapter", () => {
       role: "后端开发实习生",
     });
     expect(content.selfReview).toBe("工程基础扎实，习惯用数据复盘问题。");
+  });
+
+  it("keeps editor-only personal fields after saving and reopening", () => {
+    const jadeResume = contentToJadeResume(baseResume);
+    const personalInfo = jadeResume.sections.find((section) => section.type === "personal_info");
+    personalInfo!.content = {
+      ...(personalInfo!.content as PersonalInfoContent),
+      age: "22",
+      gender: "男",
+      politicalStatus: "共青团员",
+      wechat: "linzeyu",
+      avatar: "data:image/jpeg;base64,avatar",
+    };
+
+    const reopened = contentToJadeResume(jadeResumeToContent(jadeResume));
+    const reopenedPersonalInfo = reopened.sections.find((section) => section.type === "personal_info")?.content;
+
+    expect(reopenedPersonalInfo).toMatchObject({
+      age: "22",
+      gender: "男",
+      politicalStatus: "共青团员",
+      wechat: "linzeyu",
+      avatar: "data:image/jpeg;base64,avatar",
+    });
+  });
+
+  it("restores editor snapshots while applying newer resume content", () => {
+    const savedContent = jadeResumeToContent(contentToJadeResume(baseResume));
+    const optimizedContent: ResumeContent = {
+      ...savedContent,
+      experiences: [
+        {
+          ...savedContent.experiences[0],
+          highlights: ["围绕 JD 强化后的经历表述。"],
+        },
+      ],
+    };
+
+    const reopened = contentToJadeResume(optimizedContent);
+    const work = reopened.sections.find((section) => section.type === "work_experience")?.content as WorkExperienceContent;
+
+    expect(work.items[0].highlights).toEqual(["围绕 JD 强化后的经历表述。"]);
   });
 
   it("maps imported custom titled sections into editor custom modules", () => {

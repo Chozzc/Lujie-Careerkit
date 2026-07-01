@@ -3,8 +3,8 @@
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 import { Settings, Upload } from "lucide-react";
 
-import { ResumeSourcePicker } from "@/components/resume-source-picker";
-import { SpeechTextarea } from "@/components/speech-textarea";
+import { ResumeSourcePicker } from "@/components/resume/resume-source-picker";
+import { SpeechTextarea } from "@/components/shared/speech-textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

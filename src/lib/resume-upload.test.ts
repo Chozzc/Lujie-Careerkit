@@ -94,7 +94,7 @@ describe("resume upload formats", () => {
       preferLocalFallback: true,
     });
 
-    const body = fetch.mock.calls[0]?.[1]?.body;
+    const body = (fetch.mock.calls[0] as unknown as [RequestInfo | URL, RequestInit | undefined] | undefined)?.[1]?.body;
     expect(body).toBeInstanceOf(FormData);
     expect((body as FormData).get("preferLocalFallback")).toBe("true");
   });

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { CareerKitApp } from "@/components/careerkit-app";
+import { CareerKitApp } from "@/components/app/careerkit-app";
 import { getAppData } from "@/lib/repository";
 import { navKeyFromPathname, pathnameForNavKey } from "@/lib/navigation";
 

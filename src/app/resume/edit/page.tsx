@@ -1,4 +1,4 @@
-import { CareerKitApp } from "@/components/careerkit-app";
+import { CareerKitApp } from "@/components/app/careerkit-app";
 import { getAppData } from "@/lib/repository";
 
 export const dynamic = "force-dynamic";

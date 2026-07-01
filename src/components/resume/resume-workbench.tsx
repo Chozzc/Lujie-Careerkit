@@ -1,45 +1,29 @@
 ﻿"use client";
 
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
-  ArrowDownUp,
-  Check,
   Download,
   FileSearch,
-  FileText,
-  FileType,
-  Image as ImageIcon,
-  LayoutGrid,
-  List,
   Palette,
   PanelRightOpen,
-  Plus,
   Redo2,
   Save,
-  Search,
-  Trash2,
   Undo2,
-  Upload,
   X,
 } from "lucide-react";
 
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { EditorPreviewPanel } from "@/components/editor/editor-preview-panel";
 import { EditorSidebar } from "@/components/editor/editor-sidebar";
-import { AiSetupRequiredDialog, RESUME_IMPORT_AI_SETUP_MESSAGE } from "@/components/resume-jd-preparation";
+import { ResumeExportDialog, type ResumeExportFormat } from "@/components/resume/resume-export-dialog";
+import { ResumeLibraryView, type ResumeLibraryViewMode } from "@/components/resume/resume-library-view";
+import { ResumeTemplateBar } from "@/components/resume/resume-template-bar";
+import { ResumeThemePanel } from "@/components/resume/resume-theme-panel";
+import { AiSetupRequiredDialog, RESUME_IMPORT_AI_SETUP_MESSAGE } from "@/components/resume/resume-jd-preparation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TEMPLATES } from "@/lib/constants";
@@ -51,13 +35,18 @@ import {
 } from "@/lib/resume-export-layout";
 import { contentToJadeResume, jadeResumeToContent } from "@/lib/resume-adapter";
 import { buildDocxThemeConfig, type DocxThemeConfig } from "@/lib/resume-docx-style";
-import { buildResumeEditorPath, buildResumeLibraryCards } from "@/lib/resume-library";
+import {
+  buildResumeEditorPath,
+  buildResumeLibraryCards,
+  resumeTemplateLabels as templateLabels,
+  type ResumeLibrarySortMode,
+} from "@/lib/resume-library";
 import {
   buildAutomaticResumeTitle,
   resolveResumeContentTitle,
   shouldAutoRenameResumeTitle,
 } from "@/lib/resume-naming";
-import { buildUploadedResumeDraft, RESUME_UPLOAD_ACCEPT } from "@/lib/resume-upload";
+import { buildUploadedResumeDraft } from "@/lib/resume-upload";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type { ResumeContent } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -91,6 +80,7 @@ type ResumeWorkbenchProps = {
   initialResumeVersionId?: string;
   mode: WorkbenchMode;
   onModeChange: (mode: WorkbenchMode) => void;
+  onEditorTargetChange: (versionId?: string) => void;
   onOpenMatch: () => void;
   aiReady: boolean;
   onOpenSettings: () => void;
@@ -99,64 +89,9 @@ type ResumeWorkbenchProps = {
 };
 
 type WorkbenchMode = "library" | "editor";
-type ResumeCardKind = "原简历" | "优化后简历";
 export type ResumeSaveTarget = { kind: "main" } | { kind: "version"; id: string } | { kind: "new" };
-type ResumeExportFormat = "pdf" | "word" | "image";
-type ViewMode = "grid" | "list";
-type SortMode = "recent" | "recentOptimized";
-
-const templateLabels: Record<string, string> = {
-  classic: "经典",
-  modern: "现代",
-  minimal: "极简",
-  professional: "专业",
-  "two-column": "双栏",
-  creative: "创意",
-  ats: "ATS",
-  academic: "学术",
-  elegant: "优雅",
-  executive: "高管",
-  developer: "开发者",
-  designer: "设计师",
-  startup: "创业",
-  formal: "正式",
-  infographic: "信息图",
-  compact: "紧凑",
-  euro: "欧式",
-  clean: "清爽",
-  bold: "醒目",
-  timeline: "时间线",
-  nordic: "北欧",
-  corporate: "企业",
-  consultant: "咨询",
-  finance: "金融",
-  medical: "医疗",
-  gradient: "渐变",
-  metro: "都市",
-  material: "材料",
-  coder: "代码",
-  blocks: "块面",
-  magazine: "杂志",
-  artistic: "艺术",
-  retro: "复古",
-  neon: "霓虹",
-  watercolor: "水彩",
-  swiss: "瑞士",
-  japanese: "日式",
-  berlin: "柏林",
-  luxe: "奢雅",
-  rose: "玫瑰",
-  architect: "建筑",
-  legal: "法律",
-  teacher: "教师",
-  scientist: "科研",
-  engineer: "工程师",
-  sidebar: "侧栏",
-  card: "卡片",
-  zigzag: "折线",
-  ribbon: "丝带",
-  mosaic: "马赛克",
-};
+type ViewMode = ResumeLibraryViewMode;
+type SortMode = ResumeLibrarySortMode;
 
 const DEFAULT_EDITOR_THEME: ThemeConfig = {
   primaryColor: "#1a1a2e",
@@ -168,24 +103,6 @@ const DEFAULT_EDITOR_THEME: ThemeConfig = {
   sectionSpacing: 16,
   avatarStyle: "oneInch",
 };
-
-const themeColorPresets = [
-  { primaryColor: "#111827", accentColor: "#315f92", label: "深蓝灰" },
-  { primaryColor: "#1f2937", accentColor: "#64748b", label: "冷静灰" },
-  { primaryColor: "#172554", accentColor: "#2563eb", label: "校招蓝" },
-  { primaryColor: "#27272a", accentColor: "#a16207", label: "稳重金" },
-];
-
-const exportOptions: Array<{
-  format: ResumeExportFormat;
-  title: string;
-  subtitle: string;
-  icon: LucideIcon;
-}> = [
-  { format: "pdf", title: "PDF", subtitle: "按分页导出", icon: FileText },
-  { format: "word", title: "Word", subtitle: "可编辑，版式近似", icon: FileType },
-  { format: "image", title: "PNG 图片", subtitle: "分页高清长图", icon: ImageIcon },
-];
 
 const RESUME_SAVED_STATUS = "已保存到本地 SQLite";
 const RESUME_IMPORT_REVIEW_STATUS = "简历解析已完成，部分内容由 AI 自动归类，建议仔细甄别后再使用。";
@@ -199,6 +116,7 @@ export function ResumeWorkbench({
   initialResumeVersionId,
   mode,
   onModeChange,
+  onEditorTargetChange,
   onOpenMatch,
   aiReady,
   onOpenSettings,
@@ -309,6 +227,7 @@ export function ResumeWorkbench({
           const nextTarget: ResumeSaveTarget = { kind: "version", id: result.version.id };
           setEditingTarget(nextTarget);
           setEditingTitle(versionTitle(result.version));
+          onEditorTargetChange(result.version.id);
           window.history.replaceState(null, "", buildResumeEditorPath(nextTarget));
         }
         if (target.kind === "main") {
@@ -330,7 +249,7 @@ export function ResumeWorkbench({
     return () => {
       useResumeStore.getState().setPersistence(null);
     };
-  }, [mode]);
+  }, [mode, onEditorTargetChange]);
 
   useEffect(() => {
     if (mode !== "editor") return;
@@ -427,6 +346,7 @@ export function ResumeWorkbench({
     setEditingTarget(target);
     setStatus(RESUME_SAVED_STATUS);
     setShowThemePanel(false);
+    onEditorTargetChange(target.kind === "version" ? target.id : undefined);
     onModeChange("editor");
     const nextPath = target.kind === "new" ? "/resume/edit" : buildResumeEditorPath(target);
     if (`${window.location.pathname}${window.location.search}` !== nextPath) {
@@ -436,6 +356,7 @@ export function ResumeWorkbench({
 
   function closeEditor() {
     onModeChange("library");
+    onEditorTargetChange(undefined);
     setShowThemePanel(false);
     if (window.location.pathname !== "/resume") {
       window.history.pushState(null, "", "/resume");
@@ -554,122 +475,30 @@ export function ResumeWorkbench({
   if (mode === "library") {
     return (
       <>
-        <section className="text-foreground">
-          <div className="flex flex-col">
-            <header className="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <h1 className="font-serif text-3xl font-semibold tracking-normal">我的简历</h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  共 {resumeCards.length} 份简历 · {resumeCards.filter((card) => card.kind === "优化后简历").length} 份岗位优化版本
-                </p>
-                {status !== RESUME_SAVED_STATUS && <p className="mt-3 text-xs text-muted-foreground">{status}</p>}
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  className="hidden"
-                  accept={RESUME_UPLOAD_ACCEPT}
-                  onChange={(event) => {
-                    void handleImportResume(event.currentTarget.files?.[0], { preferLocalFallback: localImportFallbackRef.current });
-                    event.currentTarget.value = "";
-                  }}
-                />
-                <Button
-                  variant="outline"
-                  onClick={handleImportButtonClick}
-                  className="gap-2"
-                  disabled={isImportingResume}
-                >
-                  <Upload className="h-4 w-4" />
-                  {isImportingResume ? "解析中..." : "导入简历"}
-                </Button>
-                <Button onClick={handleCreateResume} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  新建简历
-                </Button>
-              </div>
-            </header>
-
-            <div className="mt-7 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <label className="flex h-11 w-full max-w-md items-center gap-3 rounded-lg border border-line bg-surface px-3 text-sm text-muted-foreground shadow-sm">
-                <Search className="h-4 w-4" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="搜索简历..."
-                  className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-                />
-              </label>
-
-              <div className="flex items-center gap-2">
-                <label className="flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm">
-                  <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
-                  <select
-                    value={sortMode}
-                    onChange={(event) => setSortMode(event.target.value as SortMode)}
-                    className="bg-transparent outline-none"
-                  >
-                    <option value="recent">最近编辑</option>
-                    <option value="recentOptimized">最近优化</option>
-                  </select>
-                </label>
-                <div className="flex h-10 overflow-hidden rounded-lg border border-line bg-surface">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("grid")}
-                    className={cn("grid w-10 place-items-center", viewMode === "grid" && "bg-primary text-white")}
-                    aria-label="网格视图"
-                    title="网格视图"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode("list")}
-                    className={cn("grid w-10 place-items-center", viewMode === "list" && "bg-primary text-white")}
-                    aria-label="列表视图"
-                    title="列表视图"
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                "mt-7",
-                viewMode === "grid"
-                  ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                  : "flex flex-col gap-3",
-              )}
-            >
-              {resumeCards.map((card) => (
-                <ResumeCard
-                  key={card.id}
-                  card={card}
-                  viewMode={viewMode}
-                  onOpen={() => openEditor(card.content, card.title, card.target)}
-                  onDelete={() => {
-                    if (card.id === "main") {
-                      onDeleteMainResume();
-                    } else {
-                      onDeleteVersion(card.id);
-                    }
-                  }}
-                />
-              ))}
-            </div>
-
-            {resumeCards.length === 0 && (
-              <div className="mt-12 grid min-h-48 place-items-center rounded-xl border border-dashed border-line text-sm text-muted-foreground">
-                没有匹配的简历
-              </div>
-            )}
-          </div>
-        </section>
+        <ResumeLibraryView
+          cards={resumeCards}
+          status={status}
+          savedStatus={RESUME_SAVED_STATUS}
+          search={search}
+          sortMode={sortMode}
+          viewMode={viewMode}
+          isImportingResume={isImportingResume}
+          importInputRef={importInputRef}
+          onImportFile={(file) => void handleImportResume(file, { preferLocalFallback: localImportFallbackRef.current })}
+          onImportButtonClick={handleImportButtonClick}
+          onCreateResume={handleCreateResume}
+          onSearchChange={setSearch}
+          onSortModeChange={setSortMode}
+          onViewModeChange={setViewMode}
+          onOpenCard={(card) => openEditor(card.content, card.title, card.target)}
+          onDeleteCard={(card) => {
+            if (card.id === "main") {
+              onDeleteMainResume();
+            } else {
+              onDeleteVersion(card.id);
+            }
+          }}
+        />
         {importAiSetupDialog}
       </>
     );
@@ -765,7 +594,7 @@ export function ResumeWorkbench({
 
           <main className="flex min-w-0 flex-1 overflow-hidden">
             <div className={cn("flex min-h-0 min-w-0 flex-col", showPreview ? "flex-[0.95]" : "flex-1")}>
-              <TemplateBar resume={activeResume} onTemplateChange={handleTemplateChange} />
+              <ResumeTemplateBar resume={activeResume} onTemplateChange={handleTemplateChange} />
               {showImportReviewNotice ? (
                 <div className="border-b border-line bg-surface-low px-4 py-3 md:px-6">
                   <div className="mx-auto max-w-3xl rounded-lg border border-primary/20 bg-white px-4 py-3 text-base leading-7 text-foreground shadow-sm">
@@ -786,8 +615,9 @@ export function ResumeWorkbench({
               </div>
             )}
             {showThemePanel && (
-              <ThemePanel
+              <ResumeThemePanel
                 theme={activeResume.themeConfig}
+                defaultMargin={DEFAULT_EDITOR_THEME.margin}
                 onChange={handleThemeChange}
                 onReset={resetTheme}
                 onClose={() => setShowThemePanel(false)}
@@ -797,426 +627,6 @@ export function ResumeWorkbench({
         </div>
       </section>
     </TooltipProvider>
-  );
-}
-
-function ResumeCard({
-  card,
-  viewMode,
-  onOpen,
-  onDelete,
-}: {
-  card: {
-    id: string;
-    kind: ResumeCardKind;
-    title: string;
-    detail: string;
-    template: string;
-    updatedAt: string;
-    content: ResumeContent;
-    target: ResumeSaveTarget;
-  };
-  viewMode: ViewMode;
-  onOpen: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
-      className={cn(
-        "group cursor-pointer overflow-hidden rounded-xl border border-line bg-surface text-left shadow-[0_12px_40px_rgba(49,48,48,0.04)] transition hover:border-primary/35 hover:shadow-[0_14px_44px_rgba(49,48,48,0.08)] focus:outline-none focus:ring-2 focus:ring-primary/20",
-        viewMode === "list" && "flex items-center",
-      )}
-    >
-      <div
-        className={cn(
-          "grid place-items-center bg-surface-low",
-          viewMode === "grid" ? "h-44 border-b border-line" : "h-32 w-44 shrink-0 border-r border-line",
-        )}
-      >
-        <ResumeMiniPreview template={card.template} />
-      </div>
-      <div className="min-w-0 flex-1 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="truncate font-serif text-lg font-semibold">{card.title}</h2>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{card.detail}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="rounded-full bg-surface-mid px-2 py-1 text-[0.6875rem] text-muted-foreground">
-              {card.kind}
-            </span>
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete();
-              }}
-              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
-              aria-label={card.id === "main" ? "删除原简历" : "删除简历"}
-              title={card.id === "main" ? "删除原简历" : "删除简历"}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded-md bg-primary-soft px-2 py-1 text-primary">{card.template}</span>
-          <span>{card.updatedAt}</span>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function ResumeMiniPreview({ template }: { template: string }) {
-  const isModern = template === "现代";
-  return (
-    <div className="h-36 w-24 overflow-hidden rounded-lg border border-line bg-white shadow-sm">
-      <div className={cn("h-12 px-3 py-2", isModern ? "bg-[#172554]" : "bg-white")}>
-        <div className={cn("h-2 w-14 rounded-full", isModern ? "bg-white/80" : "bg-zinc-700")} />
-        <div className={cn("mt-2 h-1.5 w-10 rounded-full", isModern ? "bg-white/50" : "bg-zinc-300")} />
-      </div>
-      <div className="space-y-2 px-3 py-3">
-        <div className="h-1.5 w-14 rounded-full bg-[#315f92]" />
-        <div className="h-1 w-16 rounded-full bg-zinc-200" />
-        <div className="h-1 w-12 rounded-full bg-zinc-200" />
-        <div className="mt-3 h-1.5 w-10 rounded-full bg-[#315f92]" />
-        <div className="h-1 w-16 rounded-full bg-zinc-200" />
-        <div className="h-1 w-11 rounded-full bg-zinc-200" />
-      </div>
-    </div>
-  );
-}
-
-function TemplateBar({ resume, onTemplateChange }: { resume: Resume; onTemplateChange: (template: string) => void }) {
-  return (
-    <div data-tour="template-gallery" className="flex h-11 shrink-0 items-center border-b bg-background px-4">
-      <span className="mr-2 shrink-0 text-[0.6875rem] font-medium text-muted-foreground">模板</span>
-      <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
-        {TEMPLATES.map((template) => (
-          <Button
-            key={template}
-            variant={resume.template === template ? "default" : "ghost"}
-            size="sm"
-            className="h-7 shrink-0 px-2 text-xs"
-            onClick={() => onTemplateChange(template)}
-          >
-            {templateLabels[template] ?? template}
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ThemePanel({
-  theme,
-  onChange,
-  onReset,
-  onClose,
-}: {
-  theme: ThemeConfig;
-  onChange: (themeConfig: Partial<ThemeConfig>) => void;
-  onReset: () => void;
-  onClose: () => void;
-}) {
-  const margin = theme.margin ?? DEFAULT_EDITOR_THEME.margin;
-
-  return (
-    <aside className="fixed bottom-0 right-0 top-12 z-40 flex w-80 shrink-0 flex-col border-l border-line bg-surface p-4 shadow-2xl xl:static xl:shadow-none">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="font-serif text-lg font-semibold">主题编辑</h2>
-          <p className="mt-1 text-xs text-muted-foreground">颜色、字体和页面密度会实时作用到右侧预览。</p>
-        </div>
-        <Button variant="ghost" size="icon" onClick={onClose} title="关闭主题面板">
-          <X />
-        </Button>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
-        <section>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">推荐配色</p>
-          <div className="grid grid-cols-2 gap-2">
-            {themeColorPresets.map((preset) => {
-              const active =
-                theme.primaryColor === preset.primaryColor && theme.accentColor === preset.accentColor;
-              return (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() =>
-                    onChange({
-                      primaryColor: preset.primaryColor,
-                      accentColor: preset.accentColor,
-                    })
-                  }
-                  className={cn(
-                    "flex items-center justify-between rounded-lg border border-line bg-surface-low px-3 py-2 text-xs",
-                    active && "border-primary text-primary",
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="flex overflow-hidden rounded-full border border-line">
-                      <span className="h-4 w-4" style={{ backgroundColor: preset.primaryColor }} />
-                      <span className="h-4 w-4" style={{ backgroundColor: preset.accentColor }} />
-                    </span>
-                    {preset.label}
-                  </span>
-                  {active && <Check className="h-3.5 w-3.5" />}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="grid grid-cols-2 gap-3">
-          <ColorField
-            label="主色"
-            value={theme.primaryColor}
-            onChange={(value) => onChange({ primaryColor: value })}
-          />
-          <ColorField
-            label="强调色"
-            value={theme.accentColor}
-            onChange={(value) => onChange({ accentColor: value })}
-          />
-        </section>
-
-        <ThemeField label="字体">
-          <select
-            value={theme.fontFamily}
-            onChange={(event) => onChange({ fontFamily: event.target.value })}
-            className="w-full rounded-lg border border-line bg-surface-low px-3 py-2 text-sm outline-none focus:border-primary"
-          >
-            <option value="Inter">Inter</option>
-            <option value="'Noto Sans SC'">Noto Sans SC</option>
-            <option value="system-ui">System UI</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Arial">Arial</option>
-          </select>
-        </ThemeField>
-
-        <ThemeField label="字号">
-          <div className="grid grid-cols-3 gap-2">
-            {(["small", "medium", "large"] as const).map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => onChange({ fontSize: size })}
-                className={cn(
-                  "rounded-lg border border-line px-3 py-2 text-xs",
-                  theme.fontSize === size ? "bg-primary text-white" : "bg-surface-low text-muted-foreground",
-                )}
-              >
-                {size === "small" ? "小" : size === "medium" ? "中" : "大"}
-              </button>
-            ))}
-          </div>
-        </ThemeField>
-
-        <RangeField
-          label="行距"
-          value={theme.lineSpacing}
-          min={1.1}
-          max={1.9}
-          step={0.1}
-          suffix="x"
-          onChange={(value) => onChange({ lineSpacing: value })}
-        />
-        <RangeField
-          label="模块间距"
-          value={theme.sectionSpacing}
-          min={8}
-          max={32}
-          step={1}
-          suffix="px"
-          onChange={(value) => onChange({ sectionSpacing: value })}
-        />
-
-        <section>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">页边距</p>
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              ["top", "上"],
-              ["right", "右"],
-              ["bottom", "下"],
-              ["left", "左"],
-            ] as const).map(([key, label]) => (
-              <label key={key} className="block text-xs text-muted-foreground">
-                {label}
-                <input
-                  type="number"
-                  min={0}
-                  max={48}
-                  value={margin[key]}
-                  onChange={(event) =>
-                    onChange({
-                      margin: {
-                        ...margin,
-                        [key]: Number(event.target.value),
-                      },
-                    })
-                  }
-                  className="mt-1 w-full rounded-lg border border-line bg-surface-low px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <ThemeField label="头像样式">
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              ["oneInch", "一寸照"],
-              ["circle", "圆形"],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onChange({ avatarStyle: value })}
-                className={cn(
-                  "rounded-lg border border-line px-3 py-2 text-xs",
-                  theme.avatarStyle === value ? "bg-primary text-white" : "bg-surface-low text-muted-foreground",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </ThemeField>
-
-      </div>
-
-      <Button variant="outline" onClick={onReset} className="mt-4">
-        重置主题
-      </Button>
-    </aside>
-  );
-}
-
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <ThemeField label={label}>
-      <label className="flex h-10 items-center gap-2 rounded-lg border border-line bg-surface-low px-2">
-        <input type="color" value={value} onChange={(event) => onChange(event.target.value)} className="h-6 w-8" />
-        <input
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent text-xs outline-none"
-        />
-      </label>
-    </ThemeField>
-  );
-}
-
-function RangeField({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  suffix: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <ThemeField label={`${label} ${value}${suffix}`}>
-      <input
-        type="range"
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="w-full accent-primary"
-      />
-    </ThemeField>
-  );
-}
-
-function ThemeField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block text-xs font-medium text-muted-foreground">
-      <span className="mb-1.5 block">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function ResumeExportDialog({
-  open,
-  exportingFormat,
-  onOpenChange,
-  onExport,
-}: {
-  open: boolean;
-  exportingFormat: ResumeExportFormat | null;
-  onOpenChange: (open: boolean) => void;
-  onExport: (format: ResumeExportFormat) => void;
-}) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl gap-0 p-0" showCloseButton={false}>
-        <DialogHeader className="border-b border-line p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
-                <Download className="h-5 w-5 text-emerald-600" />
-                导出简历
-              </DialogTitle>
-              <DialogDescription className="mt-2">选择导出格式下载当前简历。</DialogDescription>
-            </div>
-            <DialogClose render={<Button variant="ghost" size="icon" title="关闭导出窗口" />}>
-              <X />
-            </DialogClose>
-          </div>
-        </DialogHeader>
-
-        <div className="grid gap-3 p-5 sm:grid-cols-3">
-          {exportOptions.map((option) => {
-            const Icon = option.icon;
-            const active = exportingFormat === option.format;
-            return (
-              <button
-                key={option.format}
-                type="button"
-                onClick={() => onExport(option.format)}
-                disabled={Boolean(exportingFormat)}
-                className={cn(
-                  "flex min-h-32 flex-col items-center justify-center gap-3 rounded-xl border border-line bg-surface p-4 text-center transition hover:border-primary/40 hover:bg-primary-soft disabled:cursor-wait disabled:opacity-70",
-                  active && "border-emerald-500 bg-emerald-50 text-emerald-700",
-                )}
-              >
-                <Icon className="h-8 w-8" />
-                <span className="text-base font-semibold">{active ? "正在导出..." : option.title}</span>
-                <span className="text-xs text-muted-foreground">{option.subtitle}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <DialogFooter className="p-4">
-          <DialogClose render={<Button variant="outline" disabled={Boolean(exportingFormat)} />}>取消</DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

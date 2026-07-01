@@ -1,4 +1,4 @@
-import type { ResumeContent } from "@/lib/types";
+import type { JsonValue, ResumeContent, SerializedResumeSection } from "@/lib/types";
 import { normalizeResumeContent } from "@/lib/resume-content";
 import { generateId } from "@/lib/utils";
 import type {
@@ -38,7 +38,7 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
     .filter(Boolean)
     .join("\n");
 
-  const sections: ResumeSection[] = [
+  const generatedSections: ResumeSection[] = [
     section<PersonalInfoContent>(resumeId, "personal_info", "个人信息", 0, {
       fullName: content.basics.name,
       jobTitle: "",
@@ -89,16 +89,16 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
   ];
 
   if (skills.length > 0) {
-    sections.push(
-      section<SkillsContent>(resumeId, "skills", "技能特长", sections.length, {
+    generatedSections.push(
+      section<SkillsContent>(resumeId, "skills", "技能特长", generatedSections.length, {
         categories: [{ id: generateId("skills"), name: "核心技能", skills }],
       }),
     );
   }
 
   customSections.forEach((item) => {
-    sections.push(
-      section<CustomContent>(resumeId, "custom", item.title, sections.length, {
+    generatedSections.push(
+      section<CustomContent>(resumeId, "custom", item.title, generatedSections.length, {
         items: [
           {
             id: generateId("custom"),
@@ -109,6 +109,9 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
       }),
     );
   });
+
+  const savedSections = hydrateEditorSections(editor.sections, resumeId, now);
+  const sections = savedSections ? mergeEditorSections(savedSections, generatedSections) : generatedSections;
 
   return {
     id: resumeId,
@@ -148,6 +151,7 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
       displayName: resume.title,
       template: resume.template,
       themeConfig: resume.themeConfig,
+      sections: serializeResumeSections(resume.sections),
     },
     basics: {
       name: personalInfo?.fullName ?? "",
@@ -237,6 +241,197 @@ function section<T>(resumeId: string, type: string, title: string, sortOrder: nu
     createdAt: now,
     updatedAt: now,
   };
+}
+
+function serializeResumeSections(sections: ResumeSection[]): SerializedResumeSection[] {
+  return sections.map((item) => ({
+    ...item,
+    content: item.content as unknown as JsonValue,
+    createdAt: toIsoString(item.createdAt),
+    updatedAt: toIsoString(item.updatedAt),
+  }));
+}
+
+function hydrateEditorSections(
+  sections: SerializedResumeSection[] | undefined,
+  resumeId: string,
+  fallbackDate: Date,
+): ResumeSection[] | null {
+  if (!Array.isArray(sections) || sections.length === 0) return null;
+
+  const hydrated = sections
+    .filter((item) => item && typeof item.type === "string" && item.content)
+    .map((item, index) => ({
+      ...item,
+      id: item.id || generateId(item.type),
+      resumeId,
+      sortOrder: Number.isFinite(item.sortOrder) ? item.sortOrder : index,
+      visible: item.visible !== false,
+      content: item.content as unknown as ResumeSection["content"],
+      createdAt: toDate(item.createdAt, fallbackDate),
+      updatedAt: toDate(item.updatedAt, fallbackDate),
+    }));
+
+  return hydrated.length ? hydrated.sort((a, b) => a.sortOrder - b.sortOrder) : null;
+}
+
+function mergeEditorSections(savedSections: ResumeSection[], generatedSections: ResumeSection[]) {
+  const generatedByType = new Map(generatedSections.map((item) => [item.type, item]));
+  const savedTypes = new Set(savedSections.map((item) => item.type));
+  const merged = savedSections.map((saved) => mergeEditorSection(saved, generatedByType.get(saved.type)));
+  const missing = generatedSections.filter((item) => !savedTypes.has(item.type));
+
+  return [...merged, ...missing].map((item, index) => ({
+    ...item,
+    sortOrder: index,
+  }));
+}
+
+function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): ResumeSection {
+  if (!generated) return saved;
+
+  switch (saved.type) {
+    case "personal_info": {
+      const previous = saved.content as PersonalInfoContent;
+      const next = generated.content as PersonalInfoContent;
+      return {
+        ...saved,
+        content: {
+          ...previous,
+          fullName: next.fullName,
+          email: next.email,
+          phone: next.phone,
+          location: next.location,
+          website: next.website,
+          github: next.github,
+          customLinks: next.customLinks,
+        },
+      };
+    }
+    case "education":
+      return {
+        ...saved,
+        content: {
+          ...(saved.content as EducationContent),
+          items: mergeItems(
+            (saved.content as EducationContent).items,
+            (generated.content as EducationContent).items,
+            (previous, next) => ({
+              ...previous,
+              institution: next.institution,
+              degree: next.degree,
+              field: next.field,
+              startDate: next.startDate,
+              endDate: next.endDate,
+              highlights: next.highlights,
+            }),
+          ),
+        },
+      };
+    case "work_experience":
+    case "internship_experience":
+      return {
+        ...saved,
+        content: {
+          ...(saved.content as WorkExperienceContent),
+          items: mergeItems(
+            (saved.content as WorkExperienceContent).items,
+            (generated.content as WorkExperienceContent).items,
+            (previous, next) => ({
+              ...previous,
+              company: next.company,
+              position: next.position,
+              startDate: next.startDate,
+              endDate: next.endDate,
+              current: next.current,
+              highlights: next.highlights,
+            }),
+          ),
+        },
+      };
+    case "projects":
+      return {
+        ...saved,
+        content: {
+          ...(saved.content as ProjectsContent),
+          items: mergeItems(
+            (saved.content as ProjectsContent).items,
+            (generated.content as ProjectsContent).items,
+            (previous, next) => ({
+              ...previous,
+              name: next.name,
+              description: next.description,
+              highlights: next.highlights,
+            }),
+          ),
+        },
+      };
+    case "certifications":
+      return {
+        ...saved,
+        content: {
+          ...(saved.content as CertificationsContent),
+          items: mergeItems(
+            (saved.content as CertificationsContent).items,
+            (generated.content as CertificationsContent).items,
+            (previous, next) => ({
+              ...previous,
+              name: next.name,
+            }),
+          ),
+        },
+      };
+    case "skills": {
+      const previous = saved.content as SkillsContent;
+      const next = generated.content as SkillsContent;
+      if (!next.categories.length) return saved;
+      const [firstCategory, ...otherCategories] = previous.categories;
+      return {
+        ...saved,
+        content: {
+          ...previous,
+          categories: [
+            {
+              ...(firstCategory ?? { id: generateId("skills"), name: "核心技能" }),
+              skills: next.categories.flatMap((category) => category.skills),
+            },
+            ...otherCategories,
+          ],
+        },
+      };
+    }
+    case "self_evaluation":
+      return {
+        ...saved,
+        content: {
+          ...(saved.content as SummaryContent),
+          text: (generated.content as SummaryContent).text,
+        },
+      };
+    default:
+      return saved;
+  }
+}
+
+function mergeItems<T>(savedItems: T[] = [], generatedItems: T[] = [], merge: (previous: T, next: T) => T) {
+  const length = Math.max(savedItems.length, generatedItems.length);
+  return Array.from({ length }, (_, index) => {
+    const previous = savedItems[index];
+    const next = generatedItems[index];
+    if (previous && next) return merge(previous, next);
+    return previous ?? next;
+  }).filter((item): item is T => Boolean(item));
+}
+
+function toIsoString(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+function toDate(value: Date | string, fallback: Date) {
+  if (value instanceof Date) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : date;
 }
 
 function getSection<T>(resume: Resume, type: string): T | null {

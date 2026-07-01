@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { shouldSeedSampleResumeVersion } from "./resume-version-seeding";
+import { shouldRefreshSampleResumeVersion, shouldSeedSampleResumeVersion } from "./resume-version-seeding";
 
 describe("sample resume version seeding", () => {
   it("does not recreate a built-in resume version after the user deleted it", () => {
@@ -31,5 +31,10 @@ describe("sample resume version seeding", () => {
         deletedSeedVersionIds: new Set(),
       }),
     ).toBe(false);
+  });
+
+  it("refreshes only legacy seed versions explicitly marked as seed data", () => {
+    expect(shouldRefreshSampleResumeVersion("种子数据：旧版示例")).toBe(true);
+    expect(shouldRefreshSampleResumeVersion("示例简历")).toBe(false);
   });
 });

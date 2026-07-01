@@ -22,7 +22,7 @@ import {
 import type { InterviewRepository, InterviewSessionRecord } from "./interview-service";
 import { resolveResumeContentTitle } from "./resume-naming";
 import { buildTailoredResumeVersion } from "./resume-versioning";
-import { shouldSeedSampleResumeVersion } from "./resume-version-seeding";
+import { shouldRefreshSampleResumeVersion, shouldSeedSampleResumeVersion } from "./resume-version-seeding";
 import { sampleApplications, sampleJobs, sampleResume, sampleResumeVersions } from "./sample-data";
 import type { ApplicationPriority, InterviewRound, JobAnalysis, ResumeContent } from "./types";
 
@@ -182,7 +182,7 @@ async function ensureSampleResumeVersions(resumeId: string) {
     };
 
     if (existing) {
-      if (shouldRefreshSeedVersion(existing.summary, existing.content)) {
+      if (shouldRefreshSampleResumeVersion(existing.summary)) {
         await prisma.resumeVersion.update({ where: { id: sampleVersion.id }, data });
       }
       continue;
@@ -251,14 +251,6 @@ async function dedupeTailoredResumeVersions() {
       where: { id: { in: duplicateVersionIds } },
     });
   }
-}
-
-function shouldRefreshSeedVersion(summary: string, content: unknown) {
-  const resumeContent = content as Partial<ResumeContent> | null;
-  return (
-    summary.startsWith("种子数据") ||
-    (resumeContent?.basics?.name === sampleResume.basics.name && !resumeContent.internships?.length)
-  );
 }
 
 async function ensureSchema() {

@@ -77,6 +77,21 @@ export type ResumeEditorSettings = {
     sectionSpacing?: number;
     avatarStyle?: "circle" | "oneInch";
   };
+  sections?: SerializedResumeSection[];
+};
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+export type SerializedResumeSection = {
+  id: string;
+  resumeId: string;
+  type: string;
+  title: string;
+  sortOrder: number;
+  visible: boolean;
+  content: JsonValue;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type JobAnalysis = {
