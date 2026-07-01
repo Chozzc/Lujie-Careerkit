@@ -122,6 +122,19 @@ OPENAI_MODEL="qwen3.7-max"
 
 AI features stay disabled until the settings are saved and the connection test succeeds.
 
+## Release Notes
+
+### v0.1.1
+
+- Unified resume-import setup prompts and local fallback messaging across the Resume Editor, JD Matching, and Interview Assistant.
+- Improved external resume import with clearer button states, parsing progress, completion notice, and parsed-name based resume naming.
+- Fixed Aliyun Bailian / Qwen defaults after data reset, preserved AI test status after saving unchanged settings, and diversified demo job sources.
+- Fixed the setup dialog footer layout so action buttons stay inside the dialog.
+
+### v0.1.0
+
+- Initial open-source release with the resume library, structured resume editor, JD matching, application tracking, mock interviews, AI review, and local SQLite storage.
+
 ## FAQ
 
 ### Do I need an API key to use it?
