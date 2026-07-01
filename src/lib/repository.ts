@@ -50,7 +50,7 @@ export async function ensureSeedData() {
         company: job.company,
         title: job.title,
         city: job.company === "字节跳动" ? "北京 / 上海" : "上海",
-        source: "手动录入",
+        source: job.source ?? "企业官网",
         jd: job.jd,
         link: "",
         deadline: job.deadline ? new Date(job.deadline) : null,
@@ -123,7 +123,7 @@ async function ensureSettings() {
     ? process.env.OPENAI_MODEL
     : DEFAULT_AI_MODEL;
   const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
-  const defaultBaseUrl = process.env.OPENAI_BASE_URL ?? defaultProvider.baseUrl;
+  const defaultBaseUrl = defaultProvider.baseUrl;
   const settings = await prisma.settings.upsert({
     where: { id: "singleton" },
     create: {
@@ -145,6 +145,8 @@ async function ensureSettings() {
   const maintenancePatch = getAiSettingsMaintenancePatch({
     aiProvider: settings.aiProvider,
     aiModel: settings.aiModel,
+    baseUrl: settings.baseUrl,
+    aiBaseUrl: settings.aiBaseUrl,
     model: settings.model,
     aiApiKey: settings.aiApiKey,
     aiEnabled: settings.aiEnabled,
@@ -532,6 +534,15 @@ export async function updateAiSettings(input: AiSettingsInput) {
   await ensureSeedData();
   const existing = await prisma.settings.findUnique({ where: { id: "singleton" } });
   const patch = buildAiSettingsPatch(input, { encryptedApiKey: existing?.aiApiKey });
+  const keepTestStatus = Boolean(
+    existing &&
+      existing.aiProvider === patch.aiProvider &&
+      existing.aiModel === patch.aiModel &&
+      existing.aiBaseUrl === patch.aiBaseUrl &&
+      existing.aiApiKey === patch.aiApiKey &&
+      existing.aiEnabled === patch.aiEnabled &&
+      existing.aiTemperature === patch.aiTemperature,
+  );
 
   const settings = await prisma.settings.upsert({
     where: { id: "singleton" },
@@ -546,7 +557,8 @@ export async function updateAiSettings(input: AiSettingsInput) {
       model: patch.aiModel,
       baseUrl: patch.aiBaseUrl,
       ...patch,
-      aiLastTestedAt: null,
+      aiLastTestStatus: keepTestStatus && existing ? existing.aiLastTestStatus : patch.aiLastTestStatus,
+      aiLastTestedAt: keepTestStatus && existing ? existing.aiLastTestedAt : null,
     },
   });
 

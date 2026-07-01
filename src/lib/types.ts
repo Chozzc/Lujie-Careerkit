@@ -94,6 +94,7 @@ export type JobRecord = {
   id: string;
   company: string;
   title: string;
+  source?: string;
   deadline: string | null;
   jd: string;
 };

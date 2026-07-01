@@ -28,7 +28,7 @@ import {
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { EditorPreviewPanel } from "@/components/editor/editor-preview-panel";
 import { EditorSidebar } from "@/components/editor/editor-sidebar";
-import { AiSetupRequiredDialog } from "@/components/resume-jd-preparation";
+import { AiSetupRequiredDialog, RESUME_IMPORT_AI_SETUP_MESSAGE } from "@/components/resume-jd-preparation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -93,7 +93,6 @@ type ResumeWorkbenchProps = {
   onModeChange: (mode: WorkbenchMode) => void;
   onOpenMatch: () => void;
   aiReady: boolean;
-  aiMessage: string;
   onOpenSettings: () => void;
   onDeleteMainResume: () => void;
   onDeleteVersion: (versionId: string) => void;
@@ -202,7 +201,6 @@ export function ResumeWorkbench({
   onModeChange,
   onOpenMatch,
   aiReady,
-  aiMessage,
   onOpenSettings,
   onDeleteMainResume,
   onDeleteVersion,
@@ -225,7 +223,8 @@ export function ResumeWorkbench({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isImportingResume, setIsImportingResume] = useState(false);
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
-  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [showImportReviewNotice, setShowImportReviewNotice] = useState(false);
+  const localImportFallbackRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const importNoticeTimerRef = useRef<number | null>(null);
   const saveContextRef = useRef({ editingTarget, editingTitle, saveResume, setResume });
@@ -450,17 +449,18 @@ export function ResumeWorkbench({
 
   function showImportReviewStatus() {
     if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
+    setShowImportReviewNotice(true);
     setStatus(RESUME_IMPORT_REVIEW_STATUS);
     importNoticeTimerRef.current = window.setTimeout(() => {
+      setShowImportReviewNotice(false);
       setStatus((current) => (current === RESUME_IMPORT_REVIEW_STATUS ? RESUME_SAVED_STATUS : current));
       importNoticeTimerRef.current = null;
-    }, 6500);
+    }, 12000);
   }
 
   async function handleImportResume(file?: File, options: { preferLocalFallback?: boolean } = {}) {
     if (!file || isImportingResume) return;
     if (!aiReady && !options.preferLocalFallback) {
-      setPendingImportFile(file);
       setAiSetupDialogOpen(true);
       return;
     }
@@ -484,14 +484,21 @@ export function ResumeWorkbench({
     }
   }
 
+  function handleImportButtonClick() {
+    if (!aiReady && !localImportFallbackRef.current) {
+      setAiSetupDialogOpen(true);
+      return;
+    }
+    importInputRef.current?.click();
+  }
+
   function importWithLocalFallback() {
-    const file = pendingImportFile;
-    setPendingImportFile(null);
-    if (file) void handleImportResume(file, { preferLocalFallback: true });
+    localImportFallbackRef.current = true;
+    importInputRef.current?.click();
   }
 
   function openAiSettingsForImport() {
-    setPendingImportFile(null);
+    localImportFallbackRef.current = false;
     onOpenSettings();
   }
 
@@ -532,124 +539,139 @@ export function ResumeWorkbench({
     }
   }
 
+  const importAiSetupDialog = (
+    <AiSetupRequiredDialog
+      open={aiSetupDialogOpen}
+      title="需要配置阿里百炼"
+      message={RESUME_IMPORT_AI_SETUP_MESSAGE}
+      secondaryLabel="稍后再说"
+      onOpenChange={setAiSetupDialogOpen}
+      onOpenSettings={openAiSettingsForImport}
+      onSecondary={importWithLocalFallback}
+    />
+  );
+
   if (mode === "library") {
     return (
-      <section className="text-foreground">
-        <div className="flex flex-col">
-          <header className="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 className="font-serif text-3xl font-semibold tracking-normal">我的简历</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                共 {resumeCards.length} 份简历 · {resumeCards.filter((card) => card.kind === "优化后简历").length} 份岗位优化版本
-              </p>
-              {status !== RESUME_SAVED_STATUS && <p className="mt-3 text-xs text-muted-foreground">{status}</p>}
-            </div>
+      <>
+        <section className="text-foreground">
+          <div className="flex flex-col">
+            <header className="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <h1 className="font-serif text-3xl font-semibold tracking-normal">我的简历</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  共 {resumeCards.length} 份简历 · {resumeCards.filter((card) => card.kind === "优化后简历").length} 份岗位优化版本
+                </p>
+                {status !== RESUME_SAVED_STATUS && <p className="mt-3 text-xs text-muted-foreground">{status}</p>}
+              </div>
 
-            <div className="flex flex-wrap gap-2">
-              <input
-                ref={importInputRef}
-                type="file"
-                className="hidden"
-                accept={RESUME_UPLOAD_ACCEPT}
-                onChange={(event) => {
-                  void handleImportResume(event.currentTarget.files?.[0]);
-                  event.currentTarget.value = "";
-                }}
-              />
-              <Button
-                variant="outline"
-                onClick={() => importInputRef.current?.click()}
-                className="gap-2"
-                disabled={isImportingResume}
-              >
-                <Upload className="h-4 w-4" />
-                {isImportingResume ? "解析中..." : "导入简历"}
-              </Button>
-              <Button onClick={handleCreateResume} className="gap-2">
-                <Plus className="h-4 w-4" />
-                新建简历
-              </Button>
-            </div>
-          </header>
-
-          <div className="mt-7 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <label className="flex h-11 w-full max-w-md items-center gap-3 rounded-lg border border-line bg-surface px-3 text-sm text-muted-foreground shadow-sm">
-              <Search className="h-4 w-4" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="搜索简历..."
-                className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
-              />
-            </label>
-
-            <div className="flex items-center gap-2">
-              <label className="flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm">
-                <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
-                <select
-                  value={sortMode}
-                  onChange={(event) => setSortMode(event.target.value as SortMode)}
-                  className="bg-transparent outline-none"
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  className="hidden"
+                  accept={RESUME_UPLOAD_ACCEPT}
+                  onChange={(event) => {
+                    void handleImportResume(event.currentTarget.files?.[0], { preferLocalFallback: localImportFallbackRef.current });
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleImportButtonClick}
+                  className="gap-2"
+                  disabled={isImportingResume}
                 >
-                  <option value="recent">最近编辑</option>
-                  <option value="recentOptimized">最近优化</option>
-                </select>
+                  <Upload className="h-4 w-4" />
+                  {isImportingResume ? "解析中..." : "导入简历"}
+                </Button>
+                <Button onClick={handleCreateResume} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  新建简历
+                </Button>
+              </div>
+            </header>
+
+            <div className="mt-7 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <label className="flex h-11 w-full max-w-md items-center gap-3 rounded-lg border border-line bg-surface px-3 text-sm text-muted-foreground shadow-sm">
+                <Search className="h-4 w-4" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="搜索简历..."
+                  className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+                />
               </label>
-              <div className="flex h-10 overflow-hidden rounded-lg border border-line bg-surface">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={cn("grid w-10 place-items-center", viewMode === "grid" && "bg-primary text-white")}
-                  aria-label="网格视图"
-                  title="网格视图"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className={cn("grid w-10 place-items-center", viewMode === "list" && "bg-primary text-white")}
-                  aria-label="列表视图"
-                  title="列表视图"
-                >
-                  <List className="h-4 w-4" />
-                </button>
+
+              <div className="flex items-center gap-2">
+                <label className="flex h-10 items-center gap-2 rounded-lg border border-line bg-surface px-3 text-sm">
+                  <ArrowDownUp className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={sortMode}
+                    onChange={(event) => setSortMode(event.target.value as SortMode)}
+                    className="bg-transparent outline-none"
+                  >
+                    <option value="recent">最近编辑</option>
+                    <option value="recentOptimized">最近优化</option>
+                  </select>
+                </label>
+                <div className="flex h-10 overflow-hidden rounded-lg border border-line bg-surface">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("grid")}
+                    className={cn("grid w-10 place-items-center", viewMode === "grid" && "bg-primary text-white")}
+                    aria-label="网格视图"
+                    title="网格视图"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    className={cn("grid w-10 place-items-center", viewMode === "list" && "bg-primary text-white")}
+                    aria-label="列表视图"
+                    title="列表视图"
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div
-            className={cn(
-              "mt-7",
-              viewMode === "grid"
-                ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-                : "flex flex-col gap-3",
-            )}
-          >
-            {resumeCards.map((card) => (
-              <ResumeCard
-                key={card.id}
-                card={card}
-                viewMode={viewMode}
-                onOpen={() => openEditor(card.content, card.title, card.target)}
-                onDelete={() => {
-                  if (card.id === "main") {
-                    onDeleteMainResume();
-                  } else {
-                    onDeleteVersion(card.id);
-                  }
-                }}
-              />
-            ))}
-          </div>
-
-          {resumeCards.length === 0 && (
-            <div className="mt-12 grid min-h-48 place-items-center rounded-xl border border-dashed border-line text-sm text-muted-foreground">
-              没有匹配的简历
+            <div
+              className={cn(
+                "mt-7",
+                viewMode === "grid"
+                  ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                  : "flex flex-col gap-3",
+              )}
+            >
+              {resumeCards.map((card) => (
+                <ResumeCard
+                  key={card.id}
+                  card={card}
+                  viewMode={viewMode}
+                  onOpen={() => openEditor(card.content, card.title, card.target)}
+                  onDelete={() => {
+                    if (card.id === "main") {
+                      onDeleteMainResume();
+                    } else {
+                      onDeleteVersion(card.id);
+                    }
+                  }}
+                />
+              ))}
             </div>
-          )}
-        </div>
-      </section>
+
+            {resumeCards.length === 0 && (
+              <div className="mt-12 grid min-h-48 place-items-center rounded-xl border border-dashed border-line text-sm text-muted-foreground">
+                没有匹配的简历
+              </div>
+            )}
+          </div>
+        </section>
+        {importAiSetupDialog}
+      </>
     );
   }
 
@@ -680,7 +702,7 @@ export function ResumeWorkbench({
                   title="修改简历名称"
                 />
                 <Badge variant="secondary" className="text-[0.6875rem]" title={status}>
-                  {status === RESUME_IMPORT_REVIEW_STATUS ? "解析完成" : formatEditorSaveStatus(isDirty, isSaving, status)}
+                  {showImportReviewNotice ? "解析完成" : formatEditorSaveStatus(isDirty, isSaving, status)}
                 </Badge>
               </div>
               <p className="text-[0.6875rem] text-muted-foreground">
@@ -730,15 +752,7 @@ export function ResumeWorkbench({
           onOpenChange={setExportDialogOpen}
           onExport={handleExport}
         />
-        <AiSetupRequiredDialog
-          open={aiSetupDialogOpen}
-          title="需要配置阿里百炼"
-          message={`${aiMessage} 导入简历建议先配置阿里百炼 / Qwen API Key；稍后再说会使用本地兜底解析，字段归类和准确率可能不佳。图片简历需要配置后才能解析。`}
-          secondaryLabel="稍后再说"
-          onOpenChange={setAiSetupDialogOpen}
-          onOpenSettings={openAiSettingsForImport}
-          onSecondary={importWithLocalFallback}
-        />
+        {importAiSetupDialog}
 
         <div className="flex min-h-0 flex-1">
           <div className="hidden md:block">
@@ -752,9 +766,9 @@ export function ResumeWorkbench({
           <main className="flex min-w-0 flex-1 overflow-hidden">
             <div className={cn("flex min-h-0 min-w-0 flex-col", showPreview ? "flex-[0.95]" : "flex-1")}>
               <TemplateBar resume={activeResume} onTemplateChange={handleTemplateChange} />
-              {status === RESUME_IMPORT_REVIEW_STATUS ? (
+              {showImportReviewNotice ? (
                 <div className="border-b border-line bg-surface-low px-4 py-3 md:px-6">
-                  <div className="mx-auto max-w-3xl rounded-lg border border-primary/20 bg-white px-4 py-3 text-sm leading-6 text-foreground shadow-sm">
+                  <div className="mx-auto max-w-3xl rounded-lg border border-primary/20 bg-white px-4 py-3 text-base leading-7 text-foreground shadow-sm">
                     {RESUME_IMPORT_REVIEW_STATUS}
                   </div>
                 </div>

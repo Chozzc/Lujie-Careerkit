@@ -8,7 +8,6 @@ import { SpeechTextarea } from "@/components/speech-textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -18,6 +17,9 @@ import {
 import { cn } from "@/lib/utils";
 
 type ResumePickerProps = Omit<ComponentProps<typeof ResumeSourcePicker>, "className">;
+
+export const RESUME_IMPORT_AI_SETUP_MESSAGE =
+  "AI 功能当前未启用，请在设置页开启并测试连接。导入简历建议先配置阿里百炼API Key；否则使用本地解析(图片及复杂文件无法解析，效果可能不佳)。";
 
 export function ResumeJdPreparation({
   resumePicker,
@@ -165,14 +167,11 @@ export function AiSetupRequiredDialog({
             {message || "请先在设置页启用 AI，并完成连接测试后再继续。"}
           </DialogDescription>
         </DialogHeader>
-        <div className="px-5 py-4 text-sm leading-6 text-muted-foreground">
-          API Key 会加密保存在本机数据库，不会以明文返回到前端。
-        </div>
-        <DialogFooter className="p-4">
+        <DialogFooter className="mx-0 mb-0 flex-row justify-end gap-2 rounded-none border-0 bg-transparent px-5 pt-1 pb-4">
           {onSecondary ? (
             <Button type="button" variant="outline" onClick={handleSecondary}>{secondaryLabel}</Button>
           ) : (
-            <DialogClose render={<Button type="button" variant="outline" />}>{secondaryLabel}</DialogClose>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{secondaryLabel}</Button>
           )}
           <Button type="button" onClick={handleOpenSettings}>前往设置</Button>
         </DialogFooter>

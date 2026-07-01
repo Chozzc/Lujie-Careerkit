@@ -9,6 +9,8 @@ import type { AiTestStatus } from "./settings";
 type StoredAiSettingsForMaintenance = {
   aiProvider: string;
   aiModel: string;
+  baseUrl?: string;
+  aiBaseUrl?: string;
   model: string;
   aiApiKey: string;
   aiEnabled: boolean;
@@ -59,6 +61,25 @@ export function getAiSettingsMaintenancePatch(
       aiProvider: defaultProvider.id,
       model: defaultModel,
       aiModel: defaultModel,
+      aiBaseUrl: defaultProvider.baseUrl,
+      aiLastTestStatus: "untested",
+    };
+  }
+
+  if (
+    settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
+    (settings.aiBaseUrl === getAiProvider("deepseek").baseUrl || settings.baseUrl === getAiProvider("deepseek").baseUrl) &&
+    !settings.aiEnabled &&
+    !settings.aiApiKey
+  ) {
+    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
+    const defaultModel = getDefaultAiModel(defaultProvider.id);
+    return {
+      provider: "openai-compatible",
+      baseUrl: defaultProvider.baseUrl,
+      aiProvider: defaultProvider.id,
+      model: settings.model || defaultModel,
+      aiModel: settings.aiModel || defaultModel,
       aiBaseUrl: defaultProvider.baseUrl,
       aiLastTestStatus: "untested",
     };

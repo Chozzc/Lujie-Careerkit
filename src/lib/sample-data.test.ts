@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sampleResumeVersions } from "./sample-data";
+import { sampleJobs, sampleResumeVersions } from "./sample-data";
 
 describe("sample resume versions", () => {
   it("provides complete, distinct public resume examples", () => {
@@ -21,5 +21,9 @@ describe("sample resume versions", () => {
       expect(version.content.skills.length).toBeGreaterThan(0);
       expect(version.content.selfReview).toBeTruthy();
     }
+  });
+
+  it("spreads sample job sources across common channels", () => {
+    expect(new Set(sampleJobs.map((job) => job.source)).size).toBeGreaterThanOrEqual(5);
   });
 });

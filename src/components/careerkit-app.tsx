@@ -85,7 +85,12 @@ import { cn } from "@/lib/utils";
 import { ResumeWorkbench, type ResumeSaveTarget } from "@/components/resume-workbench";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { InterviewWorkspace } from "@/components/interview/interview-workspace";
-import { AiSetupRequiredDialog, PreparationOptionCard, ResumeJdPreparation } from "@/components/resume-jd-preparation";
+import {
+  AiSetupRequiredDialog,
+  PreparationOptionCard,
+  RESUME_IMPORT_AI_SETUP_MESSAGE,
+  ResumeJdPreparation,
+} from "@/components/resume-jd-preparation";
 import { SpeechTextarea } from "@/components/speech-textarea";
 import { WorkflowStepper } from "@/components/workflow-stepper";
 import { AiSettingsPanel } from "@/components/settings/ai-settings-panel";
@@ -1022,7 +1027,6 @@ export function CareerKitApp({
               onModeChange={setResumeMode}
               onOpenMatch={() => navigateTo("match")}
               aiReady={isResumeImportAiReady(aiSettings)}
-              aiMessage={resumeImportAiReadinessMessage(aiSettings)}
               onOpenSettings={() => navigateTo("settings")}
               onDeleteMainResume={deleteMainResume}
               onDeleteVersion={deleteResumeVersion}
@@ -1063,6 +1067,7 @@ export function CareerKitApp({
               onOpenResume={openResumeEditorFromMatch}
               aiReady={isAiReady(aiSettings)}
               aiMessage={aiReadinessMessage(aiSettings)}
+              resumeImportAiReady={isResumeImportAiReady(aiSettings)}
               onOpenSettings={() => navigateTo("settings")}
               onStatus={setToast}
             />
@@ -1247,6 +1252,7 @@ function MatchView({
 }) {
   const aiReady = isAiReady(aiSettings);
   const aiMessage = aiReadinessMessage(aiSettings);
+  const resumeImportAiReady = isResumeImportAiReady(aiSettings);
   const [resumeSource, setResumeSource] = useState<"library" | "upload">("library");
   const [selectedResumeKey, setSelectedResumeKey] = useState("main");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
@@ -1260,7 +1266,11 @@ function MatchView({
   const [optimizedDraft, setOptimizedDraft] = useState<ResumeContent | null>(null);
   const [saveStatus, setSaveStatus] = useState("");
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
+  const [aiSetupDialogMode, setAiSetupDialogMode] = useState<"ai" | "resumeImport">("ai");
   const [preferences, setPreferences] = useState<MatchOptimizationPreferences>(defaultMatchPreferences);
+  const pendingResumeUploadRef = useRef<File | null>(null);
+  const resumeUploadOpenerRef = useRef<(() => void) | null>(null);
+  const localResumeImportFallbackRef = useRef(false);
 
   const resumeOptions = useMemo(() => {
     const options: Array<{ id: string; name: string; detail: string }> = [];
@@ -1312,12 +1322,20 @@ function MatchView({
     return () => window.cancelAnimationFrame(frame);
   }, [resumeOptions, resumeSource, selectedResumeKey]);
 
-  async function handleUploadFile(file: File) {
+  async function handleUploadFile(file: File, options: { preferLocalFallback?: boolean } = {}) {
     setUploadError("");
+    const preferLocalFallback = options.preferLocalFallback || localResumeImportFallbackRef.current;
+    if (!resumeImportAiReady && !preferLocalFallback) {
+      pendingResumeUploadRef.current = file;
+      setAiSetupDialogMode("resumeImport");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+
     setIsUploadingResume(true);
-    setSaveStatus("正在解析简历，可能需要一些时间...");
+    setSaveStatus(preferLocalFallback ? "正在使用本地解析，效果可能不佳..." : "正在解析简历，可能需要一些时间...");
     try {
-      const draft = await buildUploadedResumeDraft(file);
+      const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
       setSaveStatus(`简历解析已完成，已导入 ${draft.fileName}。`);
@@ -1326,8 +1344,39 @@ function MatchView({
       setUploadError(error instanceof Error ? error.message : "文件读取失败。");
       setSaveStatus("");
     } finally {
+      localResumeImportFallbackRef.current = false;
       setIsUploadingResume(false);
     }
+  }
+
+  function requestResumeUpload(openFileDialog: () => void) {
+    if (!resumeImportAiReady && !localResumeImportFallbackRef.current) {
+      resumeUploadOpenerRef.current = openFileDialog;
+      setAiSetupDialogMode("resumeImport");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+    openFileDialog();
+  }
+
+  function continueResumeUploadWithLocalFallback() {
+    const file = pendingResumeUploadRef.current;
+    const openFileDialog = resumeUploadOpenerRef.current;
+    pendingResumeUploadRef.current = null;
+    resumeUploadOpenerRef.current = null;
+    localResumeImportFallbackRef.current = true;
+    if (file) {
+      void handleUploadFile(file, { preferLocalFallback: true });
+      return;
+    }
+    openFileDialog?.();
+  }
+
+  function openSettingsFromAiDialog() {
+    pendingResumeUploadRef.current = null;
+    resumeUploadOpenerRef.current = null;
+    localResumeImportFallbackRef.current = false;
+    onOpenSettings();
   }
 
   function togglePreference(key: keyof MatchOptimizationPreferences) {
@@ -1402,6 +1451,7 @@ function MatchView({
     }
 
     if (!aiReady) {
+      setAiSetupDialogMode("ai");
       setAiSetupDialogOpen(true);
       return;
     }
@@ -1530,6 +1580,7 @@ function MatchView({
             isUploading: isUploadingResume,
             onSourceChange: setResumeSource,
             onSelect: setSelectedResumeKey,
+            onUploadRequest: requestResumeUpload,
             onUploadFile: (file) => void handleUploadFile(file),
             onOpenResume: (id) => onOpenResume(id === "main" ? undefined : id),
           }}
@@ -1572,9 +1623,12 @@ function MatchView({
       </form>
       <AiSetupRequiredDialog
         open={aiSetupDialogOpen}
-        message={aiMessage}
+        title={aiSetupDialogMode === "resumeImport" ? "需要配置阿里百炼" : undefined}
+        message={aiSetupDialogMode === "resumeImport" ? RESUME_IMPORT_AI_SETUP_MESSAGE : aiMessage}
+        secondaryLabel="稍后再说"
         onOpenChange={setAiSetupDialogOpen}
-        onOpenSettings={onOpenSettings}
+        onOpenSettings={aiSetupDialogMode === "resumeImport" ? openSettingsFromAiDialog : onOpenSettings}
+        onSecondary={aiSetupDialogMode === "resumeImport" ? continueResumeUploadWithLocalFallback : undefined}
       />
     </div>
   );
@@ -2640,11 +2694,6 @@ function aiReadinessMessage(settings: RedactedAiSettings | null) {
 
 function isResumeImportAiReady(settings: RedactedAiSettings | null) {
   return Boolean(settings?.aiProvider === "qwen" && isAiReady(settings));
-}
-
-function resumeImportAiReadinessMessage(settings: RedactedAiSettings | null) {
-  if (settings && settings.aiProvider !== "qwen") return "简历文件导入需要阿里百炼 / Qwen。请在设置页切换到阿里百炼并保存 API Key。";
-  return aiReadinessMessage(settings);
 }
 
 function SettingsView({

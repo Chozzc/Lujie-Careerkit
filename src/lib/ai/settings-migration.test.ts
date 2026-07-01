@@ -32,6 +32,25 @@ describe("AI settings maintenance migration", () => {
     ).toBeNull();
   });
 
+  it("repairs a Qwen default accidentally paired with the DeepSeek URL", () => {
+    expect(
+      getAiSettingsMaintenancePatch({
+        aiProvider: "qwen",
+        aiModel: "qwen3.7-max",
+        model: "qwen3.7-max",
+        baseUrl: "https://api.deepseek.com/v1",
+        aiBaseUrl: "https://api.deepseek.com/v1",
+        aiApiKey: "",
+        aiEnabled: false,
+      }),
+    ).toMatchObject({
+      aiProvider: "qwen",
+      aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      aiLastTestStatus: "untested",
+    });
+  });
+
   it("only migrates old OpenAI placeholder defaults when no key has been configured", () => {
     expect(
       getAiSettingsMaintenancePatch({

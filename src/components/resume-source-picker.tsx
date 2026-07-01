@@ -1,6 +1,7 @@
 "use client";
 
-import type { DragEvent } from "react";
+import type { DragEvent, KeyboardEvent } from "react";
+import { useRef } from "react";
 import { Check, FileText, LoaderCircle, Upload } from "lucide-react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -25,6 +26,7 @@ export function ResumeSourcePicker({
   onSourceChange,
   onSelect,
   onUploadFile,
+  onUploadRequest,
   onOpenResume,
   className,
 }: {
@@ -39,10 +41,32 @@ export function ResumeSourcePicker({
   onSourceChange: (source: "library" | "upload") => void;
   onSelect: (id: string) => void;
   onUploadFile: (file: File) => void;
+  onUploadRequest?: (openFileDialog: () => void) => void;
   onOpenResume?: (id: string) => void;
   className?: string;
 }) {
-  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  function openFileDialog() {
+    if (!isUploading) uploadInputRef.current?.click();
+  }
+
+  function requestUpload() {
+    if (isUploading) return;
+    if (onUploadRequest) {
+      onUploadRequest(openFileDialog);
+      return;
+    }
+    openFileDialog();
+  }
+
+  function handleUploadKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    requestUpload();
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     if (isUploading) return;
     const file = event.dataTransfer.files?.[0];
@@ -107,19 +131,26 @@ export function ResumeSourcePicker({
         )
       ) : (
         <div className="flex flex-1 flex-col gap-3">
-          <label
+          <div
+            role="button"
+            tabIndex={isUploading ? -1 : 0}
+            aria-disabled={isUploading}
             onDrop={handleDrop}
             onDragOver={(event) => event.preventDefault()}
+            onClick={requestUpload}
+            onKeyDown={handleUploadKeyDown}
             className={cn(
               "flex min-h-80 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-line bg-surface-low px-5 py-8 text-center transition hover:border-primary/60 hover:bg-primary-soft/40",
               isUploading && "cursor-wait opacity-80",
             )}
           >
             <input
+              ref={uploadInputRef}
               type="file"
               className="hidden"
               disabled={isUploading}
               accept={RESUME_UPLOAD_ACCEPT}
+              onClick={(event) => event.stopPropagation()}
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file && !isUploading) onUploadFile(file);
@@ -138,7 +169,7 @@ export function ResumeSourcePicker({
               </span>
             ) : null}
             {uploadError ? <span className="mt-3 text-xs text-destructive">{uploadError}</span> : null}
-          </label>
+          </div>
           <div className="rounded-lg border border-line bg-background px-4 py-3 text-xs leading-5 text-muted-foreground">
             文件仅作为本次操作的简历快照，不会覆盖简历库中的内容。
           </div>

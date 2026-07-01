@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,7 +17,12 @@ import {
 } from "lucide-react";
 
 import type { ResumePickerOption } from "@/components/resume-source-picker";
-import { AiSetupRequiredDialog, PreparationOptionCard, ResumeJdPreparation } from "@/components/resume-jd-preparation";
+import {
+  AiSetupRequiredDialog,
+  PreparationOptionCard,
+  RESUME_IMPORT_AI_SETUP_MESSAGE,
+  ResumeJdPreparation,
+} from "@/components/resume-jd-preparation";
 import { SpeechTextarea } from "@/components/speech-textarea";
 import { WorkflowStepper } from "@/components/workflow-stepper";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +81,7 @@ export function InterviewWorkspace({
   onOpenResume,
   aiReady,
   aiMessage,
+  resumeImportAiReady,
   onOpenSettings,
   onStatus,
 }: {
@@ -87,6 +93,7 @@ export function InterviewWorkspace({
   onOpenResume: (versionId?: string) => void;
   aiReady: boolean;
   aiMessage: string;
+  resumeImportAiReady: boolean;
   onOpenSettings: () => void;
   onStatus: (message: string) => void;
 }) {
@@ -104,6 +111,10 @@ export function InterviewWorkspace({
   const [isWorking, setIsWorking] = useState(false);
   const [message, setMessage] = useState("");
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
+  const [aiSetupDialogMode, setAiSetupDialogMode] = useState<"ai" | "resumeImport">("ai");
+  const pendingResumeUploadRef = useRef<File | null>(null);
+  const resumeUploadOpenerRef = useRef<(() => void) | null>(null);
+  const localResumeImportFallbackRef = useRef(false);
 
   const resumeOptions = useMemo<ResumePickerOption[]>(() => {
     const options: ResumePickerOption[] = [];
@@ -198,12 +209,20 @@ export function InterviewWorkspace({
     return () => window.clearTimeout(timeout);
   }, [activeQuestion, activeSession, draftAnswers, persistProgress]);
 
-  async function uploadResume(file: File) {
+  async function uploadResume(file: File, options: { preferLocalFallback?: boolean } = {}) {
     setUploadError("");
+    const preferLocalFallback = options.preferLocalFallback || localResumeImportFallbackRef.current;
+    if (!resumeImportAiReady && !preferLocalFallback) {
+      pendingResumeUploadRef.current = file;
+      setAiSetupDialogMode("resumeImport");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+
     setIsUploadingResume(true);
-    setMessage("正在解析简历，可能需要一些时间...");
+    setMessage(preferLocalFallback ? "正在使用本地解析，效果可能不佳..." : "正在解析简历，可能需要一些时间...");
     try {
-      const draft = await buildUploadedResumeDraft(file);
+      const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
       setMessage(`简历解析已完成，已导入 ${draft.fileName}。`);
@@ -212,8 +231,39 @@ export function InterviewWorkspace({
       setUploadError(error instanceof Error ? error.message : "文件读取失败。");
       setMessage("");
     } finally {
+      localResumeImportFallbackRef.current = false;
       setIsUploadingResume(false);
     }
+  }
+
+  function requestResumeUpload(openFileDialog: () => void) {
+    if (!resumeImportAiReady && !localResumeImportFallbackRef.current) {
+      resumeUploadOpenerRef.current = openFileDialog;
+      setAiSetupDialogMode("resumeImport");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+    openFileDialog();
+  }
+
+  function continueResumeUploadWithLocalFallback() {
+    const file = pendingResumeUploadRef.current;
+    const openFileDialog = resumeUploadOpenerRef.current;
+    pendingResumeUploadRef.current = null;
+    resumeUploadOpenerRef.current = null;
+    localResumeImportFallbackRef.current = true;
+    if (file) {
+      void uploadResume(file, { preferLocalFallback: true });
+      return;
+    }
+    openFileDialog?.();
+  }
+
+  function openSettingsFromAiDialog() {
+    pendingResumeUploadRef.current = null;
+    resumeUploadOpenerRef.current = null;
+    localResumeImportFallbackRef.current = false;
+    onOpenSettings();
   }
 
   async function createSession(input: ReturnType<typeof createInterviewRetryInput>, loadingMessage: string) {
@@ -239,6 +289,7 @@ export function InterviewWorkspace({
   async function startInterview() {
     if (!selectedResume) return;
     if (!aiReady) {
+      setAiSetupDialogMode("ai");
       setAiSetupDialogOpen(true);
       return;
     }
@@ -363,6 +414,7 @@ export function InterviewWorkspace({
   async function practiceAgain() {
     if (!activeSession) return;
     if (!aiReady) {
+      setAiSetupDialogMode("ai");
       setAiSetupDialogOpen(true);
       return;
     }
@@ -388,6 +440,7 @@ export function InterviewWorkspace({
           isUploadingResume={isUploadingResume}
           onResumeSourceChange={setResumeSource}
           onResumeSelect={setSelectedResumeId}
+          onResumeUploadRequest={requestResumeUpload}
           onUploadResume={(file) => void uploadResume(file)}
           onOpenResume={onOpenResume}
           jdDraft={jdDraft}
@@ -430,9 +483,12 @@ export function InterviewWorkspace({
       ) : null}
       <AiSetupRequiredDialog
         open={aiSetupDialogOpen}
-        message={aiMessage}
+        title={aiSetupDialogMode === "resumeImport" ? "需要配置阿里百炼" : undefined}
+        message={aiSetupDialogMode === "resumeImport" ? RESUME_IMPORT_AI_SETUP_MESSAGE : aiMessage}
+        secondaryLabel="稍后再说"
         onOpenChange={setAiSetupDialogOpen}
-        onOpenSettings={onOpenSettings}
+        onOpenSettings={aiSetupDialogMode === "resumeImport" ? openSettingsFromAiDialog : onOpenSettings}
+        onSecondary={aiSetupDialogMode === "resumeImport" ? continueResumeUploadWithLocalFallback : undefined}
       />
     </div>
   );
@@ -447,6 +503,7 @@ function SetupScreen(props: {
   isUploadingResume: boolean;
   onResumeSourceChange: (source: "library" | "upload") => void;
   onResumeSelect: (id: string) => void;
+  onResumeUploadRequest: (openFileDialog: () => void) => void;
   onUploadResume: (file: File) => void;
   onOpenResume: (versionId?: string) => void;
   jdDraft: string;
@@ -471,6 +528,7 @@ function SetupScreen(props: {
         isUploading: props.isUploadingResume,
         onSourceChange: props.onResumeSourceChange,
         onSelect: props.onResumeSelect,
+        onUploadRequest: props.onResumeUploadRequest,
         onUploadFile: props.onUploadResume,
         onOpenResume: (id) => props.onOpenResume(id === "main" ? undefined : id),
       }}
