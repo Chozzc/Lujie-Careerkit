@@ -28,6 +28,7 @@ import {
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { EditorPreviewPanel } from "@/components/editor/editor-preview-panel";
 import { EditorSidebar } from "@/components/editor/editor-sidebar";
+import { AiSetupRequiredDialog } from "@/components/resume-jd-preparation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,6 +92,9 @@ type ResumeWorkbenchProps = {
   mode: WorkbenchMode;
   onModeChange: (mode: WorkbenchMode) => void;
   onOpenMatch: () => void;
+  aiReady: boolean;
+  aiMessage: string;
+  onOpenSettings: () => void;
   onDeleteMainResume: () => void;
   onDeleteVersion: (versionId: string) => void;
 };
@@ -197,6 +201,9 @@ export function ResumeWorkbench({
   mode,
   onModeChange,
   onOpenMatch,
+  aiReady,
+  aiMessage,
+  onOpenSettings,
   onDeleteMainResume,
   onDeleteVersion,
 }: ResumeWorkbenchProps) {
@@ -217,6 +224,8 @@ export function ResumeWorkbench({
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isImportingResume, setIsImportingResume] = useState(false);
+  const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const importNoticeTimerRef = useRef<number | null>(null);
   const saveContextRef = useRef({ editingTarget, editingTitle, saveResume, setResume });
@@ -448,12 +457,18 @@ export function ResumeWorkbench({
     }, 6500);
   }
 
-  async function handleImportResume(file?: File) {
+  async function handleImportResume(file?: File, options: { preferLocalFallback?: boolean } = {}) {
     if (!file || isImportingResume) return;
+    if (!aiReady && !options.preferLocalFallback) {
+      setPendingImportFile(file);
+      setAiSetupDialogOpen(true);
+      return;
+    }
+
     setIsImportingResume(true);
-    setStatus("正在解析并导入简历，可能需要一些时间...");
+    setStatus(options.preferLocalFallback ? "正在使用本地兜底解析，效果可能不佳..." : "正在解析并导入简历，可能需要一些时间...");
     try {
-      const draft = await buildUploadedResumeDraft(file);
+      const draft = await buildUploadedResumeDraft(file, options);
       const title = resolveResumeContentTitle(draft.content);
       const result = await saveResume(draft.content, { kind: "new" }, title);
       if (result.kind === "version") {
@@ -467,6 +482,17 @@ export function ResumeWorkbench({
     } finally {
       setIsImportingResume(false);
     }
+  }
+
+  function importWithLocalFallback() {
+    const file = pendingImportFile;
+    setPendingImportFile(null);
+    if (file) void handleImportResume(file, { preferLocalFallback: true });
+  }
+
+  function openAiSettingsForImport() {
+    setPendingImportFile(null);
+    onOpenSettings();
   }
 
   function handleTemplateChange(template: string) {
@@ -658,9 +684,7 @@ export function ResumeWorkbench({
                 </Badge>
               </div>
               <p className="text-[0.6875rem] text-muted-foreground">
-                {status === RESUME_IMPORT_REVIEW_STATUS
-                  ? status
-                  : `模板 ${templateLabels[activeResume.template] ?? activeResume.template} · ${editingTarget.kind === "main" ? "主简历" : "版本简历"}`}
+                模板 {templateLabels[activeResume.template] ?? activeResume.template} · {editingTarget.kind === "main" ? "主简历" : "版本简历"}
               </p>
             </div>
           </div>
@@ -706,6 +730,15 @@ export function ResumeWorkbench({
           onOpenChange={setExportDialogOpen}
           onExport={handleExport}
         />
+        <AiSetupRequiredDialog
+          open={aiSetupDialogOpen}
+          title="需要配置阿里百炼"
+          message={`${aiMessage} 导入简历建议先配置阿里百炼 / Qwen API Key；稍后再说会使用本地兜底解析，字段归类和准确率可能不佳。图片简历需要配置后才能解析。`}
+          secondaryLabel="稍后再说"
+          onOpenChange={setAiSetupDialogOpen}
+          onOpenSettings={openAiSettingsForImport}
+          onSecondary={importWithLocalFallback}
+        />
 
         <div className="flex min-h-0 flex-1">
           <div className="hidden md:block">
@@ -719,6 +752,13 @@ export function ResumeWorkbench({
           <main className="flex min-w-0 flex-1 overflow-hidden">
             <div className={cn("flex min-h-0 min-w-0 flex-col", showPreview ? "flex-[0.95]" : "flex-1")}>
               <TemplateBar resume={activeResume} onTemplateChange={handleTemplateChange} />
+              {status === RESUME_IMPORT_REVIEW_STATUS ? (
+                <div className="border-b border-line bg-surface-low px-4 py-3 md:px-6">
+                  <div className="mx-auto max-w-3xl rounded-lg border border-primary/20 bg-white px-4 py-3 text-sm leading-6 text-foreground shadow-sm">
+                    {RESUME_IMPORT_REVIEW_STATUS}
+                  </div>
+                </div>
+              ) : null}
               <EditorCanvas
                 sections={sections}
                 onUpdateSection={handleSectionUpdate}

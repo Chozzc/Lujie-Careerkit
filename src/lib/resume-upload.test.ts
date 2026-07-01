@@ -79,4 +79,23 @@ describe("resume upload formats", () => {
     expect(draft.content.basics.email).toBe("wm@example.com");
     expect(fetch).toHaveBeenCalledWith("/api/ai/resume-import", expect.objectContaining({ method: "POST" }));
   });
+
+  it("can ask the API to use the local fallback parser", async () => {
+    const fetch = vi.fn(async () =>
+      Response.json({
+        fileName: "产品运营简历.txt",
+        content: aiParsedResume,
+        characterCount: JSON.stringify(aiParsedResume).length,
+      }),
+    );
+    vi.stubGlobal("fetch", fetch);
+
+    await buildUploadedResumeDraft(new File(["王小明"], "产品运营简历.txt", { type: "text/plain" }), {
+      preferLocalFallback: true,
+    });
+
+    const body = fetch.mock.calls[0]?.[1]?.body;
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).get("preferLocalFallback")).toBe("true");
+  });
 });

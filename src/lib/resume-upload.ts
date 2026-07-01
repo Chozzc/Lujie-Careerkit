@@ -9,6 +9,10 @@ export type UploadedResumeDraft = {
   characterCount: number;
 };
 
+export type ResumeUploadOptions = {
+  preferLocalFallback?: boolean;
+};
+
 export const RESUME_UPLOAD_ACCEPT = [
   ".json",
   ".txt",
@@ -41,7 +45,7 @@ export function getResumeUploadKind(fileName: string): ResumeUploadKind | null {
   return null;
 }
 
-export async function buildUploadedResumeDraft(file: File): Promise<UploadedResumeDraft> {
+export async function buildUploadedResumeDraft(file: File, options: ResumeUploadOptions = {}): Promise<UploadedResumeDraft> {
   const uploadKind = getResumeUploadKind(file.name);
   if (!uploadKind) throw new Error("请上传 PDF、DOC、DOCX、图片、TXT、MD 或 JSON 文件。");
 
@@ -50,23 +54,24 @@ export async function buildUploadedResumeDraft(file: File): Promise<UploadedResu
     if (!trimmed) throw new Error("文件内容为空。");
     try {
       const parsed = JSON.parse(trimmed) as unknown;
-      if (!isResumeContentLike(parsed)) return importResumeWithAI(file);
+        if (!isResumeContentLike(parsed)) return importResumeWithAI(file, options);
       return {
         fileName: file.name,
         content: normalizeResumeContent(parsed, file.name.replace(/\.[^.]+$/, "")),
         characterCount: trimmed.length,
       };
     } catch {
-      return importResumeWithAI(file);
+      return importResumeWithAI(file, options);
     }
   }
 
-  return importResumeWithAI(file);
+  return importResumeWithAI(file, options);
 }
 
-async function importResumeWithAI(file: File): Promise<UploadedResumeDraft> {
+async function importResumeWithAI(file: File, options: ResumeUploadOptions): Promise<UploadedResumeDraft> {
   const formData = new FormData();
   formData.set("file", file);
+  if (options.preferLocalFallback) formData.set("preferLocalFallback", "true");
   const response = await fetch("/api/ai/resume-import", { method: "POST", body: formData });
   const result = (await response.json().catch(() => null)) as (UploadedResumeDraft & { error?: string }) | null;
   if (!response.ok) throw new Error(result?.error || "简历导入失败，请稍后重试。");

@@ -14,6 +14,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
+    const preferLocalFallback = formData.get("preferLocalFallback") === "true";
     if (!(file instanceof File)) {
       return Response.json({ error: "请选择要导入的简历文件。" }, { status: 400 });
     }
@@ -48,6 +49,12 @@ export async function POST(request: Request) {
       }
     }
 
+    if (preferLocalFallback) {
+      const local = await localFallback(file, kind, plainText, "未配置百炼 API Key，已使用本地兜底解析，字段归类效果可能不佳。");
+      if (local) return local;
+      return Response.json({ error: "图片简历需要先配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
+    }
+
     const settings = await getEffectiveAiRuntimeSettings();
     let aiError: unknown = null;
     try {
@@ -56,27 +63,8 @@ export async function POST(request: Request) {
       aiError = error;
     }
 
-    if (kind === "text" || kind === "json") {
-      return ok(
-        file.name,
-        resumeContentFromText(file.name, plainText),
-        "local-fallback",
-        `AI 解析失败，已使用本地文本兜底。${formatError(aiError)}`,
-      );
-    }
-
-    if (kind === "pdf" || kind === "word") {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const text = kind === "pdf" ? await extractPdfText(buffer) : await extractWordText(buffer);
-      if (text.replace(/\s/g, "").length >= 10) {
-        return ok(
-          file.name,
-          resumeContentFromText(file.name, text),
-          "local-fallback",
-          `AI 解析失败，已使用本地文本兜底。${formatError(aiError)}`,
-        );
-      }
-    }
+    const local = await localFallback(file, kind, plainText, `AI 解析失败，已使用本地文本兜底。${formatError(aiError)}`);
+    if (local) return local;
 
     return Response.json({ error: `AI 简历解析失败。${formatError(aiError) || "请确认已在设置中启用阿里百炼 / Qwen。"}` }, { status: 502 });
   } catch (error) {
@@ -93,6 +81,19 @@ function ok(fileName: string, content: ReturnType<typeof normalizeResumeContent>
     source,
     message,
   });
+}
+
+async function localFallback(file: File, kind: NonNullable<ReturnType<typeof getResumeUploadKind>>, plainText: string, message: string) {
+  if (kind === "text" || kind === "json") {
+    return ok(file.name, resumeContentFromText(file.name, plainText), "local-fallback", message);
+  }
+
+  if (kind !== "pdf" && kind !== "word") return null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const text = kind === "pdf" ? await extractPdfText(buffer) : await extractWordText(buffer);
+  if (text.replace(/\s/g, "").length < 10) return null;
+  return ok(file.name, resumeContentFromText(file.name, text), "local-fallback", message);
 }
 
 function formatError(error: unknown) {

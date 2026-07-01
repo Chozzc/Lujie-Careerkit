@@ -77,6 +77,7 @@ const headingMatchers: Array<[SectionKey, RegExp]> = [
 
 const emailPattern = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const phonePattern = /(?:\+?86[-\s]?)?1[3-9]\d{9}|(?:\+\d{1,3}[-\s]?)?\d{3,4}[-\s]?\d{6,8}/;
+const layoutNoisePattern = /[🟥🟧🟨🟩🟦🟪🟫⬛⬜🔴🔵⚫⚪■□▪▫●○◦◆◇▶▷►▸▹]/gu;
 
 export function isResumeContentLike(value: unknown): value is ResumeContent {
   return resumeContentSchema.safeParse(value).success;
@@ -435,8 +436,9 @@ function compactLines(lines: string[]) {
 function clean(value: string) {
   return value
     .replace(/\u0000/g, "")
+    .replace(layoutNoisePattern, " ")
     .replace(/^[\s•·●○◦▪▫■□◆◇▶▷►▸▹-]+/, "")
-    .replace(/^(?:\d{1,2}[.)、]|[（(]\d{1,2}[)）])\s*/, "")
+    .replace(/(?:^|\s)(?:\d{1,2}[.)、]|[（(]\d{1,2}[)）])\s*/g, " ")
     .replace(/^[\s•·●○◦▪▫■□◆◇▶▷►▸▹-]+/, "")
     .replace(/\s+/g, " ")
     .trim();

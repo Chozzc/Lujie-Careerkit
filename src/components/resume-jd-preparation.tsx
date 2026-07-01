@@ -129,17 +129,28 @@ export function ResumeJdPreparation({
 export function AiSetupRequiredDialog({
   open,
   message,
+  title = "需要先配置 AI",
+  secondaryLabel = "稍后再说",
   onOpenChange,
   onOpenSettings,
+  onSecondary,
 }: {
   open: boolean;
   message: string;
+  title?: string;
+  secondaryLabel?: string;
   onOpenChange: (open: boolean) => void;
   onOpenSettings: () => void;
+  onSecondary?: () => void;
 }) {
   function handleOpenSettings() {
     onOpenChange(false);
     onOpenSettings();
+  }
+
+  function handleSecondary() {
+    onOpenChange(false);
+    onSecondary?.();
   }
 
   return (
@@ -148,7 +159,7 @@ export function AiSetupRequiredDialog({
         <DialogHeader className="border-b border-line p-5">
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            需要先配置 AI
+            {title}
           </DialogTitle>
           <DialogDescription className="mt-2 leading-6">
             {message || "请先在设置页启用 AI，并完成连接测试后再继续。"}
@@ -158,7 +169,11 @@ export function AiSetupRequiredDialog({
           API Key 会加密保存在本机数据库，不会以明文返回到前端。
         </div>
         <DialogFooter className="p-4">
-          <DialogClose render={<Button type="button" variant="outline" />}>稍后再说</DialogClose>
+          {onSecondary ? (
+            <Button type="button" variant="outline" onClick={handleSecondary}>{secondaryLabel}</Button>
+          ) : (
+            <DialogClose render={<Button type="button" variant="outline" />}>{secondaryLabel}</DialogClose>
+          )}
           <Button type="button" onClick={handleOpenSettings}>前往设置</Button>
         </DialogFooter>
       </DialogContent>

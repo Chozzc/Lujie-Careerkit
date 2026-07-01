@@ -1016,11 +1016,14 @@ export function CareerKitApp({
               resumeUpdatedAt={resumeUpdatedAt}
               setResume={setResume}
               saveResume={saveResume}
-                versions={versions}
-                initialResumeVersionId={resumeEditorVersionId}
-                mode={resumeMode}
-                onModeChange={setResumeMode}
+              versions={versions}
+              initialResumeVersionId={resumeEditorVersionId}
+              mode={resumeMode}
+              onModeChange={setResumeMode}
               onOpenMatch={() => navigateTo("match")}
+              aiReady={isResumeImportAiReady(aiSettings)}
+              aiMessage={resumeImportAiReadinessMessage(aiSettings)}
+              onOpenSettings={() => navigateTo("settings")}
               onDeleteMainResume={deleteMainResume}
               onDeleteVersion={deleteResumeVersion}
             />
@@ -2633,6 +2636,15 @@ function aiReadinessMessage(settings: RedactedAiSettings | null) {
   if (settings.aiLastTestStatus === "failed") return "上次 AI 连接测试失败。请检查 Base URL、模型名称或密钥后重新测试。";
   if (settings.aiLastTestStatus !== "success") return "AI 设置尚未通过连接测试。请先在设置页点击测试连接。";
   return "AI 功能可用。";
+}
+
+function isResumeImportAiReady(settings: RedactedAiSettings | null) {
+  return Boolean(settings?.aiProvider === "qwen" && isAiReady(settings));
+}
+
+function resumeImportAiReadinessMessage(settings: RedactedAiSettings | null) {
+  if (settings && settings.aiProvider !== "qwen") return "简历文件导入需要阿里百炼 / Qwen。请在设置页切换到阿里百炼并保存 API Key。";
+  return aiReadinessMessage(settings);
 }
 
 function SettingsView({

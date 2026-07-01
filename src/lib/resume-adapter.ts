@@ -1,4 +1,5 @@
 import type { ResumeContent } from "@/lib/types";
+import { normalizeResumeContent } from "@/lib/resume-content";
 import { generateId } from "@/lib/utils";
 import type {
   CertificationsContent,
@@ -24,7 +25,8 @@ const DEFAULT_RESUME_THEME = {
   avatarStyle: "oneInch" as const,
 };
 
-export function contentToJadeResume(content: ResumeContent): Resume {
+export function contentToJadeResume(rawContent: ResumeContent): Resume {
+  const content = normalizeResumeContent(rawContent);
   const now = new Date();
   const resumeId = "local-main-resume";
   const internships = content.internships ?? [];

@@ -48,7 +48,7 @@ describe("resume content normalization", () => {
         {
           name: "医疗 AI 项目",
           role: "",
-          highlights: ["9. AIGC全栈创作者", "■模型落地与迭代", "●取得成果 2025中国高校计算机大赛三等奖"],
+          highlights: ["9. AIGC全栈创作者", "🟥模型落地与迭代", "华为 HCIA工程师认证 ●软著/实用新型专利"],
         },
       ],
       awards: ["2025中国高校计算机大赛三等奖"],
@@ -58,7 +58,7 @@ describe("resume content normalization", () => {
     expect(normalized.projects[0]?.highlights).toEqual([
       "AIGC全栈创作者",
       "模型落地与迭代",
-      "取得成果 2025中国高校计算机大赛三等奖",
+      "华为 HCIA工程师认证 软著/实用新型专利",
     ]);
     expect(normalized.awards).toEqual(["2025中国高校计算机大赛三等奖"]);
     expect(normalized.customSections?.[0]?.content).toBe("技术驱动艺术\n高产出与奖项验证");
