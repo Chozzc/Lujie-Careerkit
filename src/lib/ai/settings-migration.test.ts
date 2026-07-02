@@ -14,7 +14,7 @@ describe("AI settings maintenance migration", () => {
       }),
     ).toMatchObject({
       aiProvider: "qwen",
-      aiModel: "qwen3.7-max",
+      aiModel: "qwen3.6-flash",
       aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       aiLastTestStatus: "untested",
     });
@@ -45,6 +45,8 @@ describe("AI settings maintenance migration", () => {
       }),
     ).toMatchObject({
       aiProvider: "qwen",
+      aiModel: "qwen3.6-flash",
+      model: "qwen3.6-flash",
       aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       aiLastTestStatus: "untested",

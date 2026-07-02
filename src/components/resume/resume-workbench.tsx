@@ -5,12 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Download,
-  FileSearch,
   Palette,
   PanelRightOpen,
   Redo2,
   Save,
   Undo2,
+  WandSparkles,
   X,
 } from "lucide-react";
 
@@ -48,7 +48,7 @@ import {
 } from "@/lib/resume-naming";
 import { buildUploadedResumeDraft } from "@/lib/resume-upload";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
-import type { ResumeContent } from "@/lib/types";
+import type { ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editor-store";
 import { useResumeStore } from "@/stores/resume-store";
@@ -81,8 +81,20 @@ type ResumeWorkbenchProps = {
   mode: WorkbenchMode;
   onModeChange: (mode: WorkbenchMode) => void;
   onEditorTargetChange: (versionId?: string) => void;
-  onOpenMatch: () => void;
   aiReady: boolean;
+  optimizeAiReady: boolean;
+  optimizeResume: (input: { resumeContent: ResumeContent }) => Promise<{
+    version: ResumeVersionCard;
+    message?: string;
+    optimization?: ResumeOptimizationMeta;
+  }>;
+  onResumeOptimized: (result: {
+    before: ResumeContent;
+    after: ResumeContent;
+    version: ResumeVersionCard;
+    message?: string;
+    optimization?: ResumeOptimizationMeta;
+  }) => void;
   onOpenSettings: () => void;
   onDeleteMainResume: () => void;
   onDeleteVersion: (versionId: string) => void;
@@ -117,8 +129,10 @@ export function ResumeWorkbench({
   mode,
   onModeChange,
   onEditorTargetChange,
-  onOpenMatch,
   aiReady,
+  optimizeAiReady,
+  optimizeResume,
+  onResumeOptimized,
   onOpenSettings,
   onDeleteMainResume,
   onDeleteVersion,
@@ -140,7 +154,9 @@ export function ResumeWorkbench({
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isImportingResume, setIsImportingResume] = useState(false);
+  const [isOptimizingResume, setIsOptimizingResume] = useState(false);
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
+  const [optimizeAiSetupDialogOpen, setOptimizeAiSetupDialogOpen] = useState(false);
   const [showImportReviewNotice, setShowImportReviewNotice] = useState(false);
   const localImportFallbackRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -423,6 +439,39 @@ export function ResumeWorkbench({
     onOpenSettings();
   }
 
+  async function handleOptimizeResume() {
+    if (isOptimizingResume) return;
+    if (!optimizeAiReady) {
+      setOptimizeAiSetupDialogOpen(true);
+      return;
+    }
+
+    const state = useResumeStore.getState();
+    if (!state.currentResume) return;
+    const liveResume: Resume = { ...state.currentResume, sections: state.sections };
+    const content = jadeResumeToContent(liveResume);
+    const resolvedTitle = resolveResumeTitle(content, editingTitle);
+    const contentWithTitle = withResumeDisplayName(content, resolvedTitle);
+
+    setIsOptimizingResume(true);
+    setStatus("正在 AI 优化简历，可能需要一些时间...");
+    try {
+      const result = await optimizeResume({ resumeContent: contentWithTitle });
+      onResumeOptimized({
+        before: contentWithTitle,
+        after: result.version.content,
+        version: result.version,
+        message: result.message,
+        optimization: result.optimization,
+      });
+      setStatus(result.message ?? "AI 优化已完成，已生成新版本，请仔细复核后使用。");
+    } catch (error) {
+      setStatus(`AI 优化失败：${error instanceof Error ? error.message : "请稍后重试"}`);
+    } finally {
+      setIsOptimizingResume(false);
+    }
+  }
+
   function handleTemplateChange(template: string) {
     setTemplate(template);
   }
@@ -471,6 +520,15 @@ export function ResumeWorkbench({
       onSecondary={importWithLocalFallback}
     />
   );
+  const optimizeAiSetupDialog = (
+    <AiSetupRequiredDialog
+      open={optimizeAiSetupDialogOpen}
+      title="需要配置阿里百炼"
+      message="AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置阿里百炼API Key，暂不支持本地兜底。"
+      onOpenChange={setOptimizeAiSetupDialogOpen}
+      onOpenSettings={onOpenSettings}
+    />
+  );
 
   if (mode === "library") {
     return (
@@ -500,6 +558,7 @@ export function ResumeWorkbench({
           }}
         />
         {importAiSetupDialog}
+        {optimizeAiSetupDialog}
       </>
     );
   }
@@ -544,7 +603,13 @@ export function ResumeWorkbench({
             <ToolbarButton icon={Undo2} label="撤销" disabled={undoStack.length === 0} onClick={handleUndo} />
             <ToolbarButton icon={Redo2} label="重做" disabled={redoStack.length === 0} onClick={handleRedo} />
             <Separator orientation="vertical" className="mx-1 h-5" />
-            <ToolbarButton icon={FileSearch} label="JD匹配优化" showText onClick={onOpenMatch} />
+            <ToolbarButton
+              icon={WandSparkles}
+              label={isOptimizingResume ? "优化中..." : "AI优化简历"}
+              showText
+              disabled={isOptimizingResume || isSaving}
+              onClick={() => void handleOptimizeResume()}
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -582,6 +647,7 @@ export function ResumeWorkbench({
           onExport={handleExport}
         />
         {importAiSetupDialog}
+        {optimizeAiSetupDialog}
 
         <div className="flex min-h-0 flex-1">
           <div className="hidden md:block">

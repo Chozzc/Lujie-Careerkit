@@ -2,8 +2,9 @@ import { z } from "zod";
 
 import { tailorResumeWithAI } from "@/lib/ai-service";
 import { analyzeJobInput } from "@/lib/job-analysis";
+import { isResumeContentLike } from "@/lib/resume-content";
 import { createTailoredVersionForJob, getTailoringBaseResume, saveJobAnalysis } from "@/lib/repository";
-import type { JobAnalysis, ResumeContent } from "@/lib/types";
+import type { JobAnalysis, ResumeOptimizationMeta } from "@/lib/types";
 
 const schema = z.object({
   jobId: z.string(),
@@ -48,35 +49,56 @@ export async function POST(request: Request) {
   if (tailored.source !== "ai") {
     return Response.json({ message: tailored.message }, { status: 503 });
   }
-  await saveJobAnalysis(input.jobId, analysis);
+  const meta = tailored.meta ?? {
+    company: "",
+    title: "",
+    keywords: [],
+    summary: "",
+    changes: [],
+    versionName: "",
+  };
+  const effectiveAnalysis = mergeAnalysisMeta(analysis, meta);
+  await saveJobAnalysis(input.jobId, effectiveAnalysis);
   const version = await createTailoredVersionForJob({
     jobId: input.jobId,
     applicationId: input.applicationId,
     resumeVersionId: input.resumeVersionId,
     resumeContent: isResumeContentLike(input.resumeContent) ? input.resumeContent : undefined,
     tailoredContent: tailored.data,
-    analysis,
+    analysis: effectiveAnalysis,
+    optimizationMeta: meta,
   });
 
   return Response.json({
-    analysis,
+    analysis: effectiveAnalysis,
     version,
+    optimization: meta,
     source: "ai",
     message: tailored.message,
   });
 }
 
-function isResumeContentLike(value: unknown): value is ResumeContent {
-  if (!value || typeof value !== "object") return false;
-  const resume = value as Partial<ResumeContent>;
-  return Boolean(
-    resume.basics &&
-      typeof resume.basics.name === "string" &&
-      resume.profile &&
-      typeof resume.profile.summary === "string" &&
-      Array.isArray(resume.projects) &&
-      Array.isArray(resume.skills),
-  );
+function mergeAnalysisMeta(analysis: JobAnalysis, meta: ResumeOptimizationMeta): JobAnalysis {
+  const company = cleanMetaText(meta.company) || analysis.company;
+  const title = cleanMetaText(meta.title) || analysis.title;
+  const keywords = meta.keywords.length ? meta.keywords : analysis.keywords;
+  const suggestions = meta.summary
+    ? [meta.summary, ...analysis.suggestions.filter((item) => item !== meta.summary)]
+    : analysis.suggestions;
+  return {
+    ...analysis,
+    company,
+    title,
+    keywords,
+    suggestions,
+  };
+}
+
+function cleanMetaText(value?: string | null) {
+  const text = value?.trim() ?? "";
+  if (!text) return "";
+  if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
+  return text.length > 32 ? "" : text;
 }
 
 function isJobAnalysisLike(value: unknown): value is JobAnalysis {

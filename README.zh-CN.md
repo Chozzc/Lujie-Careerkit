@@ -49,6 +49,7 @@
 ## 功能亮点
 
 - **结构化简历编辑**：维护多份简历版本，编辑教育、实习、项目、技能等模块，切换模板和主题，并导出 PDF、PNG 或可编辑 DOCX。
+- **AI 优化简历**：在简历编辑器里一键生成通用优化版本，对比优化前后差异，并继续用原模板微调。
 - **JD 匹配优化**：粘贴目标岗位 JD，让 AI 在不编造经历的前提下重排重点、优化表达，生成岗位定制版本。
 - **投递进展管理**：记录公司、岗位、渠道、阶段、截止日期、跟进日期、优先级、备注、JD 和绑定简历版本。
 - **模拟面试与复盘**：根据简历和 JD 生成面试题，保存逐题回答，并生成可回看、可继续改进的 AI 复盘报告。
@@ -108,7 +109,7 @@ npm run dev
 DATABASE_URL="file:./dev.db"
 LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
 OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-OPENAI_MODEL="qwen3.7-max"
+OPENAI_MODEL="qwen3.6-flash"
 ```
 
 `OPENAI_BASE_URL` 和 `OPENAI_MODEL` 只用于首次默认值。真实 API Key 请在应用内设置页配置。
@@ -124,6 +125,19 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
 
+### v0.1.3
+
+- 新增简历编辑器内的 AI 优化简历入口，可在不依赖 JD 的情况下生成通用优化版本。
+- 复用 JD 匹配优化的结果工作台，展示优化前后对比、修改摘要和可见差异高亮。
+- 优化 AI 输出兼容性与错误提示，兼容模型直接返回完整简历 JSON，并避免把内部字段名暴露给用户。
+- 将 AI 优化生成的版本纳入历史优化版本，便于回看、对比和继续编辑。
+
+### v0.1.2
+
+- 拆分 JD 匹配优化结果页，将简历对比、摘要说明和高亮逻辑沉淀为共享组件。
+- 清理匹配页中重复的预览对比代码，减少后续维护同类工作台页面时的重复改动。
+- 调整应用页头、简历工作台和优化版本记录的协作方式，为 AI 优化简历功能预留稳定入口。
+
 ### v0.1.1
 
 - 统一简历编辑器、JD 匹配优化和面试助手的简历导入配置提醒与本地兜底说明。
@@ -134,6 +148,10 @@ AI 功能会在设置保存且连接测试成功后启用。
 ### v0.1.0
 
 - 初始开源版本，包含简历库、结构化简历编辑器、JD 匹配优化、投递跟进、模拟面试、AI 复盘和本地 SQLite 数据存储。
+
+## Star 趋势
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Chozzc/Lujie-Careerkit&type=Date)](https://star-history.com/#Chozzc/Lujie-Careerkit&Date)
 
 ## 常见问题
 

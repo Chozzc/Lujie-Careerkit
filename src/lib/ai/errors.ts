@@ -72,7 +72,7 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   if (lower.includes("json") || lower.includes("schema") || lower.includes("parse")) {
     return {
       code: "invalid_json",
-      message: "模型返回格式不符合要求，已保留本地规则结果。",
+      message: "模型返回格式不符合要求，请重试或切换模型。",
     };
   }
 

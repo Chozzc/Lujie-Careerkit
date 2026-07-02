@@ -108,6 +108,28 @@ describe("AI task runner", () => {
     expect(result.data).toEqual({ value: "fallback" });
     expect(result.message).not.toContain("sk-secret");
   });
+
+  it("does not claim a local result when schema parsing fails", async () => {
+    const result = await runAiObjectTask(
+      {
+        settings: enabledLocalSettings(),
+        schema: testSchema,
+        system: "Return JSON.",
+        prompt: "Say hi.",
+        fallback: { value: "fallback" },
+        taskLabel: "测试任务",
+      },
+      {
+        generateObject: async () => {
+          throw new Error("schema parse failed");
+        },
+      },
+    );
+
+    expect(result.source).toBe("fallback");
+    expect(result.message).toContain("模型返回格式不符合要求");
+    expect(result.message).not.toContain("已保留本地规则结果");
+  });
 });
 
 function enabledLocalSettings() {

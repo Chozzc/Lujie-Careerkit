@@ -12,7 +12,7 @@ export type AiProviderDefinition = {
 };
 
 export const DEFAULT_AI_PROVIDER_ID = "qwen";
-export const DEFAULT_AI_MODEL = "qwen3.7-max";
+export const DEFAULT_AI_MODEL = "qwen3.6-flash";
 export const LEGACY_DEFAULT_AI_MODELS = ["gpt-4o-mini", "gpt-5.4-mini", "deepseek-v4-flash"] as const;
 
 export const AI_PROVIDER_GROUPS: Array<{ id: AiProviderGroupId; label: string }> = [
@@ -37,8 +37,9 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     label: "通义千问 / 阿里云百炼",
     group: "domestic",
     baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-    defaultModel: "qwen3.7-max",
+    defaultModel: "qwen3.6-flash",
     models: [
+      "qwen3.6-flash",
       "qwen3.7-max",
       "qwen3.7-max-2026-06-08",
       "qwen3.7-max-2026-05-20",
@@ -47,7 +48,6 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "qwen3.7-plus-2026-05-26",
       "qwen3.6-max-preview",
       "qwen3.6-plus",
-      "qwen3.6-flash",
       "qwen3-max",
       "qwen3-plus",
       "qwen3-coder-plus",

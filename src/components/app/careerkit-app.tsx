@@ -10,10 +10,15 @@ import { buildResumeDisplayName } from "@/lib/resume-naming";
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
 import { interviewPipelineStatuses, normalizeApplicationPriority } from "@/lib/pipeline";
-import type { ApplicationStatus, JobAnalysis, ResumeContent } from "@/lib/types";
+import type { ApplicationStatus, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
 import { cn } from "@/lib/utils";
 import { ResumeWorkbench, type ResumeSaveTarget } from "@/components/resume/resume-workbench";
+import {
+  ResumeOptimizationResult,
+  buildOptimizationDescription,
+  buildOptimizationSummary,
+} from "@/components/resume/resume-optimization-result";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { InterviewWorkspace } from "@/components/interview/interview-workspace";
 import { SettingsView } from "@/components/settings/settings-view";
@@ -40,6 +45,22 @@ import {
 import type { ApplicationView, InitialData, JobView, ResumeVersionView } from "@/components/app/types";
 
 type ResumeMode = "library" | "editor";
+type ResumeOptimizationResponse = { version: ResumeVersionView; message?: string; optimization?: ResumeOptimizationMeta };
+type ResumeOptimizationView = {
+  before: ResumeContent;
+  after: ResumeContent;
+  version: {
+    id: string;
+    name: string;
+    summary: string;
+    content: ResumeContent;
+    createdAt: string;
+    updatedAt?: string;
+    jobId?: string | null;
+  };
+  message?: string;
+  optimization?: ResumeOptimizationMeta;
+};
 
 export function CareerKitApp({
   initialData,
@@ -71,11 +92,31 @@ export function CareerKitApp({
   const [pipelineAddOpen, setPipelineAddOpen] = useState(false);
   const [matchVersionId, setMatchVersionId] = useState<string | undefined>(readMatchVersionIdFromLocation());
   const [interviewSessionId, setInterviewSessionId] = useState<string | undefined>(readInterviewSessionIdFromLocation());
+  const [resumeOptimizationVersionId, setResumeOptimizationVersionId] = useState(readResumeOptimizationVersionIdFromLocation());
+  const [resumeOptimizationResult, setResumeOptimizationResult] = useState<ResumeOptimizationView | null>(null);
   const [matchResetKey, setMatchResetKey] = useState(0);
   const [isPending, startTransition] = useTransition();
 
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
-  const optimizedVersions = useMemo(() => versions.filter((version) => version.jobId), [versions]);
+  const optimizedVersions = useMemo(
+    () => versions.filter((version) => version.jobId || readStoredOptimizationBase(version.content)),
+    [versions],
+  );
+  const storedResumeOptimizationResult = useMemo<ResumeOptimizationView | null>(() => {
+    if (active !== "resume" || !resumeOptimizationVersionId) return null;
+    const version = versions.find((item) => item.id === resumeOptimizationVersionId);
+    if (!version) return null;
+    return {
+      before: readStoredOptimizationBase(version.content) ?? resume,
+      after: version.content,
+      version,
+      optimization: readStoredOptimizationMeta(version.content),
+      message: version.summary,
+    };
+  }, [active, resume, resumeOptimizationVersionId, versions]);
+  const currentResumeOptimizationResult = resumeOptimizationVersionId
+    ? storedResumeOptimizationResult ?? resumeOptimizationResult
+    : resumeOptimizationResult;
   const dashboard = useMemo(
     () => buildDashboardSummary({ jobs, applications }),
     [applications, jobs],
@@ -102,6 +143,9 @@ export function CareerKitApp({
       setActive(nextActive);
       setResumeMode(window.location.pathname === "/resume/edit" ? "editor" : "library");
       setResumeEditorVersionId(readResumeVersionIdFromLocation());
+      const optimizedVersionId = readResumeOptimizationVersionIdFromLocation();
+      setResumeOptimizationVersionId(optimizedVersionId);
+      if (!optimizedVersionId) setResumeOptimizationResult(null);
       setMatchVersionId(readMatchVersionIdFromLocation());
       setInterviewSessionId(readInterviewSessionIdFromLocation());
     };
@@ -121,6 +165,8 @@ export function CareerKitApp({
   useEffect(() => {
     if (active === "match") {
       void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.jobCreate, AI_ROUTE_WARMUP_PATHS.match]);
+    } else if (active === "resume") {
+      void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.optimize]);
     } else if (active === "interview") {
       void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.interview]);
     }
@@ -130,6 +176,8 @@ export function CareerKitApp({
     setActive(key);
     setResumeMode("library");
     if (key !== "resume") setResumeEditorVersionId(undefined);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(undefined);
     setOptimizedMenuOpen(false);
@@ -145,6 +193,8 @@ export function CareerKitApp({
     setActive("match");
     setResumeMode("library");
     setResumeEditorVersionId(undefined);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
     setMatchVersionId(versionId);
     setOptimizedMenuOpen(false);
     window.history.pushState(null, "", `/match?version=${encodeURIComponent(versionId)}`);
@@ -154,6 +204,8 @@ export function CareerKitApp({
     setActive("resume");
     setResumeMode("editor");
     setResumeEditorVersionId(versionId);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
     const nextPath = versionId ? `/resume/edit?version=${encodeURIComponent(versionId)}` : "/resume/edit";
     if (`${window.location.pathname}${window.location.search}` !== nextPath) {
       window.history.pushState(null, "", nextPath);
@@ -164,6 +216,8 @@ export function CareerKitApp({
     setActive("interview");
     setResumeMode("library");
     setResumeEditorVersionId(undefined);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(sessionId);
     setInterviewMenuOpen(false);
@@ -216,6 +270,8 @@ export function CareerKitApp({
     setAppSettings(nextData.settings);
     setAiSettings(nextData.settings?.ai ?? null);
     setResumeEditorVersionId(undefined);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(undefined);
     setMatchResetKey((key) => key + 1);
@@ -238,10 +294,17 @@ export function CareerKitApp({
     }
   }
 
-  const isResumeEditor = active === "resume" && resumeMode === "editor";
-  const pageTitle = active === "match" ? "JD匹配优化" : navItems.find((item) => item.key === active)?.label;
+  const isResumeOptimizationResult = active === "resume" && Boolean(currentResumeOptimizationResult);
+  const isResumeEditor = active === "resume" && resumeMode === "editor" && !isResumeOptimizationResult;
+  const pageTitle = isResumeOptimizationResult
+    ? "AI简历优化"
+    : active === "match"
+      ? "JD匹配优化"
+      : navItems.find((item) => item.key === active)?.label;
   const pageSubtitle =
-    active === "match"
+    isResumeOptimizationResult
+      ? "基于当前简历优化表达清晰度、信息密度和成果呈现，生成可继续编辑的专属版本。"
+      : active === "match"
       ? "基于目标 JD 重新梳理简历重点，强化真实经历中的匹配证据，生成可继续编辑的专属版本。"
       : active === "pipeline"
         ? "记录投递渠道、当前阶段、面试轮次和跟进日期，把每个岗位从投递到 Offer 的进展集中管理。"
@@ -427,10 +490,27 @@ export function CareerKitApp({
       resumeVersionId: input.resumeVersionId,
       resumeContent: input.resumeContent,
       preferences: input.preferences,
-    })) as { analysis: JobAnalysis; version: ResumeVersionView; source?: "ai" | "fallback"; message?: string };
+    })) as {
+      analysis: JobAnalysis;
+      version: ResumeVersionView;
+      optimization?: ResumeOptimizationMeta;
+      source?: "ai" | "fallback";
+      message?: string;
+    };
     const version = normalizeVersion(tailored.version);
 
-    setJobs((current) => current.map((item) => (item.id === job.id ? { ...item, analysis: tailored.analysis } : item)));
+    setJobs((current) =>
+      current.map((item) =>
+        item.id === job.id
+          ? {
+              ...item,
+              company: cleanOptimizationLabel(tailored.analysis.company) || item.company,
+              title: cleanOptimizationLabel(tailored.analysis.title) || item.title,
+              analysis: tailored.analysis,
+            }
+          : item,
+      ),
+    );
     setVersions((current) => [version, ...current]);
     setApplications((current) =>
       current.map((item) => (item.id === application.id ? { ...item, resumeVersionId: version.id } : item)),
@@ -438,12 +518,52 @@ export function CareerKitApp({
     setToast(tailored.message ?? `${identity.title} 的优化后简历已生成。`);
 
     return {
-      job: { ...job, analysis: tailored.analysis },
+      job: {
+        ...job,
+        company: cleanOptimizationLabel(tailored.analysis.company) || job.company,
+        title: cleanOptimizationLabel(tailored.analysis.title) || job.title,
+        analysis: tailored.analysis,
+      },
       application: { ...application, resumeVersionId: version.id },
       analysis: tailored.analysis,
       version,
+      optimization: tailored.optimization,
       message: tailored.message,
     };
+  }
+
+  async function runResumeOptimization(input: { resumeContent: ResumeContent }): Promise<ResumeOptimizationResponse> {
+    if (!isAiReady(aiSettings)) throw new Error(aiReadinessMessage(aiSettings));
+
+    const result = (await postJson("/api/ai/resume-optimize", input)) as {
+      version: ResumeVersionView;
+      message?: string;
+      optimization?: ResumeOptimizationMeta;
+    };
+    const version = normalizeVersion(result.version);
+    setVersions((current) => [version, ...current.filter((item) => item.id !== version.id)]);
+    return {
+      version,
+      message: result.message,
+      optimization: result.optimization,
+    };
+  }
+
+  function showResumeOptimizationResult(result: ResumeOptimizationView) {
+    setResumeOptimizationVersionId(result.version.id);
+    setResumeOptimizationResult(result);
+    setResumeMode("library");
+    setResumeEditorVersionId(undefined);
+    setToast(result.message ?? "AI 简历优化已完成。");
+    const nextPath = `/resume?optimized=${encodeURIComponent(result.version.id)}`;
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
+      window.history.pushState(null, "", nextPath);
+    }
+  }
+
+  function openResumeOptimizationVersion() {
+    if (!currentResumeOptimizationResult) return;
+    openResumeEditorFromMatch(currentResumeOptimizationResult.version.id);
   }
 
   function updatePipelineEntry(event: FormEvent<HTMLFormElement>) {
@@ -558,6 +678,7 @@ export function CareerKitApp({
             active={active}
             pageTitle={pageTitle}
             pageSubtitle={pageSubtitle}
+            showResumeHeader={isResumeOptimizationResult}
             isPending={isPending}
             toast={toast}
             optimizedVersions={optimizedVersions}
@@ -566,7 +687,6 @@ export function CareerKitApp({
             interviewSessions={interviewSessions}
             interviewMenuOpen={interviewMenuOpen}
             setInterviewMenuOpen={setInterviewMenuOpen}
-            jobById={jobById}
             onAddApplication={() => setPipelineAddOpen(true)}
             onOpenOptimizedVersion={openOptimizedVersionFromHeader}
             onDeleteResumeVersion={deleteResumeVersion}
@@ -587,23 +707,44 @@ export function CareerKitApp({
             />
           )}
           {active === "resume" && (
-            <ResumeWorkbench
-              key={resumeEditorVersionId ?? "main-resume"}
-              resume={resume}
-              resumeUpdatedAt={resumeUpdatedAt}
-              setResume={setResume}
-              saveResume={saveResume}
-              versions={versions}
-              initialResumeVersionId={resumeEditorVersionId}
-              mode={resumeMode}
-              onModeChange={setResumeMode}
-              onEditorTargetChange={setResumeEditorVersionId}
-              onOpenMatch={() => navigateTo("match")}
-              aiReady={isResumeImportAiReady(aiSettings)}
-              onOpenSettings={() => navigateTo("settings")}
-              onDeleteMainResume={deleteMainResume}
-              onDeleteVersion={deleteResumeVersion}
-            />
+            currentResumeOptimizationResult ? (
+              <ResumeOptimizationResult
+                workflowLabels={["当前简历", "AI 简历优化", "预览并编辑"]}
+                title="AI优化简历完成"
+                description={buildOptimizationDescription(currentResumeOptimizationResult.before, currentResumeOptimizationResult.after, {
+                  mode: "general",
+                  meta: currentResumeOptimizationResult.optimization,
+                })}
+                before={currentResumeOptimizationResult.before}
+                after={currentResumeOptimizationResult.after}
+                summaryItems={buildOptimizationSummary(currentResumeOptimizationResult.before, currentResumeOptimizationResult.after, {
+                  mode: "general",
+                  meta: currentResumeOptimizationResult.optimization,
+                })}
+                openEditorLabel="进入编辑器修改"
+                onOpenEditor={openResumeOptimizationVersion}
+              />
+            ) : (
+              <ResumeWorkbench
+                key={resumeEditorVersionId ?? "main-resume"}
+                resume={resume}
+                resumeUpdatedAt={resumeUpdatedAt}
+                setResume={setResume}
+                saveResume={saveResume}
+                versions={versions}
+                initialResumeVersionId={resumeEditorVersionId}
+                mode={resumeMode}
+                onModeChange={setResumeMode}
+                onEditorTargetChange={setResumeEditorVersionId}
+                aiReady={isResumeImportAiReady(aiSettings)}
+                optimizeAiReady={isAiReady(aiSettings)}
+                optimizeResume={runResumeOptimization}
+                onResumeOptimized={showResumeOptimizationResult}
+                onOpenSettings={() => navigateTo("settings")}
+                onDeleteMainResume={deleteMainResume}
+                onDeleteVersion={deleteResumeVersion}
+              />
+            )
           )}
           {active === "match" && (
             <MatchView
@@ -704,6 +845,11 @@ function readResumeVersionIdFromLocation() {
   return new URLSearchParams(window.location.search).get("version") ?? undefined;
 }
 
+function readResumeOptimizationVersionIdFromLocation() {
+  if (typeof window === "undefined" || window.location.pathname !== "/resume") return undefined;
+  return new URLSearchParams(window.location.search).get("optimized") ?? undefined;
+}
+
 function readMatchVersionIdFromLocation() {
   if (typeof window === "undefined" || window.location.pathname !== "/match") return undefined;
   return new URLSearchParams(window.location.search).get("version") ?? undefined;
@@ -730,6 +876,38 @@ async function postJson(url: string, body: unknown, method = "POST") {
 function formatRequestError(error: unknown) {
   if (error instanceof Error && error.message.trim()) return error.message.trim();
   return "请稍后重试";
+}
+
+function readStoredOptimizationBase(content: ResumeContent) {
+  const base = (content as ResumeContent & { _tailoringBaseResume?: unknown })._tailoringBaseResume;
+  return isResumeContentRecord(base) ? base : null;
+}
+
+function readStoredOptimizationMeta(content: ResumeContent): ResumeOptimizationMeta | undefined {
+  const value = (content as ResumeContent & { _optimizationMeta?: unknown })._optimizationMeta;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Partial<ResumeOptimizationMeta>;
+  return {
+    company: typeof record.company === "string" ? record.company : "",
+    title: typeof record.title === "string" ? record.title : "",
+    keywords: Array.isArray(record.keywords) ? record.keywords.filter((item): item is string => typeof item === "string") : [],
+    summary: typeof record.summary === "string" ? record.summary : "",
+    changes: Array.isArray(record.changes) ? record.changes.filter((item): item is string => typeof item === "string") : [],
+    versionName: typeof record.versionName === "string" ? record.versionName : "",
+  };
+}
+
+function isResumeContentRecord(value: unknown): value is ResumeContent {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Partial<ResumeContent>;
+  return Boolean(record.basics && record.profile && Array.isArray(record.projects) && Array.isArray(record.skills));
+}
+
+function cleanOptimizationLabel(value?: string | null) {
+  const text = value?.trim() ?? "";
+  if (!text) return "";
+  if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
+  return text.length > 32 ? "" : text;
 }
 
 function emptyResume(): ResumeContent {

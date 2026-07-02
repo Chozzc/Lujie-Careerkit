@@ -22,13 +22,14 @@ describe("AI provider registry", () => {
   it("returns stable defaults for known providers", () => {
     expect(getDefaultAiModel("deepseek")).toBe("deepseek-v4-flash");
     expect(getDefaultAiModel("openai")).toBe("gpt-5.5");
-    expect(getDefaultAiModel("qwen")).toBe("qwen3.7-max");
+    expect(getDefaultAiModel("qwen")).toBe("qwen3.6-flash");
     expect(getDefaultAiModel("gemini-via-openrouter")).toBe("google/gemini-3.5-flash");
     expect(getDefaultAiModel("zhipu")).toBe("glm-5.1");
     expect(getDefaultAiModel("anthropic-via-openrouter")).toBe("anthropic/claude-fable-5");
     expect(getAiProvider("siliconflow").baseUrl).toBe("https://api.siliconflow.cn/v1");
     expect(getAiProvider("deepseek").models).toContain("deepseek-v4-flash");
     expect(getAiProvider("deepseek").models).toContain("deepseek-v4-pro");
+    expect(getAiProvider("qwen").models[0]).toBe("qwen3.6-flash");
     expect(getAiProvider("qwen").models).toContain("qwen3.7-max");
     expect(getAiProvider("gemini-via-openrouter").models).toContain("google/gemini-3.1-pro-preview");
     expect(getAiProvider("gemini-via-openrouter").models).not.toContain("google/gemini-3.5-pro");

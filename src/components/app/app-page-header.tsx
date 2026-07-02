@@ -3,7 +3,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
-import type { JobView, ResumeVersionView } from "@/components/app/types";
+import type { ResumeVersionView } from "@/components/app/types";
 import { resumeVersionDisplayName } from "@/components/match/match-view";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
 import type { NavKey } from "@/lib/navigation";
@@ -13,6 +13,7 @@ export function AppPageHeader({
   active,
   pageTitle,
   pageSubtitle,
+  showResumeHeader = false,
   isPending,
   toast,
   optimizedVersions,
@@ -21,7 +22,6 @@ export function AppPageHeader({
   interviewSessions,
   interviewMenuOpen,
   setInterviewMenuOpen,
-  jobById,
   onAddApplication,
   onOpenOptimizedVersion,
   onDeleteResumeVersion,
@@ -33,6 +33,7 @@ export function AppPageHeader({
   active: NavKey;
   pageTitle?: string;
   pageSubtitle: string;
+  showResumeHeader?: boolean;
   isPending: boolean;
   toast: string;
   optimizedVersions: ResumeVersionView[];
@@ -41,7 +42,6 @@ export function AppPageHeader({
   interviewSessions: InterviewSessionRecord[];
   interviewMenuOpen: boolean;
   setInterviewMenuOpen: Dispatch<SetStateAction<boolean>>;
-  jobById: Map<string, JobView>;
   onAddApplication: () => void;
   onOpenOptimizedVersion: (versionId: string) => void;
   onDeleteResumeVersion: (versionId: string) => void;
@@ -54,7 +54,7 @@ export function AppPageHeader({
     <div
       className={cn(
         "mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end",
-        active === "resume" && "hidden",
+        active === "resume" && !showResumeHeader && "hidden",
         active === "pipeline" && "relative items-center text-center lg:block",
       )}
     >
@@ -94,7 +94,6 @@ export function AppPageHeader({
             versions={optimizedVersions}
             open={optimizedMenuOpen}
             setOpen={setOptimizedMenuOpen}
-            jobById={jobById}
             onOpen={onOpenOptimizedVersion}
             onDelete={onDeleteResumeVersion}
             onDeleteAll={onDeleteOptimizedResumeVersions}
@@ -119,7 +118,6 @@ function OptimizedVersionsMenu({
   versions,
   open,
   setOpen,
-  jobById,
   onOpen,
   onDelete,
   onDeleteAll,
@@ -127,7 +125,6 @@ function OptimizedVersionsMenu({
   versions: ResumeVersionView[];
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  jobById: Map<string, JobView>;
   onOpen: (versionId: string) => void;
   onDelete: (versionId: string) => void;
   onDeleteAll: () => void;
@@ -146,8 +143,7 @@ function OptimizedVersionsMenu({
           <div className="px-2 pb-2 pt-1 text-xs text-muted-foreground">选择一个历史优化结果继续查看</div>
           <div className="max-h-80 overflow-y-auto">
             {versions.map((version) => {
-              const job = jobById.get(version.jobId ?? "");
-              const versionLabel = resumeVersionDisplayName(version, job);
+              const versionLabel = resumeVersionDisplayName(version);
               return (
                 <div key={version.id} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-surface-low">
                   <button type="button" onClick={() => onOpen(version.id)} className="min-w-0 flex-1 text-left">

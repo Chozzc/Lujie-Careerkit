@@ -1,12 +1,11 @@
 "use client";
 
-import type { FormEvent, ReactNode } from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Edit3, FileCheck2, FileText, ListChecks, Target, WandSparkles } from "lucide-react";
+import type { FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Edit3, FileCheck2, ListChecks, Target, WandSparkles } from "lucide-react";
 
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
-import { contentToJadeResume } from "@/lib/resume-adapter";
 import { hasResumeContent } from "@/lib/resume-library";
 import { buildResumeDisplayName } from "@/lib/resume-naming";
 import {
@@ -14,8 +13,15 @@ import {
   isResumeContentLike,
   type UploadedResumeDraft,
 } from "@/lib/resume-upload";
-import { buildOptimizedResumeVersionName, normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
-import type { ApplicationPriority, ApplicationStatus, InterviewRound, JobAnalysis, ResumeContent } from "@/lib/types";
+import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
+import type {
+  ApplicationPriority,
+  ApplicationStatus,
+  InterviewRound,
+  JobAnalysis,
+  ResumeContent,
+  ResumeOptimizationMeta,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   AiSetupRequiredDialog,
@@ -23,7 +29,11 @@ import {
   RESUME_IMPORT_AI_SETUP_MESSAGE,
   ResumeJdPreparation,
 } from "@/components/resume/resume-jd-preparation";
-import { ZoomableResumeCanvas } from "@/components/preview/zoomable-resume-canvas";
+import {
+  ResumeOptimizationResult,
+  buildOptimizationDescription,
+  buildOptimizationSummary,
+} from "@/components/resume/resume-optimization-result";
 import { WorkflowStepper } from "@/components/shared/workflow-stepper";
 
 export type MatchJobView = {
@@ -83,14 +93,8 @@ export type MatchOptimizationResult = {
   application: MatchApplicationView;
   analysis?: JobAnalysis;
   version?: MatchResumeVersionView;
+  optimization?: ResumeOptimizationMeta;
   message?: string;
-};
-
-type ResumeDiffSection = {
-  key: string;
-  title: string;
-  previewTitles: string[];
-  detail: string;
 };
 
 const defaultMatchPreferences: MatchOptimizationPreferences = {
@@ -100,12 +104,9 @@ const defaultMatchPreferences: MatchOptimizationPreferences = {
   highlightMatchedSkills: true,
 };
 
-export function resumeVersionDisplayName(version: MatchResumeVersionView, job?: MatchJobView) {
+export function resumeVersionDisplayName(version: MatchResumeVersionView) {
   if (!version.jobId) return version.name;
-  const baseResume = readTailoringBaseResume(version.content);
-  return job && baseResume
-    ? buildOptimizedResumeVersionName(baseResume, job.title)
-    : normalizeOptimizedResumeVersionName(version.name);
+  return normalizeOptimizedResumeVersionName(version.name);
 }
 
 export function MatchView({
@@ -162,16 +163,16 @@ export function MatchView({
     }
 
     for (const version of versions) {
-      const job = version.jobId ? jobs.find((item) => item.id === version.jobId) : undefined;
+      const isOptimizedVersion = Boolean(version.jobId || readTailoringBaseResume(version.content));
       options.push({
         id: version.id,
-        name: resumeVersionDisplayName(version, job),
-        detail: `${version.jobId ? "优化后简历" : "原简历"} · ${new Date(version.updatedAt).toLocaleDateString("zh-CN")}`,
+        name: resumeVersionDisplayName(version),
+        detail: `${isOptimizedVersion ? "优化后简历" : "原简历"} · ${new Date(version.updatedAt).toLocaleDateString("zh-CN")}`,
       });
     }
 
     return options;
-  }, [jobs, resume, versions]);
+  }, [resume, versions]);
   const selectedResumeOption = resumeOptions.find((item) => item.id === selectedResumeKey) ?? resumeOptions[0];
   const selectedLibraryKey = selectedResumeOption?.id;
   const selectedVersion = versions.find((version) => version.id === selectedLibraryKey);
@@ -280,6 +281,7 @@ export function MatchView({
         application,
         analysis: job.analysis ?? undefined,
         version,
+        optimization: readOptimizationMeta(version.content),
         message: "已打开本地优化版本。",
       });
       setResultBaseResume(readTailoringBaseResume(version.content) ?? resume);
@@ -361,83 +363,40 @@ export function MatchView({
   }
 
   if (screen === "result" && result?.version && resultBaseResume && optimizedDraft) {
-    const summaryItems = buildOptimizationSummary(resultBaseResume, optimizedDraft, result.analysis);
-    const diffSections = buildResumeDiffSections(resultBaseResume, optimizedDraft);
+    const resultMode = getMatchOptimizationMode(result);
+    const isJdResult = resultMode === "jd";
+    const resultMeta = result.optimization ?? readOptimizationMeta(result.version.content);
 
     return (
-      <div className="space-y-5">
-        <WorkflowStepper labels={["选择简历与 JD", "AI 匹配优化", "预览并编辑"]} current={2} />
-        <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6">
-          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-            <div>
-              <p className="text-sm font-medium text-primary">优化结果总结</p>
-              <h2 className="mt-2 font-serif text-2xl font-semibold">
-                {result.job.company} · {result.job.title}
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                已基于职位描述重新组织简历重点。右侧简历中浅黄色区域为本次优化产生或调整的模块，可以进入编辑器继续微调。
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setScreen("input");
-                  setResult(null);
-                  setResultBaseResume(null);
-                  setOptimizedDraft(null);
-                  setSaveStatus("");
-                  window.history.pushState(null, "", "/match");
-                }}
-                className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-surface-low"
-              >
-                返回修改 JD
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenResume(result.version?.id)}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
-              >
-                进入编辑器修改
-              </button>
-            </div>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {summaryItems.map((item) => (
-              <div key={item.label} className="rounded-lg bg-surface-low px-4 py-3">
-                <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
-                <p className="mt-1 text-sm leading-6 text-foreground">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid items-stretch gap-5 xl:grid-cols-2">
-          <ResumeDocumentComparePane
-            title="原简历"
-                  subtitle={buildResumeDisplayName(resultBaseResume, "未命名简历")}
-            resume={resultBaseResume}
-          />
-          <ResumeDocumentComparePane
-            title="优化后"
-            subtitle="已生成优化后简历，可进入编辑器继续微调。"
-            resume={optimizedDraft}
-            optimized
-            changedSections={diffSections}
-            action={
-              <button
-                type="button"
-                onClick={() => onOpenResume(result.version?.id)}
-                aria-label="进入编辑器修改优化后简历"
-                title="进入编辑器修改"
-                className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-white text-primary hover:bg-primary-soft"
-              >
-                <FileText className="h-5 w-5" />
-              </button>
-            }
-          />
-        </section>
-      </div>
+      <ResumeOptimizationResult
+        workflowLabels={isJdResult ? ["选择简历与 JD", "AI 匹配优化", "预览并编辑"] : ["当前简历", "AI 简历优化", "预览并编辑"]}
+        title={buildMatchResultTitle(result)}
+        description={buildOptimizationDescription(resultBaseResume, optimizedDraft, {
+          mode: resultMode,
+          meta: resultMeta,
+        })}
+        before={resultBaseResume}
+        after={optimizedDraft}
+        summaryItems={buildOptimizationSummary(resultBaseResume, optimizedDraft, {
+          mode: resultMode,
+          analysis: result.analysis,
+          meta: resultMeta,
+        })}
+        backLabel={isJdResult ? "返回修改 JD" : undefined}
+        onBack={
+          isJdResult
+            ? () => {
+                setScreen("input");
+                setResult(null);
+                setResultBaseResume(null);
+                setOptimizedDraft(null);
+                setSaveStatus("");
+                window.history.pushState(null, "", "/match");
+              }
+            : undefined
+        }
+        onOpenEditor={() => onOpenResume(result.version?.id)}
+      />
     );
   }
 
@@ -513,263 +472,60 @@ export function MatchView({
   );
 }
 
-function isNearlyWhiteCssColor(color: string) {
-  const match = color.match(/rgba?\(([^)]+)\)/);
-  if (!match) return false;
-  const values = match[1]
-    .split(",")
-    .map((part) => Number(part.trim()));
-  const [red, green, blue] = values;
-  const alpha = values[3] ?? 1;
-  return alpha > 0.45 && red >= 235 && green >= 235 && blue >= 235;
-}
-
-function resetHighlightedReadableText(root: HTMLElement) {
-  const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-match-readable-text='true']"));
-  for (const node of nodes) {
-    node.style.color = "";
-    node.removeAttribute("data-match-readable-text");
-  }
-}
-
-function makeHighlightedTextReadable(section: HTMLElement) {
-  const nodes = Array.from(section.querySelectorAll<HTMLElement>("h1,h2,h3,p,span,li,strong,em,div"));
-  for (const node of nodes) {
-    if (!node.textContent?.trim()) continue;
-    if (!isNearlyWhiteCssColor(window.getComputedStyle(node).color)) continue;
-    node.style.color = "#111827";
-    node.setAttribute("data-match-readable-text", "true");
-  }
-}
-
-function ResumeDocumentComparePane({
-  title,
-  subtitle,
-  resume,
-  optimized,
-  changedSections = [],
-  action,
-}: {
-  title: string;
-  subtitle: string;
-  resume: ResumeContent;
-  optimized?: boolean;
-  changedSections?: ResumeDiffSection[];
-  action?: ReactNode;
-}) {
-  const previewRootRef = useRef<HTMLDivElement>(null);
-  const previewResume = useMemo(() => contentToJadeResume(resume), [resume]);
-  const [canvasZoom, setCanvasZoom] = useState(68);
-  const changedPreviewTitles = useMemo(
-    () => new Set(changedSections.flatMap((section) => section.previewTitles.map(normalizeDiffText))),
-    [changedSections],
-  );
-
-  useLayoutEffect(() => {
-    const root = previewRootRef.current;
-    if (!root || !optimized) return undefined;
-
-    const applyHighlights = () => {
-      resetHighlightedReadableText(root);
-      const sectionNodes = Array.from(root.querySelectorAll<HTMLElement>("[data-section]"));
-      for (const section of sectionNodes) {
-        section.style.outline = "";
-        section.style.background = "";
-        section.style.borderRadius = "";
-        section.style.boxShadow = "";
-      }
-
-      const headerNodes = Array.from(root.querySelectorAll<HTMLElement>("h1"));
-      for (const node of headerNodes) {
-        node.style.background = "";
-        node.style.boxShadow = "";
-        node.style.borderRadius = "";
-      }
-
-      if (!changedPreviewTitles.size) return;
-
-      for (const section of sectionNodes) {
-        const heading = normalizeDiffText(section.querySelector("h2")?.textContent ?? "");
-        if (!changedPreviewTitles.has(heading)) continue;
-        section.style.outline = "1px solid rgba(245, 158, 11, 0.32)";
-        section.style.background = "rgba(255, 251, 235, 0.72)";
-        section.style.borderRadius = "10px";
-        section.style.boxShadow = "0 0 0 5px rgba(255, 251, 235, 0.64)";
-        makeHighlightedTextReadable(section);
-      }
-    };
-
-    applyHighlights();
-    const frame = window.requestAnimationFrame(applyHighlights);
-    const timers = [120, 400, 1000].map((delay) => window.setTimeout(applyHighlights, delay));
-    const observer = new MutationObserver(applyHighlights);
-    observer.observe(root, { childList: true, subtree: true });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      timers.forEach((timer) => window.clearTimeout(timer));
-      observer.disconnect();
-      resetHighlightedReadableText(root);
-    };
-  }, [changedPreviewTitles, optimized, previewResume]);
-
-  return (
-    <section
-      className="flex h-[820px] min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-surface shadow-[0_18px_50px_rgba(49,48,48,0.04)]"
-    >
-      <div className="relative flex min-h-[76px] items-center justify-center border-b border-line px-14 py-4">
-        <div className="min-w-0 text-center">
-          <h2 className="font-serif text-xl font-semibold">{title}</h2>
-          <p className="sr-only">{subtitle}</p>
-        </div>
-        <div className="absolute right-5 top-1/2 flex -translate-y-1/2 items-center gap-2">
-          {action ?? <FileText className="h-5 w-5 shrink-0 text-primary" />}
-        </div>
-      </div>
-      <ZoomableResumeCanvas
-        resume={previewResume}
-        zoom={canvasZoom}
-        onZoomChange={setCanvasZoom}
-        smartOnePage={false}
-        previewRootRef={previewRootRef}
-        initialZoom={68}
-        minZoom={30}
-        maxZoom={160}
-      />
-    </section>
-  );
-}
-
 function readTailoringBaseResume(content: ResumeContent) {
   const maybeBase = (content as ResumeContent & { _tailoringBaseResume?: unknown })._tailoringBaseResume;
   return isResumeContentLike(maybeBase) ? maybeBase : null;
 }
 
-function buildResumeDiffSections(before: ResumeContent, after: ResumeContent): ResumeDiffSection[] {
-  const diffs: ResumeDiffSection[] = [];
-
-  if (
-    before.basics.name !== after.basics.name ||
-    before.basics.email !== after.basics.email ||
-    before.basics.phone !== after.basics.phone ||
-    before.basics.city !== after.basics.city ||
-    stringifyForDiff(before.basics.links) !== stringifyForDiff(after.basics.links) ||
-    before.profile.title !== after.profile.title
-  ) {
-    diffs.push({
-      key: "header",
-      title: "顶部信息",
-      previewTitles: ["顶部信息"],
-      detail: "姓名、联系方式、城市、链接或求职方向发生变化。",
-    });
-  }
-
-  if (before.profile.summary !== after.profile.summary || before.selfReview !== after.selfReview) {
-    diffs.push({
-      key: "summary",
-      title: "自我评价",
-      previewTitles: ["自我评价", "求职摘要"],
-      detail: "求职摘要或自我评价经过岗位化改写。",
-    });
-  }
-
-  if (stringifyForDiff(before.education) !== stringifyForDiff(after.education)) {
-    diffs.push({
-      key: "education",
-      title: "教育背景",
-      previewTitles: ["教育背景"],
-      detail: "教育经历内容发生调整。",
-    });
-  }
-
-  if (stringifyForDiff(before.experiences) !== stringifyForDiff(after.experiences)) {
-    diffs.push({
-      key: "experiences",
-      title: "工作经历",
-      previewTitles: ["工作经历"],
-      detail: "工作经历表达或排序发生调整。",
-    });
-  }
-
-  if (stringifyForDiff(before.internships) !== stringifyForDiff(after.internships)) {
-    diffs.push({
-      key: "internships",
-      title: "实习经历",
-      previewTitles: ["实习经历"],
-      detail: "实习经历表达或排序发生调整。",
-    });
-  }
-
-  if (stringifyForDiff(before.projects) !== stringifyForDiff(after.projects)) {
-    diffs.push({
-      key: "projects",
-      title: "项目经历",
-      previewTitles: ["项目经历"],
-      detail: "项目经历的职责、行动或结果表达发生调整。",
-    });
-  }
-
-  if (stringifyForDiff(before.awards) !== stringifyForDiff(after.awards)) {
-    diffs.push({
-      key: "awards",
-      title: "资格证书",
-      previewTitles: ["资格证书", "奖项证书"],
-      detail: "奖项或证书内容发生调整。",
-    });
-  }
-
-  if (stringifyForDiff(before.skills) !== stringifyForDiff(after.skills)) {
-    diffs.push({
-      key: "skills",
-      title: "技能特长",
-      previewTitles: ["技能特长", "核心技能"],
-      detail: "技能顺序或关键词覆盖发生调整。",
-    });
-  }
-
-  return diffs;
+function readOptimizationMeta(content: ResumeContent): ResumeOptimizationMeta | undefined {
+  const value = (content as ResumeContent & { _optimizationMeta?: unknown })._optimizationMeta;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Partial<ResumeOptimizationMeta>;
+  return {
+    company: typeof record.company === "string" ? record.company : "",
+    title: typeof record.title === "string" ? record.title : "",
+    keywords: Array.isArray(record.keywords) ? record.keywords.filter((item): item is string => typeof item === "string") : [],
+    summary: typeof record.summary === "string" ? record.summary : "",
+    changes: Array.isArray(record.changes) ? record.changes.filter((item): item is string => typeof item === "string") : [],
+    versionName: typeof record.versionName === "string" ? record.versionName : "",
+  };
 }
 
-function stringifyForDiff(value: unknown) {
-  return JSON.stringify(value);
+function getMatchOptimizationMode(result: MatchOptimizationResult): "jd" | "general" {
+  return result.version && !result.version.jobId && result.optimization ? "general" : "jd";
 }
 
-function normalizeDiffText(value: string) {
-  return value.replace(/\s+/g, "").replace(/[：:]/g, "");
+export function buildMatchResultTitle(result: MatchOptimizationResult) {
+  if (getMatchOptimizationMode(result) === "general") return "AI优化简历完成";
+
+  const company =
+    cleanResultTitlePart(result.optimization?.company) ||
+    cleanResultTitlePart(result.analysis?.company) ||
+    cleanResultTitlePart(result.job.company);
+  const title =
+    cleanResultTitlePart(result.optimization?.title) ||
+    cleanResultTitlePart(result.analysis?.title) ||
+    cleanResultTitlePart(result.job.title);
+  if (company && title) return `${company} · ${title}`;
+  if (title) return `JD匹配优化 · ${title}`;
+  return "JD匹配优化完成";
 }
 
-function buildOptimizationSummary(before: ResumeContent, after: ResumeContent, analysis?: JobAnalysis) {
-  const changedSections = [
-    before.profile.summary !== after.profile.summary ? "求职摘要" : "",
-    before.skills.join("\n") !== after.skills.join("\n") ? "核心技能" : "",
-    JSON.stringify(before.projects) !== JSON.stringify(after.projects) ? "项目经历" : "",
-    JSON.stringify(before.internships) !== JSON.stringify(after.internships) ? "实习经历" : "",
-  ].filter(Boolean);
-  const keywordText = analysis?.keywords?.slice(0, 5).join("、") || "岗位关键词";
-
-  return [
-    {
-      label: "岗位关键词",
-      value: keywordText,
-    },
-    {
-      label: "调整范围",
-      value: changedSections.length ? changedSections.join("、") : "保留原结构，仅调整表达重点。",
-    },
-    {
-      label: "事实边界",
-      value: "只重排和改写原简历已有事实，不新增经历或数据。",
-    },
-  ];
+function cleanResultTitlePart(value?: string | null) {
+  const text = value?.trim() ?? "";
+  if (!text) return "";
+  if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
+  return text.length > 32 ? "" : text;
 }
 
 function buildSyntheticJobForVersion(version: MatchResumeVersionView): MatchJobView {
+  const isGeneralAiVersion = !version.jobId;
   return {
     id: version.jobId ?? `version-${version.id}`,
-    company: "本地优化版本",
-    title: version.name,
+    company: isGeneralAiVersion ? "" : "本地优化版本",
+    title: isGeneralAiVersion ? "" : version.name,
     city: "待填写",
-    source: "JD匹配优化",
+    source: isGeneralAiVersion ? "AI简历优化" : "JD匹配优化",
     jd: version.summary || version.name,
     link: "",
     deadline: null,

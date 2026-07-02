@@ -24,7 +24,7 @@ import { resolveResumeContentTitle } from "./resume-naming";
 import { buildTailoredResumeVersion } from "./resume-versioning";
 import { shouldRefreshSampleResumeVersion, shouldSeedSampleResumeVersion } from "./resume-version-seeding";
 import { sampleApplications, sampleJobs, sampleResume, sampleResumeVersions } from "./sample-data";
-import type { ApplicationPriority, InterviewRound, JobAnalysis, ResumeContent } from "./types";
+import type { ApplicationPriority, InterviewRound, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
 
 export async function ensureSeedData() {
   await ensureSchema();
@@ -606,18 +606,23 @@ export async function createResumeVersion(input: {
   name: string;
   summary?: string;
   content: ResumeContent;
+  baseResume?: ResumeContent;
+  optimizationMeta?: ResumeOptimizationMeta;
 }) {
   await ensureSeedData();
   const resume = await prisma.resume.findFirst();
   if (!resume) throw new Error("Resume seed failed.");
+  const content = input.baseResume
+    ? attachTailoringBaseResume(input.content, input.baseResume, input.optimizationMeta)
+    : input.content;
 
   return prisma.resumeVersion.create({
     data: {
       resumeId: resume.id,
       jobId: null,
-      name: input.name.trim() || deriveResumeVersionName(input.content),
+      name: input.name.trim() || deriveResumeVersionName(content),
       summary: input.summary?.trim() || "原简历版本，可作为 JD匹配优化的基准。",
-      content: input.content,
+      content,
     },
   });
 }
@@ -685,6 +690,7 @@ export async function createTailoredVersionForJob(input: {
   resumeContent?: ResumeContent;
   tailoredContent?: ResumeContent;
   analysis: JobAnalysis;
+  optimizationMeta?: ResumeOptimizationMeta;
 }) {
   await ensureSeedData();
   const [resume, job] = await Promise.all([
@@ -699,18 +705,24 @@ export async function createTailoredVersionForJob(input: {
     resumeContent: input.resumeContent,
   });
 
+  const jobIdentity = {
+    company: cleanJobLabel(input.analysis.company) || job.company,
+    title: cleanJobLabel(input.analysis.title) || job.title,
+  };
   const tailored = buildTailoredResumeVersion({
     masterResume: baseResume,
-    job: { id: job.id, company: job.company, title: job.title },
+    job: { id: job.id, company: jobIdentity.company, title: jobIdentity.title },
     analysis: input.analysis,
   });
-  const content = attachTailoringBaseResume(input.tailoredContent ?? tailored.content, baseResume);
+  const content = attachTailoringBaseResume(input.tailoredContent ?? tailored.content, baseResume, input.optimizationMeta);
+  const versionName = input.optimizationMeta?.versionName?.trim() || tailored.name;
+  const versionSummary = input.optimizationMeta?.summary?.trim() || tailored.summary;
 
   const existingVersion = await prisma.resumeVersion.findFirst({
     where: {
       resumeId: resume.id,
       jobId: job.id,
-      name: tailored.name,
+      name: versionName,
     },
     orderBy: { updatedAt: "desc" },
   });
@@ -719,8 +731,8 @@ export async function createTailoredVersionForJob(input: {
     ? await prisma.resumeVersion.update({
         where: { id: existingVersion.id },
         data: {
-          name: tailored.name,
-          summary: tailored.summary,
+          name: versionName,
+          summary: versionSummary,
           content,
           resumeId: resume.id,
           jobId: job.id,
@@ -728,8 +740,8 @@ export async function createTailoredVersionForJob(input: {
       })
     : await prisma.resumeVersion.create({
         data: {
-          name: tailored.name,
-          summary: tailored.summary,
+          name: versionName,
+          summary: versionSummary,
           content,
           resumeId: resume.id,
           jobId: job.id,
@@ -742,7 +754,7 @@ export async function createTailoredVersionForJob(input: {
         id: { not: version.id },
         resumeId: resume.id,
         jobId: job.id,
-        name: tailored.name,
+        name: versionName,
       },
       select: { id: true },
     });
@@ -963,10 +975,11 @@ export async function deleteResumeVersion(versionId: string) {
 export async function deleteOptimizedResumeVersions() {
   await ensureSeedData();
   const versions = await prisma.resumeVersion.findMany({
-    where: { jobId: { not: null } },
-    select: { id: true },
+    select: { id: true, jobId: true, content: true },
   });
-  const versionIds = versions.map((version) => version.id);
+  const versionIds = versions
+    .filter((version) => version.jobId || hasStoredOptimizationBase(version.content))
+    .map((version) => version.id);
   if (!versionIds.length) return { count: 0 };
 
   await prisma.application.updateMany({
@@ -978,6 +991,10 @@ export async function deleteOptimizedResumeVersions() {
     data: { resumeVersionId: null },
   });
   return prisma.resumeVersion.deleteMany({ where: { id: { in: versionIds } } });
+}
+
+function hasStoredOptimizationBase(content: unknown) {
+  return isRecord(content) && isRecord(content._tailoringBaseResume);
 }
 
 export const interviewSessionRepository: InterviewRepository = {
@@ -1132,11 +1149,23 @@ function stringRecord(value: unknown) {
   return entries.length ? Object.fromEntries(entries) : null;
 }
 
-function attachTailoringBaseResume(content: ResumeContent, baseResume: ResumeContent): ResumeContent {
+function attachTailoringBaseResume(
+  content: ResumeContent,
+  baseResume: ResumeContent,
+  optimizationMeta?: ResumeOptimizationMeta,
+): ResumeContent {
   return {
     ...content,
     _tailoringBaseResume: baseResume,
+    ...(optimizationMeta ? { _optimizationMeta: optimizationMeta } : {}),
   } as ResumeContent;
+}
+
+function cleanJobLabel(value?: string | null) {
+  const text = value?.trim() ?? "";
+  if (!text) return "";
+  if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
+  return text.length > 32 ? "" : text;
 }
 
 function deriveResumeVersionName(content: ResumeContent) {

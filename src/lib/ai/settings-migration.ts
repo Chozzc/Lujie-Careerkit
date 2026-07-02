@@ -30,6 +30,7 @@ export function getAiSettingsMaintenancePatch(
   settings: StoredAiSettingsForMaintenance,
 ): AiSettingsMaintenancePatch | null {
   const legacyDefaultModels = new Set<string>(LEGACY_DEFAULT_AI_MODELS);
+  const oldQwenDefaultModels = new Set(["qwen3.7-max"]);
 
   if (
     settings.aiProvider === "openai" &&
@@ -50,6 +51,26 @@ export function getAiSettingsMaintenancePatch(
     settings.aiProvider === "deepseek" &&
     settings.aiModel === "deepseek-v4-flash" &&
     settings.model === "deepseek-v4-flash" &&
+    !settings.aiEnabled &&
+    !settings.aiApiKey
+  ) {
+    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
+    const defaultModel = getDefaultAiModel(defaultProvider.id);
+    return {
+      provider: "openai-compatible",
+      baseUrl: defaultProvider.baseUrl,
+      aiProvider: defaultProvider.id,
+      model: defaultModel,
+      aiModel: defaultModel,
+      aiBaseUrl: defaultProvider.baseUrl,
+      aiLastTestStatus: "untested",
+    };
+  }
+
+  if (
+    settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
+    oldQwenDefaultModels.has(settings.aiModel) &&
+    oldQwenDefaultModels.has(settings.model) &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {

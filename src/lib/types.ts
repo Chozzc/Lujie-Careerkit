@@ -105,6 +105,15 @@ export type JobAnalysis = {
   suggestions: string[];
 };
 
+export type ResumeOptimizationMeta = {
+  company: string;
+  title: string;
+  keywords: string[];
+  summary: string;
+  changes: string[];
+  versionName: string;
+};
+
 export type JobRecord = {
   id: string;
   company: string;

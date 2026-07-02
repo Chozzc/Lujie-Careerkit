@@ -49,6 +49,7 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 ## Highlights
 
 - **Structured resume editing**: maintain multiple resume versions, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
+- **AI resume optimization**: generate a general AI-optimized resume version from the editor, compare before and after, and keep refining it with the same templates.
 - **JD matching**: paste a target job description and let AI reorder emphasis and improve wording without inventing experience.
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, priorities, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
@@ -108,7 +109,7 @@ Open [http://localhost:3000](http://localhost:3000). The app creates the local s
 DATABASE_URL="file:./dev.db"
 LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
 OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-OPENAI_MODEL="qwen3.7-max"
+OPENAI_MODEL="qwen3.6-flash"
 ```
 
 `OPENAI_BASE_URL` and `OPENAI_MODEL` only set first-run defaults. Configure the actual API key from the in-app Settings page.
@@ -124,6 +125,19 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.1.3
+
+- Added AI resume optimization from the Resume Editor, generating a general optimized version without requiring a JD.
+- Reused the JD matching result workspace for before/after comparison, optimization summaries, and visible change highlighting.
+- Improved AI output compatibility and error messaging, including support for models that return a complete resume JSON directly.
+- Included AI-optimized resume versions in the optimized history menu for easier review, comparison, and continued editing.
+
+### v0.1.2
+
+- Split the JD matching result page into shared resume comparison, summary, and highlight components.
+- Removed duplicated preview-comparison code from the matching workspace to make similar result views easier to maintain.
+- Adjusted the app header, resume workbench, and optimized-version records to provide a stable path for AI resume optimization.
+
 ### v0.1.1
 
 - Unified resume-import setup prompts and local fallback messaging across the Resume Editor, JD Matching, and Interview Assistant.
@@ -134,6 +148,10 @@ AI features stay disabled until the settings are saved and the connection test s
 ### v0.1.0
 
 - Initial open-source release with the resume library, structured resume editor, JD matching, application tracking, mock interviews, AI review, and local SQLite storage.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Chozzc/Lujie-Careerkit&type=Date)](https://star-history.com/#Chozzc/Lujie-Careerkit&Date)
 
 ## FAQ
 
