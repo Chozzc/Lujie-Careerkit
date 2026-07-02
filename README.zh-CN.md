@@ -17,6 +17,9 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
+  <img alt="Version" src="https://img.shields.io/github/v/tag/Chozzc/Lujie-Careerkit?label=version" />
+  <img alt="Docker Image" src="https://github.com/Chozzc/Lujie-Careerkit/actions/workflows/docker-image.yml/badge.svg" />
+  <img alt="GHCR" src="https://img.shields.io/badge/GHCR-ghcr.io%2Fchozzc%2Flujie--careerkit-24292f?logo=github" />
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
@@ -123,6 +126,8 @@ docker run -d --name lujie-careerkit \
 
 容器默认使用 `DATABASE_URL=file:/data/dev.db`。API Key 仍然在应用内设置页配置。
 
+使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前发布版本，可以把镜像标签换成 `v0.1.4`。
+
 ## 环境变量
 
 ```env
@@ -149,7 +154,7 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 - 新增 Docker 构建支持，并将 SQLite 持久化数据挂载到 `/data`。
 - 新增 `docker-compose.yml`，支持本地一条命令启动。
-- 新增 GitHub Actions workflow，推送到 `main` 后发布 `ghcr.io/chozzc/lujie-careerkit:latest` 镜像。
+- 新增 GitHub Actions workflow，发布 `ghcr.io/chozzc/lujie-careerkit:latest` 和版本标签镜像。
 
 ### v0.1.3
 
