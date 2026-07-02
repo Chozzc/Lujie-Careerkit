@@ -70,7 +70,23 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 - npm
 - Chrome or Edge for the best browser speech experience
 
-### Run Locally
+### Docker Deployment (Recommended)
+
+```bash
+docker run -d --name lujie-careerkit \
+  -p 3000:3000 \
+  -v lujie-data:/data \
+  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
+  ghcr.io/chozzc/lujie-careerkit:latest
+```
+
+Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in the Docker volume `lujie-data`. API keys are configured from the in-app Settings page.
+
+`LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
+
+Use `latest` to follow the newest `main` build. Use `v0.1.5` when you want to pin the current published Docker release.
+
+### Local Development
 
 ```bash
 git clone https://github.com/Chozzc/Lujie-Careerkit.git
@@ -92,39 +108,13 @@ Copy-Item .env.example .env.local
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Put the generated value into `.env.local` as `LUJIE_SETTINGS_SECRET`.
-
-Start the app:
+Put the generated value into `.env.local` as `LUJIE_SETTINGS_SECRET`, then start the app:
 
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The app creates the local schema and demo workflow data on first use.
-
-### Run With Docker
-
-Build and start locally:
-
-```bash
-docker compose up -d --build
-```
-
-Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in the Docker volume `lujie-data`. For long-term use, set `LUJIE_SETTINGS_SECRET` in your shell or a local `.env` file before starting Compose.
-
-Or use the published GitHub Container Registry image directly:
-
-```bash
-docker run -d --name lujie-careerkit \
-  -p 3000:3000 \
-  -v lujie-data:/data \
-  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
-  ghcr.io/chozzc/lujie-careerkit:latest
-```
-
-The container uses `DATABASE_URL=file:/data/dev.db` by default. API keys are still configured from the in-app Settings page.
-
-Use `latest` to follow the newest `main` build. Use `v0.1.4` when you want to pin the current published Docker release.
 
 ## Environment Variables
 
@@ -148,12 +138,12 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
-### Unreleased
+### v0.1.5
 
-- Added real `next-intl` multilingual support with an in-app language switcher.
+- Added Chinese and English UI, with in-app language switching.
 - Localized the main workspace shell, Dashboard, Resume Library, Settings, JD Matching, Interview Assistant, Application Tracking, and core Resume Editor controls.
 - Kept user data, resume content, JD text, and locally stored records unchanged when switching languages.
-- Fixed test/build configuration issues found during the `next-intl` migration.
+- Fixed test/build configuration issues found during the multilingual UI update.
 
 ### v0.1.4
 

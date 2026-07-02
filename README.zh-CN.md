@@ -70,7 +70,23 @@
 - npm
 - Chrome 或 Edge：浏览器语音识别体验更完整
 
-### 本地运行
+### Docker 部署（推荐）
+
+```bash
+docker run -d --name lujie-careerkit \
+  -p 3000:3000 \
+  -v lujie-data:/data \
+  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
+  ghcr.io/chozzc/lujie-careerkit:latest
+```
+
+打开 [http://localhost:3000](http://localhost:3000)。SQLite 数据会保存在 Docker volume `lujie-data` 中，API Key 在应用内设置页配置。
+
+`LUJIE_SETTINGS_SECRET` 用于加密本机保存的设置密钥，请替换成一串足够长的随机字符串。
+
+使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前已发布的 Docker 版本，可以把镜像标签换成 `v0.1.5`。
+
+### 本地开发
 
 ```bash
 git clone https://github.com/Chozzc/Lujie-Careerkit.git
@@ -92,39 +108,13 @@ Copy-Item .env.example .env.local
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-把生成的值写入 `.env.local` 的 `LUJIE_SETTINGS_SECRET`。
-
-启动应用：
+把生成的值写入 `.env.local` 的 `LUJIE_SETTINGS_SECRET`，然后启动应用：
 
 ```bash
 npm run dev
 ```
 
 打开 [http://localhost:3000](http://localhost:3000)。应用会在首次使用时创建本地数据库结构和示例数据。
-
-### Docker 运行
-
-本地构建并启动：
-
-```bash
-docker compose up -d --build
-```
-
-打开 [http://localhost:3000](http://localhost:3000)。SQLite 数据会保存在 Docker volume `lujie-data` 中。长期使用前，建议先在命令行环境或本地 `.env` 文件里设置自己的 `LUJIE_SETTINGS_SECRET`。
-
-也可以直接使用已发布到 GitHub Container Registry 的公开镜像：
-
-```bash
-docker run -d --name lujie-careerkit \
-  -p 3000:3000 \
-  -v lujie-data:/data \
-  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
-  ghcr.io/chozzc/lujie-careerkit:latest
-```
-
-容器默认使用 `DATABASE_URL=file:/data/dev.db`。API Key 仍然在应用内设置页配置。
-
-使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前已发布的 Docker 版本，可以把镜像标签换成 `v0.1.4`。
 
 ## 环境变量
 
@@ -148,12 +138,12 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
 
-### 未发布
+### v0.1.5
 
-- 接入真实 `next-intl` 多语言能力，并加入应用内语言切换。
-- 完成主工作台、控制中心、简历库、设置、JD 匹配优化、面试助手、投递跟进和简历编辑器核心控件的中英文界面文案。
+- 加入中英文双语界面，支持在应用内切换语言。
+- 完成主工作台、控制中心、简历库、设置、JD 匹配优化、面试助手、投递跟进和简历编辑器核心控件的双语文案。
 - 切换语言时不自动改写用户简历、JD、投递记录和本地数据。
-- 修复 `next-intl` 迁移过程中发现的测试与构建配置问题。
+- 修复多语言改造过程中发现的测试与构建配置问题。
 
 ### v0.1.4
 
