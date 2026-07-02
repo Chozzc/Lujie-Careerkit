@@ -101,6 +101,28 @@ npm run dev
 
 打开 [http://localhost:3000](http://localhost:3000)。应用会在首次使用时创建本地数据库结构和示例数据。
 
+### Docker 运行
+
+本地构建并启动：
+
+```bash
+docker compose up -d --build
+```
+
+打开 [http://localhost:3000](http://localhost:3000)。SQLite 数据会保存在 Docker volume `lujie-data` 中。长期使用前，建议先在命令行环境或本地 `.env` 文件里设置自己的 `LUJIE_SETTINGS_SECRET`。
+
+GitHub Container Registry 镜像发布并设为公开后，也可以直接运行：
+
+```bash
+docker run -d --name lujie-careerkit \
+  -p 3000:3000 \
+  -v lujie-data:/data \
+  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
+  ghcr.io/chozzc/lujie-careerkit:latest
+```
+
+容器默认使用 `DATABASE_URL=file:/data/dev.db`。API Key 仍然在应用内设置页配置。
+
 ## 环境变量
 
 ```env
@@ -122,6 +144,12 @@ OPENAI_MODEL="qwen3.6-flash"
 AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
+
+### v0.1.4
+
+- 新增 Docker 构建支持，并将 SQLite 持久化数据挂载到 `/data`。
+- 新增 `docker-compose.yml`，支持本地一条命令启动。
+- 新增 GitHub Actions workflow，推送到 `main` 后发布 `ghcr.io/chozzc/lujie-careerkit:latest` 镜像。
 
 ### v0.1.3
 
@@ -172,6 +200,9 @@ AI 功能会在设置保存且连接测试成功后启用。
 ## 项目结构
 
 ```text
+.github/workflows/      GitHub Actions workflow，包括 GHCR 镜像发布
+Dockerfile              生产容器镜像定义
+docker-compose.yml      本地 Docker 启动与 SQLite 持久化卷配置
 prisma/                 Prisma schema 与本地 SQLite 运行数据
 src/app/                Next.js 页面与 API 路由
 src/components/         工作台、简历、面试和共享 UI

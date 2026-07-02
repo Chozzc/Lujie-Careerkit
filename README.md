@@ -101,6 +101,28 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The app creates the local schema and demo workflow data on first use.
 
+### Run With Docker
+
+Build and start locally:
+
+```bash
+docker compose up -d --build
+```
+
+Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in the Docker volume `lujie-data`. For long-term use, set `LUJIE_SETTINGS_SECRET` in your shell or a local `.env` file before starting Compose.
+
+After the GitHub Container Registry image is published and made public, you can also run:
+
+```bash
+docker run -d --name lujie-careerkit \
+  -p 3000:3000 \
+  -v lujie-data:/data \
+  -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
+  ghcr.io/chozzc/lujie-careerkit:latest
+```
+
+The container uses `DATABASE_URL=file:/data/dev.db` by default. API keys are still configured from the in-app Settings page.
+
 ## Environment Variables
 
 ```env
@@ -122,6 +144,12 @@ OPENAI_MODEL="qwen3.6-flash"
 AI features stay disabled until the settings are saved and the connection test succeeds.
 
 ## Release Notes
+
+### v0.1.4
+
+- Added Docker build support with persistent SQLite storage mounted at `/data`.
+- Added `docker-compose.yml` for one-command local startup.
+- Added a GitHub Actions workflow that publishes `ghcr.io/chozzc/lujie-careerkit:latest` on pushes to `main`.
 
 ### v0.1.3
 
@@ -172,6 +200,9 @@ Yes. Any OpenAI-compatible provider can be configured by entering its Base URL, 
 ## Project Structure
 
 ```text
+.github/workflows/      GitHub Actions workflows, including GHCR image publishing
+Dockerfile              Production container image definition
+docker-compose.yml      Local Docker startup with persistent SQLite volume
 prisma/                 Prisma schema and local SQLite runtime data
 src/app/                Next.js pages and API routes
 src/components/         Workspace, resume, interview, and shared UI
