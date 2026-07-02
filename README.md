@@ -54,8 +54,6 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, priorities, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
 - **Data and privacy controls**: resumes, jobs, applications, interviews, and settings are stored in a local SQLite database for long-term personal use.
-- **OpenAI-compatible setup**: configure Base URL, model, API key, and generation parameters from the Settings page.
-- **Voice input**: use browser speech recognition where available for JD fields and interview answers.
 
 ## Data and Privacy
 
