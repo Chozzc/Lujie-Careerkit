@@ -13,6 +13,7 @@ import {
   WandSparkles,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { EditorPreviewPanel } from "@/components/editor/editor-preview-panel";
@@ -38,7 +39,6 @@ import { buildDocxThemeConfig, type DocxThemeConfig } from "@/lib/resume-docx-st
 import {
   buildResumeEditorPath,
   buildResumeLibraryCards,
-  resumeTemplateLabels as templateLabels,
   type ResumeLibrarySortMode,
 } from "@/lib/resume-library";
 import {
@@ -116,9 +116,6 @@ const DEFAULT_EDITOR_THEME: ThemeConfig = {
   avatarStyle: "oneInch",
 };
 
-const RESUME_SAVED_STATUS = "已保存到本地 SQLite";
-const RESUME_IMPORT_REVIEW_STATUS = "简历解析已完成，部分内容由 AI 自动归类，建议仔细甄别后再使用。";
-
 export function ResumeWorkbench({
   resume,
   resumeUpdatedAt,
@@ -137,6 +134,10 @@ export function ResumeWorkbench({
   onDeleteMainResume,
   onDeleteVersion,
 }: ResumeWorkbenchProps) {
+  const t = useTranslations("resumeWorkbench");
+  const templateT = useTranslations("app.resumeLibrary.templates");
+  const savedStatus = t("status.saved");
+  const importReviewStatus = t("status.importReview");
   const initialVersion = initialResumeVersionId
     ? versions.find((version) => version.id === initialResumeVersionId)
     : undefined;
@@ -145,7 +146,7 @@ export function ResumeWorkbench({
   const [editingTarget, setEditingTarget] = useState<ResumeSaveTarget>(
     initialVersion ? { kind: "version", id: initialVersion.id } : { kind: "main" },
   );
-  const [status, setStatus] = useState(RESUME_SAVED_STATUS);
+  const [status, setStatus] = useState(savedStatus);
   const [showPreview, setShowPreview] = useState(true);
   const [showThemePanel, setShowThemePanel] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -188,25 +189,25 @@ export function ResumeWorkbench({
         setEditingContent(resume);
         setEditingTitle(buildResumeTitle(resume));
         setEditingTarget({ kind: "main" });
-        setStatus(RESUME_SAVED_STATUS);
+        setStatus(savedStatus);
         return;
       }
 
       const version = versions.find((item) => item.id === versionId);
       if (!version) {
-        setStatus("未找到该简历版本，已打开原简历");
+        setStatus(t("status.versionNotFound"));
         return;
       }
 
       setEditingContent(version.content);
       setEditingTitle(versionTitle(version));
       setEditingTarget({ kind: "version", id: version.id });
-      setStatus(RESUME_SAVED_STATUS);
+      setStatus(savedStatus);
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [resume, versions]);
+  }, [resume, savedStatus, t, versions]);
 
   useEffect(() => {
     saveContextRef.current = { editingTarget, editingTitle, saveResume, setResume };
@@ -235,7 +236,7 @@ export function ResumeWorkbench({
       const content = jadeResumeToContent(liveResume);
       const resolvedTitle = resolveResumeTitle(content, title);
       const contentWithTitle = withResumeDisplayName(content, resolvedTitle);
-      setStatus(context.source === "auto" ? "正在自动保存..." : "正在保存...");
+      setStatus(context.source === "auto" ? t("status.autoSaving") : t("status.saving"));
 
       try {
         const result = await persistResume(contentWithTitle, target, resolvedTitle);
@@ -251,13 +252,13 @@ export function ResumeWorkbench({
         }
         setStatus(
           context.source === "auto"
-            ? "已自动保存到本地 SQLite"
+            ? t("status.autoSaved")
             : target.kind === "main"
-              ? "原简历已保存到本地 SQLite"
-              : "简历已保存到本地 SQLite",
+              ? t("status.mainSaved")
+              : t("status.resumeSaved"),
         );
       } catch (error) {
-        setStatus(context.source === "auto" ? "自动保存失败，请点击保存重试" : "保存失败，请稍后重试");
+        setStatus(context.source === "auto" ? t("status.autoSaveFailed") : t("status.saveFailed"));
         throw error;
       }
     });
@@ -265,7 +266,7 @@ export function ResumeWorkbench({
     return () => {
       useResumeStore.getState().setPersistence(null);
     };
-  }, [mode, onEditorTargetChange]);
+  }, [mode, onEditorTargetChange, t]);
 
   useEffect(() => {
     if (mode !== "editor") return;
@@ -360,7 +361,7 @@ export function ResumeWorkbench({
     setEditingContent(content);
     setEditingTitle(title);
     setEditingTarget(target);
-    setStatus(RESUME_SAVED_STATUS);
+    setStatus(savedStatus);
     setShowThemePanel(false);
     onEditorTargetChange(target.kind === "version" ? target.id : undefined);
     onModeChange("editor");
@@ -381,16 +382,16 @@ export function ResumeWorkbench({
 
   function handleCreateResume() {
     const blankResume = createBlankResume();
-    openEditor(blankResume, "未命名简历", { kind: "new" });
+    openEditor(blankResume, t("untitled"), { kind: "new" });
   }
 
   function showImportReviewStatus() {
     if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
     setShowImportReviewNotice(true);
-    setStatus(RESUME_IMPORT_REVIEW_STATUS);
+    setStatus(importReviewStatus);
     importNoticeTimerRef.current = window.setTimeout(() => {
       setShowImportReviewNotice(false);
-      setStatus((current) => (current === RESUME_IMPORT_REVIEW_STATUS ? RESUME_SAVED_STATUS : current));
+      setStatus((current) => (current === importReviewStatus ? savedStatus : current));
       importNoticeTimerRef.current = null;
     }, 12000);
   }
@@ -403,7 +404,7 @@ export function ResumeWorkbench({
     }
 
     setIsImportingResume(true);
-    setStatus(options.preferLocalFallback ? "正在使用本地兜底解析，效果可能不佳..." : "正在解析并导入简历，可能需要一些时间...");
+    setStatus(options.preferLocalFallback ? t("status.localParsing") : t("status.importing"));
     try {
       const draft = await buildUploadedResumeDraft(file, options);
       const title = resolveResumeContentTitle(draft.content);
@@ -415,7 +416,7 @@ export function ResumeWorkbench({
       }
       showImportReviewStatus();
     } catch (error) {
-      setStatus(`导入失败：${error instanceof Error ? error.message : "请稍后重试"}`);
+      setStatus(t("status.importFailed", { message: error instanceof Error ? error.message : t("status.retryLater") }));
     } finally {
       setIsImportingResume(false);
     }
@@ -454,7 +455,7 @@ export function ResumeWorkbench({
     const contentWithTitle = withResumeDisplayName(content, resolvedTitle);
 
     setIsOptimizingResume(true);
-    setStatus("正在 AI 优化简历，可能需要一些时间...");
+    setStatus(t("status.optimizing"));
     try {
       const result = await optimizeResume({ resumeContent: contentWithTitle });
       onResumeOptimized({
@@ -464,9 +465,9 @@ export function ResumeWorkbench({
         message: result.message,
         optimization: result.optimization,
       });
-      setStatus(result.message ?? "AI 优化已完成，已生成新版本，请仔细复核后使用。");
+      setStatus(result.message ?? t("status.optimizeDone"));
     } catch (error) {
-      setStatus(`AI 优化失败：${error instanceof Error ? error.message : "请稍后重试"}`);
+      setStatus(t("status.optimizeFailed", { message: error instanceof Error ? error.message : t("status.retryLater") }));
     } finally {
       setIsOptimizingResume(false);
     }
@@ -489,21 +490,21 @@ export function ResumeWorkbench({
   async function persistNow() {
     const state = useResumeStore.getState();
     if (!state.currentResume) return;
-    setStatus("正在保存...");
+    setStatus(t("status.saving"));
     await save("manual", { force: true });
   }
 
   async function handleExport(format: ResumeExportFormat) {
     if (!activeResume || exportingFormat) return;
     setExportingFormat(format);
-    setStatus("正在导出...");
+    setStatus(t("status.exporting"));
     try {
       await exportResume(activeResume, format);
-      setStatus(format === "pdf" ? "PDF 已导出" : format === "word" ? "Word 已导出" : "图片已导出");
+      setStatus(t(`status.exported.${format}`));
       setExportDialogOpen(false);
     } catch (error) {
       console.error("Failed to export resume:", error);
-      setStatus("导出失败，请稍后重试");
+      setStatus(t("status.exportFailed"));
     } finally {
       setExportingFormat(null);
     }
@@ -512,9 +513,9 @@ export function ResumeWorkbench({
   const importAiSetupDialog = (
     <AiSetupRequiredDialog
       open={aiSetupDialogOpen}
-      title="需要配置阿里百炼"
+      title={t("aiSetup.title")}
       message={RESUME_IMPORT_AI_SETUP_MESSAGE}
-      secondaryLabel="稍后再说"
+      secondaryLabel={t("aiSetup.later")}
       onOpenChange={setAiSetupDialogOpen}
       onOpenSettings={openAiSettingsForImport}
       onSecondary={importWithLocalFallback}
@@ -523,8 +524,8 @@ export function ResumeWorkbench({
   const optimizeAiSetupDialog = (
     <AiSetupRequiredDialog
       open={optimizeAiSetupDialogOpen}
-      title="需要配置阿里百炼"
-      message="AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置阿里百炼API Key，暂不支持本地兜底。"
+      title={t("aiSetup.title")}
+      message={t("aiSetup.optimizeMessage")}
       onOpenChange={setOptimizeAiSetupDialogOpen}
       onOpenSettings={onOpenSettings}
     />
@@ -536,7 +537,7 @@ export function ResumeWorkbench({
         <ResumeLibraryView
           cards={resumeCards}
           status={status}
-          savedStatus={RESUME_SAVED_STATUS}
+          savedStatus={savedStatus}
           search={search}
           sortMode={sortMode}
           viewMode={viewMode}
@@ -566,7 +567,7 @@ export function ResumeWorkbench({
   if (!activeResume) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
-        <p className="text-sm text-muted-foreground">正在载入简历编辑器...</p>
+        <p className="text-sm text-muted-foreground">{t("loading")}</p>
       </div>
     );
   }
@@ -576,7 +577,7 @@ export function ResumeWorkbench({
       <section className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
         <header className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-3">
           <div className="flex min-w-[220px] shrink-0 items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={closeEditor} title="返回我的简历">
+            <Button variant="ghost" size="icon" onClick={closeEditor} title={t("toolbar.back")}>
               <X />
             </Button>
             <div className="min-w-0">
@@ -586,26 +587,29 @@ export function ResumeWorkbench({
                   onChange={(event) => handleTitleChange(event.target.value)}
                   onBlur={handleTitleBlur}
                   className="h-7 min-w-0 max-w-[220px] rounded-md border border-transparent bg-transparent px-2 text-xs font-semibold outline-none hover:border-line hover:bg-surface focus:border-primary focus:bg-white"
-                  aria-label="简历名称"
-                  title="修改简历名称"
+                  aria-label={t("toolbar.resumeName")}
+                  title={t("toolbar.rename")}
                 />
                 <Badge variant="secondary" className="text-[0.6875rem]" title={status}>
-                  {showImportReviewNotice ? "解析完成" : formatEditorSaveStatus(isDirty, isSaving, status)}
+                  {showImportReviewNotice ? t("status.parsed") : formatEditorSaveStatus(isDirty, isSaving, status, t)}
                 </Badge>
               </div>
               <p className="text-[0.6875rem] text-muted-foreground">
-                模板 {templateLabels[activeResume.template] ?? activeResume.template} · {editingTarget.kind === "main" ? "主简历" : "版本简历"}
+                {t("toolbar.meta", {
+                  template: templateT(activeResume.template),
+                  kind: editingTarget.kind === "main" ? t("toolbar.mainResume") : t("toolbar.versionResume"),
+                })}
               </p>
             </div>
           </div>
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto">
-            <ToolbarButton icon={Undo2} label="撤销" disabled={undoStack.length === 0} onClick={handleUndo} />
-            <ToolbarButton icon={Redo2} label="重做" disabled={redoStack.length === 0} onClick={handleRedo} />
+            <ToolbarButton icon={Undo2} label={t("toolbar.undo")} disabled={undoStack.length === 0} onClick={handleUndo} />
+            <ToolbarButton icon={Redo2} label={t("toolbar.redo")} disabled={redoStack.length === 0} onClick={handleRedo} />
             <Separator orientation="vertical" className="mx-1 h-5" />
             <ToolbarButton
               icon={WandSparkles}
-              label={isOptimizingResume ? "优化中..." : "AI优化简历"}
+              label={isOptimizingResume ? t("toolbar.optimizing") : t("toolbar.optimize")}
               showText
               disabled={isOptimizingResume || isSaving}
               onClick={() => void handleOptimizeResume()}
@@ -614,28 +618,28 @@ export function ResumeWorkbench({
               variant="ghost"
               size="sm"
               className="h-8 shrink-0 gap-1 text-xs"
-              aria-label="导出"
-              title="导出"
+              aria-label={t("toolbar.export")}
+              title={t("toolbar.export")}
               onClick={() => setExportDialogOpen(true)}
             >
               <Download />
-              <span>导出</span>
+              <span>{t("toolbar.export")}</span>
             </Button>
             <ToolbarButton
               icon={Palette}
-              label={showThemePanel ? "关闭主题" : "主题"}
+              label={showThemePanel ? t("toolbar.closeTheme") : t("toolbar.theme")}
               showText
               onClick={() => setShowThemePanel((value) => !value)}
             />
             <ToolbarButton
               icon={PanelRightOpen}
-              label={showPreview ? "隐藏预览" : "显示预览"}
+              label={showPreview ? t("toolbar.hidePreview") : t("toolbar.showPreview")}
               showText
               onClick={() => setShowPreview((value) => !value)}
             />
             <Button onClick={persistNow} disabled={isSaving} size="sm" className="shrink-0 text-xs">
               <Save data-icon="inline-start" />
-              保存
+              {t("toolbar.save")}
             </Button>
           </div>
         </header>
@@ -664,7 +668,7 @@ export function ResumeWorkbench({
               {showImportReviewNotice ? (
                 <div className="border-b border-line bg-surface-low px-4 py-3 md:px-6">
                   <div className="mx-auto max-w-3xl rounded-lg border border-primary/20 bg-white px-4 py-3 text-base leading-7 text-foreground shadow-sm">
-                    {RESUME_IMPORT_REVIEW_STATUS}
+                    {importReviewStatus}
                   </div>
                 </div>
               ) : null}
@@ -789,9 +793,14 @@ function getValidTemplate(template?: string) {
   return TEMPLATES.includes(template as (typeof TEMPLATES)[number]) ? template! : "modern";
 }
 
-function formatEditorSaveStatus(isDirty: boolean, isSaving: boolean, status: string) {
-  if (isSaving) return status.startsWith("正在") ? status : "正在保存...";
-  if (isDirty) return "未保存";
+function formatEditorSaveStatus(
+  isDirty: boolean,
+  isSaving: boolean,
+  status: string,
+  t: (key: string) => string,
+) {
+  if (isSaving) return status || t("status.saving");
+  if (isDirty) return t("status.unsaved");
   return status;
 }
 

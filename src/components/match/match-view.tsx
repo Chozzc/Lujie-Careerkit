@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Edit3, FileCheck2, ListChecks, Target, WandSparkles } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
@@ -130,6 +131,8 @@ export function MatchView({
   aiSettings: RedactedAiSettings | null;
   onOpenSettings: () => void;
 }) {
+  const t = useTranslations("match");
+  const locale = useLocale();
   const aiReady = isAiReady(aiSettings);
   const aiMessage = aiReadinessMessage(aiSettings);
   const resumeImportAiReady = isResumeImportAiReady(aiSettings);
@@ -157,8 +160,8 @@ export function MatchView({
     if (hasResumeContent(resume)) {
       options.push({
         id: "main",
-        name: buildResumeDisplayName(resume, "原简历"),
-        detail: `原简历 · ${resume.skills.length} 项技能 · ${resume.projects.length} 个项目`,
+        name: buildResumeDisplayName(resume, t("resume.original")),
+        detail: t("resume.mainDetail", { skills: resume.skills.length, projects: resume.projects.length }),
       });
     }
 
@@ -167,12 +170,14 @@ export function MatchView({
       options.push({
         id: version.id,
         name: resumeVersionDisplayName(version),
-        detail: `${isOptimizedVersion ? "优化后简历" : "原简历"} · ${new Date(version.updatedAt).toLocaleDateString("zh-CN")}`,
+        detail: t(isOptimizedVersion ? "resume.optimizedDetail" : "resume.originalDetail", {
+          date: new Date(version.updatedAt).toLocaleDateString(locale),
+        }),
       });
     }
 
     return options;
-  }, [resume, versions]);
+  }, [locale, resume, t, versions]);
   const selectedResumeOption = resumeOptions.find((item) => item.id === selectedResumeKey) ?? resumeOptions[0];
   const selectedLibraryKey = selectedResumeOption?.id;
   const selectedVersion = versions.find((version) => version.id === selectedLibraryKey);
@@ -189,7 +194,7 @@ export function MatchView({
   const resumeReady = resumeSource === "upload" ? Boolean(uploadedResume) : Boolean(selectedBaseResume);
   const canOptimize = resumeReady && Boolean(jdDraft.trim()) && !isGenerating && !isUploadingResume;
   const currentBaseLabel =
-    resumeSource === "upload" ? uploadedResume?.fileName ?? "等待上传文件" : selectedResumeOption?.name ?? "请选择简历";
+    resumeSource === "upload" ? uploadedResume?.fileName ?? t("upload.waitingFile") : selectedResumeOption?.name ?? t("upload.selectResume");
 
   useEffect(() => {
     if (resumeSource !== "library") return undefined;
@@ -213,15 +218,15 @@ export function MatchView({
     }
 
     setIsUploadingResume(true);
-    setSaveStatus(preferLocalFallback ? "正在使用本地解析，效果可能不佳..." : "正在解析简历，可能需要一些时间...");
+    setSaveStatus(preferLocalFallback ? t("status.localParsing") : t("status.parsing"));
     try {
       const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
-      setSaveStatus(`简历解析已完成，已导入 ${draft.fileName}。`);
+      setSaveStatus(t("status.imported", { fileName: draft.fileName }));
     } catch (error) {
       setUploadedResume(null);
-      setUploadError(error instanceof Error ? error.message : "文件读取失败。");
+      setUploadError(error instanceof Error ? error.message : t("status.fileReadFailed"));
       setSaveStatus("");
     } finally {
       localResumeImportFallbackRef.current = false;
@@ -282,7 +287,7 @@ export function MatchView({
         analysis: job.analysis ?? undefined,
         version,
         optimization: readOptimizationMeta(version.content),
-        message: "已打开本地优化版本。",
+        message: t("status.localVersionOpened"),
       });
       setResultBaseResume(readTailoringBaseResume(version.content) ?? resume);
       setOptimizedDraft(version.content);
@@ -298,7 +303,7 @@ export function MatchView({
       }
       return true;
     },
-    [applications, jobs, resume, versions],
+    [applications, jobs, resume, t, versions],
   );
 
   useEffect(() => {
@@ -322,12 +327,12 @@ export function MatchView({
     event.preventDefault();
 
     if (!resumeReady || !selectedBaseResume) {
-      setSaveStatus("请先选择或上传一份简历。");
+      setSaveStatus(t("status.needResume"));
       return;
     }
 
     if (!jdDraft.trim()) {
-      setSaveStatus("请先粘贴职位描述。");
+      setSaveStatus(t("status.needJd"));
       return;
     }
 
@@ -338,7 +343,7 @@ export function MatchView({
     }
 
     setIsGenerating(true);
-    setSaveStatus("正在分析 JD 并生成优化简历...");
+    setSaveStatus(t("status.generating"));
     try {
       const nextResult = await runMatchOptimization({
         jd: jdDraft,
@@ -352,11 +357,11 @@ export function MatchView({
         setResultBaseResume(selectedBaseResume);
         setOptimizedDraft(nextResult.version.content);
         setScreen("result");
-        setSaveStatus("优化结果已生成，右侧高亮区域可继续修改。");
+        setSaveStatus(t("status.generated"));
         window.history.replaceState(null, "", `/match?version=${encodeURIComponent(nextResult.version.id)}`);
       }
     } catch (error) {
-      setSaveStatus(error instanceof Error ? error.message : "匹配优化失败，请稍后再试。");
+      setSaveStatus(error instanceof Error ? error.message : t("status.failed"));
     } finally {
       setIsGenerating(false);
     }
@@ -369,8 +374,12 @@ export function MatchView({
 
     return (
       <ResumeOptimizationResult
-        workflowLabels={isJdResult ? ["选择简历与 JD", "AI 匹配优化", "预览并编辑"] : ["当前简历", "AI 简历优化", "预览并编辑"]}
-        title={buildMatchResultTitle(result)}
+        workflowLabels={isJdResult ? [t("steps.select"), t("steps.optimize"), t("steps.preview")] : [t("steps.current"), t("steps.generalOptimize"), t("steps.preview")]}
+        title={buildMatchResultTitle(result, {
+          general: t("result.generalComplete"),
+          jdComplete: t("result.jdComplete"),
+          jdPrefix: t("result.jdPrefix"),
+        })}
         description={buildOptimizationDescription(resultBaseResume, optimizedDraft, {
           mode: resultMode,
           meta: resultMeta,
@@ -382,7 +391,7 @@ export function MatchView({
           analysis: result.analysis,
           meta: resultMeta,
         })}
-        backLabel={isJdResult ? "返回修改 JD" : undefined}
+        backLabel={isJdResult ? t("result.back") : undefined}
         onBack={
           isJdResult
             ? () => {
@@ -403,13 +412,13 @@ export function MatchView({
   return (
     <div className="space-y-5">
       <WorkflowStepper
-        labels={["选择简历与 JD", "AI 匹配优化", "预览并编辑"]}
+        labels={[t("steps.select"), t("steps.optimize"), t("steps.preview")]}
         current={isGenerating ? 1 : 0}
       />
       <form onSubmit={handleSubmit}>
         <ResumeJdPreparation
           resumePicker={{
-            description: `选择一份作为优化基准 · 共 ${resumeOptions.length} 份`,
+            description: t("resumePickerDescription", { count: resumeOptions.length }),
             source: resumeSource,
             selectedId: selectedLibraryKey,
             options: resumeOptions,
@@ -422,32 +431,32 @@ export function MatchView({
             onUploadFile: (file) => void handleUploadFile(file),
             onOpenResume: (id) => onOpenResume(id === "main" ? undefined : id),
           }}
-          title="填写目标 JD"
-          description="粘贴完整的岗位职责、任职要求与加分项，录阶会结合所选简历提炼重点并生成匹配版本。"
-          jdLabel="职位描述 / 任职要求 / 加分项 *"
+          title={t("form.title")}
+          description={t("form.description")}
+          jdLabel={t("form.jdLabel")}
           jdValue={jdDraft}
           onJdChange={setJdDraft}
-          jdPlaceholder="粘贴目标 JD，建议包含岗位职责、任职要求、加分项与业务方向..."
-          settingsTitle="优化设置"
-          settingsDescription="选择本次改写侧重点；所有内容都以原简历事实为边界，不新增不存在的经历或数据。"
+          jdPlaceholder={t("form.jdPlaceholder")}
+          settingsTitle={t("form.settingsTitle")}
+          settingsDescription={t("form.settingsDescription")}
           onJdImportStatus={setSaveStatus}
           settings={
             <div className="grid gap-4 md:grid-cols-2">
-              <PreparationOptionCard checked={preferences.emphasizeImpact} icon={ListChecks} label="强调项目成果" description="优先突出项目职责与结果证据" onChange={() => togglePreference("emphasizeImpact")} />
-              <PreparationOptionCard checked={preferences.quantifyResults} icon={Edit3} label="补充量化表达" description="只重写已有结果，不编造数字" onChange={() => togglePreference("quantifyResults")} />
-              <PreparationOptionCard checked={preferences.atsFriendly} icon={FileCheck2} label="ATS 友好" description="优化关键词与格式，通过初筛" onChange={() => togglePreference("atsFriendly")} />
-              <PreparationOptionCard checked={preferences.highlightMatchedSkills} icon={Target} label="突出匹配技能" description="优先展示与 JD 对齐的技能" onChange={() => togglePreference("highlightMatchedSkills")} />
+              <PreparationOptionCard checked={preferences.emphasizeImpact} icon={ListChecks} label={t("preferences.impact")} description={t("preferences.impactDescription")} onChange={() => togglePreference("emphasizeImpact")} />
+              <PreparationOptionCard checked={preferences.quantifyResults} icon={Edit3} label={t("preferences.quantify")} description={t("preferences.quantifyDescription")} onChange={() => togglePreference("quantifyResults")} />
+              <PreparationOptionCard checked={preferences.atsFriendly} icon={FileCheck2} label={t("preferences.ats")} description={t("preferences.atsDescription")} onChange={() => togglePreference("atsFriendly")} />
+              <PreparationOptionCard checked={preferences.highlightMatchedSkills} icon={Target} label={t("preferences.skills")} description={t("preferences.skillsDescription")} onChange={() => togglePreference("highlightMatchedSkills")} />
             </div>
           }
           footer={
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs leading-5 text-muted-foreground">
-                当前基准：{currentBaseLabel}
-                {resumeSource === "library" && selectedLibraryKey ? <button type="button" onClick={() => onOpenResume(selectedLibraryKey === "main" ? undefined : selectedLibraryKey)} className="ml-2 font-medium text-primary hover:text-primary/80">修改</button> : null}
+                {t("currentBase", { name: currentBaseLabel })}
+                {resumeSource === "library" && selectedLibraryKey ? <button type="button" onClick={() => onOpenResume(selectedLibraryKey === "main" ? undefined : selectedLibraryKey)} className="ml-2 font-medium text-primary hover:text-primary/80">{t("edit")}</button> : null}
               </p>
               <div className="flex gap-3">
-                <button type="submit" disabled={!canOptimize} className={cn("flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white", !canOptimize && "cursor-not-allowed opacity-55")} title={canOptimize ? undefined : resumeReady ? "请先粘贴职位描述。" : "请先选择或上传简历。"}>
-                  <WandSparkles className="h-4 w-4" />{isGenerating ? "正在生成..." : "开始 JD匹配优化"}
+                <button type="submit" disabled={!canOptimize} className={cn("flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white", !canOptimize && "cursor-not-allowed opacity-55")} title={canOptimize ? undefined : resumeReady ? t("status.needJd") : t("status.needResume")}>
+                  <WandSparkles className="h-4 w-4" />{isGenerating ? t("generatingButton") : t("startButton")}
                 </button>
               </div>
             </div>
@@ -461,9 +470,9 @@ export function MatchView({
       </form>
       <AiSetupRequiredDialog
         open={aiSetupDialogOpen}
-        title={aiSetupDialogMode === "resumeImport" ? "需要配置阿里百炼" : undefined}
+        title={aiSetupDialogMode === "resumeImport" ? t("aiSetup.title") : undefined}
         message={aiSetupDialogMode === "resumeImport" ? RESUME_IMPORT_AI_SETUP_MESSAGE : aiMessage}
-        secondaryLabel="稍后再说"
+        secondaryLabel={t("aiSetup.later")}
         onOpenChange={setAiSetupDialogOpen}
         onOpenSettings={aiSetupDialogMode === "resumeImport" ? openSettingsFromAiDialog : onOpenSettings}
         onSecondary={aiSetupDialogMode === "resumeImport" ? continueResumeUploadWithLocalFallback : undefined}
@@ -495,8 +504,15 @@ function getMatchOptimizationMode(result: MatchOptimizationResult): "jd" | "gene
   return result.version && !result.version.jobId && result.optimization ? "general" : "jd";
 }
 
-export function buildMatchResultTitle(result: MatchOptimizationResult) {
-  if (getMatchOptimizationMode(result) === "general") return "AI优化简历完成";
+export function buildMatchResultTitle(
+  result: MatchOptimizationResult,
+  labels: { general: string; jdComplete: string; jdPrefix: string } = {
+    general: "AI优化简历完成",
+    jdComplete: "JD匹配优化完成",
+    jdPrefix: "JD匹配优化",
+  },
+) {
+  if (getMatchOptimizationMode(result) === "general") return labels.general;
 
   const company =
     cleanResultTitlePart(result.optimization?.company) ||
@@ -507,8 +523,8 @@ export function buildMatchResultTitle(result: MatchOptimizationResult) {
     cleanResultTitlePart(result.analysis?.title) ||
     cleanResultTitlePart(result.job.title);
   if (company && title) return `${company} · ${title}`;
-  if (title) return `JD匹配优化 · ${title}`;
-  return "JD匹配优化完成";
+  if (title) return `${labels.jdPrefix} · ${title}`;
+  return labels.jdComplete;
 }
 
 function cleanResultTitlePart(value?: string | null) {

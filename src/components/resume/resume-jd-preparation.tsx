@@ -2,6 +2,7 @@
 
 import type { ComponentProps, ComponentType, ReactNode } from "react";
 import { Settings, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { ResumeSourcePicker } from "@/components/resume/resume-source-picker";
 import { SpeechTextarea } from "@/components/shared/speech-textarea";
@@ -50,19 +51,21 @@ export function ResumeJdPreparation({
   notice?: ReactNode;
   onJdImportStatus?: (message: string) => void;
 }) {
+  const t = useTranslations("jdPreparation");
+
   async function importJdFile(file?: File) {
     if (!file) return;
     if (!/\.(txt|md)$/i.test(file.name)) {
-      onJdImportStatus?.("JD 上传目前支持 txt 或 md 文件。");
+      onJdImportStatus?.(t("uploadUnsupported"));
       return;
     }
     const text = (await file.text()).trim();
     if (!text) {
-      onJdImportStatus?.("上传的 JD 文件内容为空。");
+      onJdImportStatus?.(t("uploadEmpty"));
       return;
     }
     onJdChange(text);
-    onJdImportStatus?.(`已从 ${file.name} 导入 ${text.length} 字职位描述。`);
+    onJdImportStatus?.(t("uploadImported", { fileName: file.name, count: text.length }));
   }
 
   return (
@@ -82,7 +85,7 @@ export function ResumeJdPreparation({
               </div>
               <label className="inline-flex cursor-pointer items-center gap-2 self-start rounded-lg border border-line bg-white px-3 py-2 text-xs font-medium text-foreground hover:bg-surface-low">
                 <Upload className="h-4 w-4" />
-                上传 JD
+                {t("uploadJd")}
                 <input
                   type="file"
                   className="hidden"
@@ -131,8 +134,8 @@ export function ResumeJdPreparation({
 export function AiSetupRequiredDialog({
   open,
   message,
-  title = "需要先配置 AI",
-  secondaryLabel = "稍后再说",
+  title,
+  secondaryLabel,
   onOpenChange,
   onOpenSettings,
   onSecondary,
@@ -145,6 +148,8 @@ export function AiSetupRequiredDialog({
   onOpenSettings: () => void;
   onSecondary?: () => void;
 }) {
+  const t = useTranslations("jdPreparation.aiDialog");
+
   function handleOpenSettings() {
     onOpenChange(false);
     onOpenSettings();
@@ -161,19 +166,19 @@ export function AiSetupRequiredDialog({
         <DialogHeader className="border-b border-line p-5">
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-primary" />
-            {title}
+            {title ?? t("title")}
           </DialogTitle>
           <DialogDescription className="mt-2 leading-6">
-            {message || "请先在设置页启用 AI，并完成连接测试后再继续。"}
+            {message || t("message")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="mx-0 mb-0 flex-row justify-end gap-2 rounded-none border-0 bg-transparent px-5 pt-1 pb-4">
           {onSecondary ? (
-            <Button type="button" variant="outline" onClick={handleSecondary}>{secondaryLabel}</Button>
+            <Button type="button" variant="outline" onClick={handleSecondary}>{secondaryLabel ?? t("later")}</Button>
           ) : (
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{secondaryLabel}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{secondaryLabel ?? t("later")}</Button>
           )}
-          <Button type="button" onClick={handleOpenSettings}>前往设置</Button>
+          <Button type="button" onClick={handleOpenSettings}>{t("settings")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

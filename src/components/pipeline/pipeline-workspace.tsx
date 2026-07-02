@@ -27,6 +27,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -42,10 +43,8 @@ import {
 
 import { SpeechTextarea } from "@/components/shared/speech-textarea";
 import {
-  applicationPriorityLabels,
   applicationPriorityOptions,
   applicationSourceOptions,
-  applicationStatusDateLabels,
   buildApplicationTimeline,
   buildPipelineOverview,
   chunkPipelineStatuses,
@@ -73,20 +72,13 @@ export const statusMeta: Record<
 };
 
 const pipelineStatuses = visiblePipelineStatuses;
-const interviewRoundLabels: Record<Exclude<InterviewRound, "">, string> = {
-  FIRST: "一面",
-  SECOND: "二面",
-  THIRD: "三面",
-  HR: "HR 面",
-};
-
 const pipelineStageOptions = pipelineStatuses.flatMap((status) => {
-  if (status !== "INTERVIEW") return [{ value: status, label: statusMeta[status].label }];
+  if (status !== "INTERVIEW") return [{ value: status }];
   return [
-    { value: "INTERVIEW:FIRST", label: "一面" },
-    { value: "INTERVIEW:SECOND", label: "二面" },
-    { value: "INTERVIEW:THIRD", label: "三面" },
-    { value: "INTERVIEW:HR", label: "HR 面" },
+    { value: "INTERVIEW:FIRST" },
+    { value: "INTERVIEW:SECOND" },
+    { value: "INTERVIEW:THIRD" },
+    { value: "INTERVIEW:HR" },
   ];
 });
 
@@ -205,8 +197,10 @@ function PipelineStatusColumn({
   draggingApplicationId: string | null;
   onEditApplication: (applicationId: string) => void;
 }) {
+  const t = useTranslations("pipeline");
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const Icon = statusMeta[status].icon;
+  const statusLabel = pipelineStatusLabel(status, t);
 
   return (
     <section
@@ -220,7 +214,7 @@ function PipelineStatusColumn({
       <div className="relative mb-4 flex items-center justify-center px-9 text-center">
         <div className="flex min-w-0 items-center justify-center gap-2">
           <Icon className={cn("h-4 w-4 shrink-0", statusMeta[status].className)} />
-          <h2 className="truncate text-lg font-semibold tracking-normal">{statusMeta[status].label}</h2>
+          <h2 className="truncate text-lg font-semibold tracking-normal">{statusLabel}</h2>
         </div>
         <span className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md bg-surface-mid px-2 py-1 text-xs">
           {applications.length}
@@ -234,7 +228,7 @@ function PipelineStatusColumn({
               isOver ? "border-primary/40 bg-white/70 text-primary" : "border-line text-muted-foreground",
             )}
           >
-            {isOver ? `松开后移入${statusMeta[status].label}` : "暂无岗位"}
+            {isOver ? t("board.dropInto", { status: statusLabel }) : t("board.empty")}
           </p>
         )}
         {applications.map((application) => (
@@ -258,27 +252,29 @@ function PipelineStatusColumn({
 }
 
 function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipelineOverview> }) {
+  const t = useTranslations("pipeline");
   const sourceCountMap = new Map(overview.sourceCounts.map((item) => [item.source, item.count]));
   const sourceData = applicationSourceOptions.map((source) => ({
     source,
+    label: sourceLabel(source, t),
     count: sourceCountMap.get(source) ?? 0,
   }));
   const sourceChartData = sourceData.filter((item) => item.count > 0);
   const sourceTotal = sourceData.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Panel title="数据总览">
+    <Panel title={t("overview.title")}>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <PipelineMetric icon={ClipboardList} label="跟进岗位" value={overview.total} />
-        <PipelineMetric icon={CalendarClock} label="活跃流程" value={overview.active} />
-        <PipelineMetric icon={Mic} label="面试转化" value={`${overview.interviewRate}%`} />
-        <PipelineMetric icon={Trophy} label="Offer 转化" value={`${overview.offerRate}%`} />
+        <PipelineMetric icon={ClipboardList} label={t("overview.metrics.total")} value={overview.total} />
+        <PipelineMetric icon={CalendarClock} label={t("overview.metrics.active")} value={overview.active} />
+        <PipelineMetric icon={Mic} label={t("overview.metrics.interviewRate")} value={`${overview.interviewRate}%`} />
+        <PipelineMetric icon={Trophy} label={t("overview.metrics.offerRate")} value={`${overview.offerRate}%`} />
       </div>
       <div className="mt-4 grid gap-6 2xl:grid-cols-[minmax(0,1.35fr)_minmax(420px,0.65fr)]">
         <div className="min-w-0">
           <div className="relative min-h-[24rem] min-w-0">
             <p className="absolute left-1/2 top-3 z-10 min-w-20 -translate-x-1/2 rounded-md bg-background/85 px-2 py-1 text-center text-[0.6875rem] font-medium text-muted-foreground shadow-[0_4px_14px_rgba(49,48,48,0.04)]">
-              阶段分布
+              {t("overview.statusChart")}
             </p>
             <ResponsiveContainer width="100%" height={392} minWidth={160}>
               <BarChart data={overview.statusCounts} margin={{ top: 8, right: 18, bottom: 4, left: -12 }} barCategoryGap="22%">
@@ -307,7 +303,7 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
                   cursor={{ fill: "rgba(156, 182, 156, 0.12)" }}
                   contentStyle={{ borderRadius: 8, border: "1px solid #E5DDD0", fontSize: 12 }}
                 />
-                <Bar dataKey="count" radius={[8, 8, 0, 0]} name="岗位数">
+                <Bar dataKey="count" radius={[8, 8, 0, 0]} name={t("overview.jobCount")}>
                   {overview.statusCounts.map((entry) => (
                     <Cell key={entry.status} fill={`url(#pipeline-status-${entry.status})`} />
                   ))}
@@ -323,9 +319,9 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
                     className="h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: pipelineChartColors[index % pipelineChartColors.length] }}
                   />
-                  <span className="truncate font-medium text-foreground">{item.label}</span>
+                  <span className="truncate font-medium text-foreground">{pipelineStatusLabel(item.status, t)}</span>
                 </span>
-                <span className="mt-1 block text-muted-foreground">{item.count}个</span>
+                <span className="mt-1 block text-muted-foreground">{t("overview.count", { count: item.count })}</span>
               </div>
             ))}
           </div>
@@ -334,7 +330,7 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
           {sourceChartData.length > 0 ? (
             <div className="relative min-h-[20rem] min-w-0">
               <p className="absolute left-1/2 top-3 z-10 min-w-20 -translate-x-1/2 rounded-md bg-background/85 px-2 py-1 text-center text-[0.6875rem] font-medium text-muted-foreground shadow-[0_4px_14px_rgba(49,48,48,0.04)]">
-                来源组成
+                {t("overview.sourceChart")}
               </p>
               <ResponsiveContainer width="100%" height={328} minWidth={160}>
                 <PieChart>
@@ -353,7 +349,7 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
                   <Pie
                     data={sourceChartData}
                     dataKey="count"
-                    nameKey="source"
+                    nameKey="label"
                     cy="57%"
                     innerRadius={66}
                     outerRadius={104}
@@ -373,9 +369,9 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
           ) : (
             <div className="relative grid min-h-[22rem] place-items-center rounded-lg bg-surface-low text-sm text-muted-foreground">
               <p className="absolute left-1/2 top-3 min-w-20 -translate-x-1/2 rounded-md bg-background/85 px-2 py-1 text-center text-[0.6875rem] font-medium text-muted-foreground shadow-[0_4px_14px_rgba(49,48,48,0.04)]">
-                来源组成
+                {t("overview.sourceChart")}
               </p>
-              暂无来源数据
+              {t("overview.noSourceData")}
             </div>
           )}
           <div className="mt-4 grid grid-cols-3 gap-x-5 gap-y-3 border-t border-line pt-4">
@@ -386,10 +382,10 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
                     className="h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: pipelineChartColors[index % pipelineChartColors.length] }}
                   />
-                  <span className="truncate font-medium text-foreground">{entry.source}</span>
+                  <span className="truncate font-medium text-foreground">{entry.label}</span>
                 </span>
                 <span className="mt-1 block text-muted-foreground">
-                  {entry.count}个 · {sourceTotal > 0 ? Math.round((entry.count / sourceTotal) * 100) : 0}%
+                  {t("overview.sourceCount", { count: entry.count, percent: sourceTotal > 0 ? Math.round((entry.count / sourceTotal) * 100) : 0 })}
                 </span>
               </div>
             ))}
@@ -409,6 +405,7 @@ export function AddApplicationDialog({
   addJob: (event: FormEvent<HTMLFormElement>) => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations("pipeline");
   if (!open) return null;
 
   return (
@@ -428,17 +425,17 @@ export function AddApplicationDialog({
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 id="pipeline-add-title" className="font-serif text-xl font-semibold">
-              新增投递岗位
+              {t("add.title")}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              记录岗位、渠道和跟进日期，保存后会进入下方投递看板。
+              {t("add.description")}
             </p>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line text-muted-foreground hover:bg-surface-low hover:text-foreground"
-            aria-label="关闭新增投递窗口"
+            aria-label={t("add.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -456,6 +453,7 @@ function AddApplicationForm({
   addJob: (event: FormEvent<HTMLFormElement>) => void;
   onSubmitted?: () => void;
 }) {
+  const t = useTranslations("pipeline");
   const [applicationStage, setApplicationStage] = useState("APPLIED");
   const [stageDate, setStageDate] = useState("");
   const [nextFollowUpAt, setNextFollowUpAt] = useState("");
@@ -493,18 +491,18 @@ function AddApplicationForm({
         ))}
       </datalist>
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="公司" required>
-          <Input name="company" placeholder="输入投递的公司" list="pipeline-company-suggestions" required />
+        <FormField label={t("fields.company")} required>
+          <Input name="company" placeholder={t("placeholders.company")} list="pipeline-company-suggestions" required />
         </FormField>
-        <FormField label="岗位名称" required>
-          <Input name="title" placeholder="例：前端开发实习生" required />
+        <FormField label={t("fields.title")} required>
+          <Input name="title" placeholder={t("placeholders.title")} required />
         </FormField>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormField label="投递渠道" required>
+        <FormField label={t("fields.source")} required>
           <SourceSelect name="source" defaultValue="企业官网" required />
         </FormField>
-        <FormField label="当前状态" required>
+        <FormField label={t("fields.status")} required>
           <PipelineStageSelect
             name="applicationStage"
             value={applicationStage}
@@ -514,7 +512,7 @@ function AddApplicationForm({
         </FormField>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <FormField label={applicationStatusDateLabels[applicationStatus]} optional>
+        <FormField label={statusDateLabel(applicationStatus, t)} optional>
           <Input
             name="stageDate"
             type="date"
@@ -522,7 +520,7 @@ function AddApplicationForm({
             onChange={(event) => handleStageDateChange(event.target.value)}
           />
         </FormField>
-        <FormField label="下次跟进日期" optional>
+        <FormField label={t("fields.nextFollowUp")} optional>
           <Input
             name="nextFollowUpAt"
             type="date"
@@ -530,33 +528,33 @@ function AddApplicationForm({
             onChange={(event) => setNextFollowUpAt(event.target.value)}
           />
         </FormField>
-        <FormField label="求职优先级" required>
+        <FormField label={t("fields.priority")} required>
           <ApplicationPrioritySelect name="priority" defaultValue="NORMAL" required />
         </FormField>
       </div>
-      <FormField label="招聘链接" optional>
-        <Input name="link" placeholder="例：官网岗位链接、BOSS 聊天链接" />
+      <FormField label={t("fields.link")} optional>
+        <Input name="link" placeholder={t("placeholders.link")} />
       </FormField>
-      <FormField label="投递备注" optional>
+      <FormField label={t("fields.notes")} optional>
         <textarea
           name="notes"
-          placeholder="例：内推人、当前进度、材料状态"
+          placeholder={t("placeholders.notes")}
           className="min-h-24 w-full resize-none rounded-lg border border-line bg-surface-low px-3 py-2 text-sm leading-6 outline-none focus:border-primary"
         />
       </FormField>
-      <FormField label="岗位描述 / JD" optional>
+      <FormField label={t("fields.jd")} optional>
         <SpeechTextarea
           name="jd"
           value={jd}
           onValueChange={setJd}
           maxLength={8000}
-          placeholder="例：岗位职责、任职要求、加分项；可后续补完整 JD"
+          placeholder={t("placeholders.jd")}
           className="min-h-28 resize-y bg-surface-low text-sm leading-6"
         />
       </FormField>
       <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white">
         <Plus className="h-4 w-4" />
-        添加到跟进
+        {t("add.submit")}
       </button>
     </form>
   );
@@ -595,6 +593,7 @@ function PipelineApplicationCard({
   isAnyDragging?: boolean;
   onEdit: () => void;
 }) {
+  const t = useTranslations("pipeline");
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: application.id });
   const dragTransform = transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined;
 
@@ -620,8 +619,8 @@ function PipelineApplicationCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{job?.company ?? "未知公司"}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{job?.title ?? "未知岗位"}</p>
+          <p className="truncate text-sm font-semibold">{job?.company ?? t("card.unknownCompany")}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{job?.title ?? t("card.unknownTitle")}</p>
         </div>
         <button
           type="button"
@@ -636,30 +635,30 @@ function PipelineApplicationCard({
             onEdit();
           }}
           className="inline-flex shrink-0 items-center gap-1 rounded-md border border-line px-2 py-1 text-[0.6875rem] font-medium text-primary hover:bg-primary-soft"
-          aria-label={`编辑${job?.company ?? "岗位"}投递信息`}
-          title="编辑投递信息"
+          aria-label={t("card.editAria", { company: job?.company ?? t("card.application") })}
+          title={t("card.editTitle")}
         >
           <Edit3 className="h-3 w-3" />
-          编辑
+          {t("card.edit")}
         </button>
       </div>
       <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">
-        {application.notes || "暂无备注"}
+        {application.notes || t("card.noNotes")}
       </p>
       <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-        <span className="rounded-md bg-surface-low px-2 py-1">渠道：{displaySource(job?.source)}</span>
+        <span className="rounded-md bg-surface-low px-2 py-1">{t("card.source", { source: sourceLabel(displaySource(job?.source), t) })}</span>
         <span className="rounded-md bg-surface-low px-2 py-1">
-          {applicationStatusDateLabels[application.status].replace("日期", "").trim()}：{application.stageDate ?? application.appliedAt ?? "未记录"}
+          {t("card.stageDate", { label: statusShortDateLabel(application.status, t), date: application.stageDate ?? application.appliedAt ?? t("card.notRecorded") })}
         </span>
-        <span className="rounded-md bg-surface-low px-2 py-1">跟进：{application.nextFollowUpAt ?? "未设置"}</span>
-        <span className="rounded-md bg-surface-low px-2 py-1">优先：{applicationPriorityLabels[application.priority]}</span>
-        <span className="rounded-md bg-surface-low px-2 py-1">简历：{version?.name ?? "未绑定"}</span>
+        <span className="rounded-md bg-surface-low px-2 py-1">{t("card.followUp", { date: application.nextFollowUpAt ?? t("card.notSet") })}</span>
+        <span className="rounded-md bg-surface-low px-2 py-1">{t("card.priority", { priority: priorityLabel(application.priority, t) })}</span>
+        <span className="rounded-md bg-surface-low px-2 py-1">{t("card.resume", { resume: version?.name ?? t("card.unbound") })}</span>
       </div>
       <div className="mt-3 rounded-lg border border-line bg-surface-low px-3 py-3">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <span className="text-[0.6875rem] font-semibold text-foreground">投递进度</span>
+          <span className="text-[0.6875rem] font-semibold text-foreground">{t("card.progress")}</span>
           <span className="rounded-full bg-background px-2 py-0.5 text-[0.625rem] font-medium text-muted-foreground">
-            {applicationStageLabel(application)}
+            {applicationStageLabel(application, t)}
           </span>
         </div>
         <ol className="grid gap-1" style={{ gridTemplateColumns: `repeat(${timeline.length}, minmax(0, 1fr))` }}>
@@ -682,10 +681,10 @@ function PipelineApplicationCard({
                     <Icon className="h-3.5 w-3.5" />
                   </span>
                   <span className={cn("mt-1 w-full truncate text-[0.625rem] font-semibold", timelineTextClass(item))}>
-                    {item.label}
+                    {pipelineStatusLabel(item.status, t)}
                   </span>
                   <span className="mt-0.5 w-full truncate text-[0.5625rem] text-muted-foreground">
-                    {formatTimelineDate(item)}
+                    {formatTimelineDate(item, t)}
                   </span>
                 </span>
               </li>
@@ -695,7 +694,7 @@ function PipelineApplicationCard({
       </div>
       <div className="mt-3 flex items-center justify-center gap-1 rounded-md border border-dashed border-line bg-surface-low px-2 py-2 text-xs font-medium text-muted-foreground">
         <GripVertical className="h-3.5 w-3.5" />
-        整张卡片可拖动切换阶段
+        {t("card.dragHint")}
       </div>
     </article>
   );
@@ -743,6 +742,7 @@ function PipelineEditDialogContent({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onDelete: () => void;
 }) {
+  const t = useTranslations("pipeline");
   const [jd, setJd] = useState(job.jd ?? "");
   const [applicationStage, setApplicationStage] = useState(
     pipelineStageValue(application.status, application.interviewRound),
@@ -766,17 +766,17 @@ function PipelineEditDialogContent({
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 id="pipeline-edit-title" className="font-serif text-xl font-semibold">
-              编辑投递信息
+              {t("edit.title")}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              修改岗位资料、跟进日期和当前阶段；需要彻底移除时可在底部删除。
+              {t("edit.description")}
             </p>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line text-muted-foreground hover:bg-surface-low hover:text-foreground"
-            aria-label="关闭编辑窗口"
+            aria-label={t("edit.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -791,7 +791,7 @@ function PipelineEditDialogContent({
           </datalist>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="公司" required>
+            <FormField label={t("fields.company")} required>
               <Input
                 name="company"
                 defaultValue={job.company}
@@ -799,13 +799,13 @@ function PipelineEditDialogContent({
                 required
               />
             </FormField>
-            <FormField label="岗位名称" required>
+            <FormField label={t("fields.title")} required>
               <Input name="title" defaultValue={job.title} required />
             </FormField>
-            <FormField label="投递渠道" required>
+            <FormField label={t("fields.source")} required>
               <SourceSelect name="source" defaultValue={displaySource(job.source)} required />
             </FormField>
-            <FormField label="当前阶段" required>
+            <FormField label={t("fields.stage")} required>
               <PipelineStageSelect
                 name="stage"
                 value={applicationStage}
@@ -813,35 +813,35 @@ function PipelineEditDialogContent({
                 required
               />
             </FormField>
-            <FormField label={applicationStatusDateLabels[applicationStatus]} optional>
+            <FormField label={statusDateLabel(applicationStatus, t)} optional>
               <Input name="stageDate" type="date" defaultValue={application.stageDate ?? application.appliedAt ?? ""} />
             </FormField>
-            <FormField label="下次跟进日期" optional>
+            <FormField label={t("fields.nextFollowUp")} optional>
               <Input name="nextFollowUpAt" type="date" defaultValue={application.nextFollowUpAt ?? ""} />
             </FormField>
-            <FormField label="求职优先级" required>
+            <FormField label={t("fields.priority")} required>
               <ApplicationPrioritySelect name="priority" defaultValue={application.priority} required />
             </FormField>
           </div>
 
-          <FormField label="招聘链接" optional>
-            <Input name="link" defaultValue={job.link ?? ""} placeholder="例：官网岗位链接、BOSS 聊天链接" />
+          <FormField label={t("fields.link")} optional>
+            <Input name="link" defaultValue={job.link ?? ""} placeholder={t("placeholders.link")} />
           </FormField>
-          <FormField label="投递备注" optional>
+          <FormField label={t("fields.notes")} optional>
             <textarea
               name="notes"
               defaultValue={application.notes ?? ""}
-              placeholder="例：内推人、当前进度、材料状态"
+              placeholder={t("placeholders.notes")}
               className="min-h-24 w-full resize-none rounded-lg border border-line bg-surface-low px-3 py-2 text-sm leading-6 outline-none focus:border-primary"
             />
           </FormField>
-          <FormField label="岗位描述 / JD" optional>
+          <FormField label={t("fields.jd")} optional>
             <SpeechTextarea
               name="jd"
               value={jd}
               onValueChange={setJd}
               maxLength={8000}
-              placeholder="例：岗位职责、任职要求、加分项"
+              placeholder={t("placeholders.jdShort")}
               className="min-h-28 resize-y bg-surface-low text-sm leading-6"
             />
           </FormField>
@@ -850,14 +850,14 @@ function PipelineEditDialogContent({
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(`删除「${job.company} · ${job.title}」这条投递记录？`)) {
+                if (window.confirm(t("edit.deleteConfirm", { company: job.company, title: job.title }))) {
                   onDelete();
                 }
               }}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />
-              删除投递岗位
+              {t("edit.delete")}
             </button>
             <div className="flex gap-2">
               <button
@@ -865,10 +865,10 @@ function PipelineEditDialogContent({
                 onClick={() => onOpenChange(false)}
                 className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-primary hover:bg-surface-low"
               >
-                取消
+                {t("edit.cancel")}
               </button>
               <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
-                保存修改
+                {t("edit.save")}
               </button>
             </div>
           </div>
@@ -926,12 +926,13 @@ function FormField({
   className?: string;
   children: ReactNode;
 }) {
+  const t = useTranslations("pipeline");
   return (
     <label className={cn("block space-y-1.5 text-xs font-medium text-muted-foreground", className)}>
       <span>
         {label}
         {required && <span className="ml-0.5 text-red-600">*</span>}
-        {optional && <span className="ml-1 font-normal text-muted-foreground">（可选）</span>}
+        {optional && <span className="ml-1 font-normal text-muted-foreground">{t("fields.optional")}</span>}
       </span>
       {children}
     </label>
@@ -947,6 +948,7 @@ function SourceSelect({
   defaultValue?: string;
   required?: boolean;
 }) {
+  const t = useTranslations("pipeline");
   return (
     <select
       name={name}
@@ -956,7 +958,7 @@ function SourceSelect({
     >
       {applicationSourceOptions.map((source) => (
         <option key={source} value={source}>
-          {source}
+          {sourceLabel(source, t)}
         </option>
       ))}
     </select>
@@ -976,6 +978,7 @@ function PipelineStageSelect({
   onValueChange?: (value: string) => void;
   required?: boolean;
 }) {
+  const t = useTranslations("pipeline");
   return (
     <select
       name={name}
@@ -987,7 +990,7 @@ function PipelineStageSelect({
     >
       {pipelineStageOptions.map((option) => (
         <option key={option.value} value={option.value}>
-          {option.label}
+          {pipelineStageOptionLabel(option.value, t)}
         </option>
       ))}
     </select>
@@ -1003,6 +1006,7 @@ function ApplicationPrioritySelect({
   defaultValue: ApplicationPriority;
   required?: boolean;
 }) {
+  const t = useTranslations("pipeline");
   return (
     <select
       name={name}
@@ -1012,7 +1016,7 @@ function ApplicationPrioritySelect({
     >
       {applicationPriorityOptions.map((priority) => (
         <option key={priority} value={priority}>
-          {applicationPriorityLabels[priority]}
+          {priorityLabel(priority, t)}
         </option>
       ))}
     </select>
@@ -1045,10 +1049,60 @@ function pipelineStageValue(status: ApplicationStatus, interviewRound?: Intervie
   return `INTERVIEW:${interviewRound || "FIRST"}`;
 }
 
-function applicationStageLabel(application: Pick<ApplicationView, "status" | "interviewRound">) {
-  if (application.status !== "INTERVIEW") return statusMeta[application.status].label;
-  const round = application.interviewRound ? interviewRoundLabels[application.interviewRound] : "";
-  return round ? `面试中（${round}）` : "面试中";
+type PipelineT = (key: string, values?: Record<string, string | number>) => string;
+
+function pipelineStatusLabel(status: ApplicationStatus, t: PipelineT) {
+  return t(`status.${status}`);
+}
+
+function interviewRoundLabel(round: Exclude<InterviewRound, "">, t: PipelineT) {
+  return t(`round.${round}`);
+}
+
+function pipelineStageOptionLabel(value: string, t: PipelineT) {
+  if (value === "INTERVIEW:FIRST") return interviewRoundLabel("FIRST", t);
+  if (value === "INTERVIEW:SECOND") return interviewRoundLabel("SECOND", t);
+  if (value === "INTERVIEW:THIRD") return interviewRoundLabel("THIRD", t);
+  if (value === "INTERVIEW:HR") return interviewRoundLabel("HR", t);
+  return isPipelineStatus(value) ? pipelineStatusLabel(value, t) : value;
+}
+
+function priorityLabel(priority: ApplicationPriority, t: PipelineT) {
+  return t(`priority.${priority}`);
+}
+
+function statusDateLabel(status: ApplicationStatus, t: PipelineT) {
+  return t(`statusDate.${status}`);
+}
+
+function statusShortDateLabel(status: ApplicationStatus, t: PipelineT) {
+  return t(`statusShortDate.${status}`);
+}
+
+function sourceLabel(source: string, t: PipelineT) {
+  return t(`source.${sourceKey(source)}`);
+}
+
+function sourceKey(source: string) {
+  return (
+    {
+      实习僧: "shixiseng",
+      BOSS直聘: "boss",
+      猎聘: "liepin",
+      智联招聘: "zhaopin",
+      前程无忧: "51job",
+      企业官网: "official",
+      内推: "referral",
+      邮件: "email",
+      其他: "other",
+    }[source] ?? "other"
+  );
+}
+
+function applicationStageLabel(application: Pick<ApplicationView, "status" | "interviewRound">, t: PipelineT) {
+  if (application.status !== "INTERVIEW") return pipelineStatusLabel(application.status, t);
+  const round = application.interviewRound ? interviewRoundLabel(application.interviewRound, t) : "";
+  return round ? t("card.interviewRound", { round }) : pipelineStatusLabel("INTERVIEW", t);
 }
 
 function Input({ className, ...props }: ComponentProps<"input">) {
@@ -1065,13 +1119,13 @@ function displaySource(source?: string) {
   return normalizeApplicationSource(source);
 }
 
-function formatTimelineDate(item: ApplicationTimelineItem) {
+function formatTimelineDate(item: ApplicationTimelineItem, t: PipelineT) {
   if (item.date) return item.date.slice(0, 10);
-  if (item.tone === "future") return "未到";
-  if (item.tone === "current") return "当前";
-  if (item.tone === "win") return "达成";
-  if (item.tone === "terminal") return "结束";
-  return "已过";
+  if (item.tone === "future") return t("timeline.future");
+  if (item.tone === "current") return t("timeline.current");
+  if (item.tone === "win") return t("timeline.win");
+  if (item.tone === "terminal") return t("timeline.terminal");
+  return t("timeline.done");
 }
 
 function timelineMarkerClass(item: ApplicationTimelineItem) {

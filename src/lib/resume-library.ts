@@ -23,7 +23,10 @@ export type ResumeLibraryCard = {
   title: string;
   detail: string;
   template: string;
+  templateKey: string;
   updatedAt: string;
+  updatedAtKind: "edited" | "created" | "editedUnknown" | "createdUnknown";
+  updatedAtDate: string;
   timestamp: number;
   content: ResumeContent;
   target: ResumeLibrarySaveTarget;
@@ -95,14 +98,17 @@ export function buildResumeLibraryCards({
   search: string;
   sortMode: ResumeLibrarySortMode;
 }): ResumeLibraryCard[] {
+  const mainTemplate = getValidResumeTemplate(resume.editor?.template);
   const mainCard: ResumeLibraryCard | null = hasResumeContent(resume)
     ? {
         id: "main",
         kind: "原简历",
         title: buildResumeTitle(resume),
         detail: `${resume.profile.title || "目标岗位待填写"} · 主简历`,
-        template: resumeTemplateLabels[getValidResumeTemplate(resume.editor?.template)] ?? "现代",
+        template: resumeTemplateLabels[mainTemplate] ?? "现代",
+        templateKey: mainTemplate,
         updatedAt: formatResumeEditedAt(mainResumeUpdatedAt),
+        ...formatResumeDateParts(mainResumeUpdatedAt, "edited"),
         timestamp: toTimestamp(mainResumeUpdatedAt),
         content: resume,
         target: { kind: "main" },
@@ -112,13 +118,16 @@ export function buildResumeLibraryCards({
   const versionCards: ResumeLibraryCard[] = versions.map((version) => {
     const editedAt = version.updatedAt ?? version.createdAt;
     const isOptimized = Boolean(version.jobId);
+    const templateKey = getValidResumeTemplate(version.content.editor?.template);
     return {
       id: version.id,
       kind: isOptimized ? "优化后简历" : "原简历",
       title: isOptimized ? normalizeOptimizedResumeVersionName(version.name) : version.name || "未命名原简历",
       detail: version.summary || (isOptimized ? "基于 JD 生成的优化后简历" : "原简历版本，可作为优化基准"),
-      template: resumeTemplateLabels[getValidResumeTemplate(version.content.editor?.template)] ?? "现代",
+      template: resumeTemplateLabels[templateKey] ?? "现代",
+      templateKey,
       updatedAt: version.updatedAt ? formatResumeEditedAt(editedAt) : formatResumeCreatedAt(editedAt),
+      ...formatResumeDateParts(editedAt, version.updatedAt ? "edited" : "created"),
       timestamp: toTimestamp(editedAt),
       content: version.content,
       target: { kind: "version", id: version.id },
@@ -168,6 +177,13 @@ function formatResumeDate(value: string | undefined, prefix: string, fallback: s
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return fallback;
   return `${prefix} ${date.toLocaleDateString("zh-CN")}`;
+}
+
+function formatResumeDateParts(value: string | undefined, kind: "edited" | "created") {
+  if (!value) return { updatedAtKind: `${kind}Unknown` as const, updatedAtDate: "" };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { updatedAtKind: `${kind}Unknown` as const, updatedAtDate: "" };
+  return { updatedAtKind: kind, updatedAtDate: date.toISOString() };
 }
 
 function toTimestamp(value?: string) {

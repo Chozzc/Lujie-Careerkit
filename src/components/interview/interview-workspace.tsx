@@ -15,6 +15,7 @@ import {
   Target,
   UserRound,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { ResumePickerOption } from "@/components/resume/resume-source-picker";
 import {
@@ -54,22 +55,22 @@ type InterviewScreen = "setup" | "session" | "report";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const MODE_OPTIONS = [
-  { value: "comprehensive", label: "综合模拟", description: "8 题，覆盖完整校招流程", icon: ListChecks },
-  { value: "project", label: "项目深挖", description: "6 题，验证项目真实性与取舍", icon: BriefcaseBusiness },
-  { value: "behavioral", label: "行为面试", description: "6 题，集中练习 STAR 表达", icon: MessagesSquare },
-  { value: "hr", label: "HR 面", description: "6 题，练习动机、规划与反问", icon: UserRound },
+  { value: "comprehensive", labelKey: "modes.comprehensive.label", descriptionKey: "modes.comprehensive.description", icon: ListChecks },
+  { value: "project", labelKey: "modes.project.label", descriptionKey: "modes.project.description", icon: BriefcaseBusiness },
+  { value: "behavioral", labelKey: "modes.behavioral.label", descriptionKey: "modes.behavioral.description", icon: MessagesSquare },
+  { value: "hr", labelKey: "modes.hr.label", descriptionKey: "modes.hr.description", icon: UserRound },
 ];
 
-const CATEGORY_LABELS: Record<string, string> = {
-  general: "历史题目",
-  "self-introduction": "自我介绍",
-  motivation: "岗位动机",
-  project: "项目深挖",
-  professional: "专业能力",
-  behavioral: "行为面试",
-  failure: "失败复盘",
-  "reverse-question": "反问",
-  hr: "HR 面",
+const CATEGORY_KEYS: Record<string, string> = {
+  general: "categories.general",
+  "self-introduction": "categories.selfIntroduction",
+  motivation: "categories.motivation",
+  project: "categories.project",
+  professional: "categories.professional",
+  behavioral: "categories.behavioral",
+  failure: "categories.failure",
+  "reverse-question": "categories.reverseQuestion",
+  hr: "categories.hr",
 };
 
 export function InterviewWorkspace({
@@ -97,6 +98,8 @@ export function InterviewWorkspace({
   onOpenSettings: () => void;
   onStatus: (message: string) => void;
 }) {
+  const t = useTranslations("interview");
+  const locale = useLocale();
   const [screen, setScreen] = useState<InterviewScreen>("setup");
   const [activeSession, setActiveSession] = useState<InterviewSessionRecord | null>(null);
   const [resumeSource, setResumeSource] = useState<"library" | "upload">("library");
@@ -122,18 +125,20 @@ export function InterviewWorkspace({
       options.push({
         id: "main",
         name: mainResumeName,
-        detail: `原简历 · ${resume.skills.length} 项技能 · ${resume.projects.length} 个项目`,
+        detail: t("resume.mainDetail", { skills: resume.skills.length, projects: resume.projects.length }),
       });
     }
     for (const version of versions) {
       options.push({
         id: version.id,
         name: version.name,
-        detail: `${version.jobId ? "优化后简历" : "原简历"} · ${formatDate(version.updatedAt)}`,
+        detail: t(version.jobId ? "resume.optimizedDetail" : "resume.originalDetail", {
+          date: new Date(version.updatedAt).toLocaleDateString(locale),
+        }),
       });
     }
     return options;
-  }, [mainResumeName, resume, versions]);
+  }, [locale, mainResumeName, resume, t, versions]);
   const selectedResumeOption = resumeOptions.find((option) => option.id === selectedResumeId) ?? resumeOptions[0];
   const selectedLibraryId = selectedResumeOption?.id;
   const selectedVersion = versions.find((version) => version.id === selectedLibraryId);
@@ -141,7 +146,7 @@ export function InterviewWorkspace({
     resumeSource === "upload" ? uploadedResume?.content : selectedLibraryId === "main" ? resume : selectedVersion?.content;
   const selectedResumeName =
     resumeSource === "upload"
-      ? uploadedResume?.fileName ?? "上传简历"
+      ? uploadedResume?.fileName ?? t("resume.uploaded")
       : selectedResumeOption?.name ?? mainResumeName;
   const canStart = Boolean(selectedResume && hasResumeContent(selectedResume) && jdDraft.trim().length >= 10 && !isWorking && !isUploadingResume);
   const activeQuestion = activeSession?.questions[activeSession.currentQuestionIndex];
@@ -160,7 +165,7 @@ export function InterviewWorkspace({
 
   const fetchSession = useCallback(async (sessionId: string) => {
     setIsWorking(true);
-    setMessage("正在恢复面试记录...");
+    setMessage(t("status.restoring"));
     try {
       const result = await requestJson<{ session: InterviewSessionRecord }>(`/api/interviews/${sessionId}`);
       setActiveSession(result.session);
@@ -168,12 +173,12 @@ export function InterviewWorkspace({
       setScreen(screenForInterviewSession(result.session));
       setMessage("");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "面试记录恢复失败。");
+      setMessage(error instanceof Error ? error.message : t("status.restoreFailed"));
       setScreen("setup");
     } finally {
       setIsWorking(false);
     }
-  }, [onSessionUpsert]);
+  }, [onSessionUpsert, t]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -203,11 +208,11 @@ export function InterviewWorkspace({
         .then(() => setSaveState("saved"))
         .catch((error) => {
           setSaveState("error");
-          setMessage(error instanceof Error ? error.message : "回答保存失败，请重试。");
+          setMessage(error instanceof Error ? error.message : t("status.answerSaveFailed"));
         });
     }, 800);
     return () => window.clearTimeout(timeout);
-  }, [activeQuestion, activeSession, draftAnswers, persistProgress]);
+  }, [activeQuestion, activeSession, draftAnswers, persistProgress, t]);
 
   async function uploadResume(file: File, options: { preferLocalFallback?: boolean } = {}) {
     setUploadError("");
@@ -220,15 +225,15 @@ export function InterviewWorkspace({
     }
 
     setIsUploadingResume(true);
-    setMessage(preferLocalFallback ? "正在使用本地解析，效果可能不佳..." : "正在解析简历，可能需要一些时间...");
+    setMessage(preferLocalFallback ? t("status.localParsing") : t("status.parsing"));
     try {
       const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
-      setMessage(`简历解析已完成，已导入 ${draft.fileName}。`);
+      setMessage(t("status.imported", { fileName: draft.fileName }));
     } catch (error) {
       setUploadedResume(null);
-      setUploadError(error instanceof Error ? error.message : "文件读取失败。");
+      setUploadError(error instanceof Error ? error.message : t("status.fileReadFailed"));
       setMessage("");
     } finally {
       localResumeImportFallbackRef.current = false;
@@ -277,10 +282,10 @@ export function InterviewWorkspace({
       setSaveState("idle");
       setScreen("session");
       setMessage("");
-      onStatus("模拟面试题已生成，回答会自动保存。");
+      onStatus(t("status.questionsGenerated"));
       window.history.pushState(null, "", `/interview?session=${encodeURIComponent(result.session.id)}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "问题生成失败，请稍后重试。");
+      setMessage(error instanceof Error ? error.message : t("status.questionFailed"));
     } finally {
       setIsWorking(false);
     }
@@ -308,7 +313,7 @@ export function InterviewWorkspace({
           resume: selectedResume,
         },
       },
-      "正在结合 JD 和简历生成本轮问题...",
+      t("status.generatingQuestions"),
     );
   }
 
@@ -326,7 +331,7 @@ export function InterviewWorkspace({
       setMessage("");
     } catch (error) {
       setSaveState("error");
-      setMessage(error instanceof Error ? error.message : "回答保存失败，请重试。");
+      setMessage(error instanceof Error ? error.message : t("status.answerSaveFailed"));
     } finally {
       setIsWorking(false);
     }
@@ -336,13 +341,13 @@ export function InterviewWorkspace({
     if (!activeSession || !activeQuestion) return;
     const draft = draftAnswers[activeQuestion.id] ?? activeSession.answers[activeQuestion.id]?.content ?? "";
     setIsWorking(true);
-    setMessage("正在保存最后一个回答...");
+    setMessage(t("status.savingLastAnswer"));
     try {
       await persistProgress(activeSession.id, {
         answer: buildAnswer(activeQuestion.id, draft, false),
         currentQuestionIndex: activeSession.currentQuestionIndex,
       });
-      setMessage("AI 正在综合本轮回答生成复盘报告...");
+      setMessage(t("status.generatingReport"));
       const result = await requestJson<{ session: InterviewSessionRecord }>(
         `/api/interviews/${activeSession.id}/report`,
         {},
@@ -351,9 +356,9 @@ export function InterviewWorkspace({
       onSessionUpsert(result.session);
       setScreen("report");
       setMessage("");
-      onStatus("面试复盘报告已生成并保存。");
+      onStatus(t("status.reportSaved"));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "报告生成失败，回答已保留，可以重试。");
+      setMessage(error instanceof Error ? error.message : t("status.reportFailed"));
     } finally {
       setIsWorking(false);
     }
@@ -372,10 +377,10 @@ export function InterviewWorkspace({
         currentQuestionIndex: activeSession.currentQuestionIndex,
       });
       openSetupFromSession(activeSession);
-      onStatus("本题回答已保存，可以稍后继续。");
+      onStatus(t("status.answerSavedExit"));
     } catch (error) {
       setSaveState("error");
-      setMessage(error instanceof Error ? error.message : "回答保存失败，请重试。");
+      setMessage(error instanceof Error ? error.message : t("status.answerSaveFailed"));
     } finally {
       setIsWorking(false);
     }
@@ -399,7 +404,7 @@ export function InterviewWorkspace({
       setSelectedResumeId(storedVersion?.id ?? "main");
     } else if (isResumeContentLike(session.context.resume)) {
       setUploadedResume({
-        fileName: `${session.context.resumeName}（历史快照）`,
+        fileName: t("resume.historySnapshot", { name: session.context.resumeName }),
         content: session.context.resume,
         characterCount: JSON.stringify(session.context.resume).length,
       });
@@ -420,14 +425,14 @@ export function InterviewWorkspace({
     }
     await createSession(
       createInterviewRetryInput(activeSession),
-      "正在沿用本轮素材生成一组新问题...",
+      t("status.retrying"),
     );
   }
 
   return (
     <div className="flex flex-col gap-5">
       <WorkflowStepper
-        labels={["选择面试素材", "模拟提问与回答", "AI 反馈复盘"]}
+        labels={[t("steps.setup"), t("steps.session"), t("steps.report")]}
         current={{ setup: 0, session: 1, report: 2 }[screen]}
       />
       {screen === "setup" ? (
@@ -483,9 +488,9 @@ export function InterviewWorkspace({
       ) : null}
       <AiSetupRequiredDialog
         open={aiSetupDialogOpen}
-        title={aiSetupDialogMode === "resumeImport" ? "需要配置阿里百炼" : undefined}
+        title={aiSetupDialogMode === "resumeImport" ? t("aiSetup.title") : undefined}
         message={aiSetupDialogMode === "resumeImport" ? RESUME_IMPORT_AI_SETUP_MESSAGE : aiMessage}
-        secondaryLabel="稍后再说"
+        secondaryLabel={t("aiSetup.later")}
         onOpenChange={setAiSetupDialogOpen}
         onOpenSettings={aiSetupDialogMode === "resumeImport" ? openSettingsFromAiDialog : onOpenSettings}
         onSecondary={aiSetupDialogMode === "resumeImport" ? continueResumeUploadWithLocalFallback : undefined}
@@ -516,10 +521,12 @@ function SetupScreen(props: {
   onStart: () => void;
   onMessage: (message: string) => void;
 }) {
+  const t = useTranslations("interview");
+
   return (
     <ResumeJdPreparation
       resumePicker={{
-        description: `选择本轮回答所依据的简历 · 共 ${props.resumeOptions.length} 份`,
+        description: t("setup.resumePickerDescription", { count: props.resumeOptions.length }),
         source: props.resumeSource,
         selectedId: props.selectedResumeId,
         options: props.resumeOptions,
@@ -532,14 +539,14 @@ function SetupScreen(props: {
         onUploadFile: props.onUploadResume,
         onOpenResume: (id) => props.onOpenResume(id === "main" ? undefined : id),
       }}
-      title="填写目标 JD"
-      description="粘贴完整的岗位职责、任职要求与能力要求，录阶会结合所选简历生成本轮模拟问题。"
-      jdLabel="职位描述 / 任职要求 / 加分项 *"
+      title={t("setup.title")}
+      description={t("setup.description")}
+      jdLabel={t("setup.jdLabel")}
       jdValue={props.jdDraft}
       onJdChange={props.onJdChange}
-      jdPlaceholder="粘贴目标 JD，或描述岗位方向、主要职责、能力要求与业务场景..."
-      settingsTitle="面试设置"
-      settingsDescription="选择本轮面试侧重点；问题生成后保持固定，不会在作答过程中改变。"
+      jdPlaceholder={t("setup.jdPlaceholder")}
+      settingsTitle={t("setup.settingsTitle")}
+      settingsDescription={t("setup.settingsDescription")}
       onJdImportStatus={props.onMessage}
       settings={
         <div className="grid w-full gap-4 md:grid-cols-2">
@@ -548,8 +555,8 @@ function SetupScreen(props: {
               key={option.value}
               checked={props.mode === option.value}
               icon={option.icon}
-              label={option.label}
-              description={option.description}
+              label={t(option.labelKey)}
+              description={t(option.descriptionKey)}
               onChange={() => props.onModeChange(option.value as InterviewMode)}
             />
           ))}
@@ -557,10 +564,10 @@ function SetupScreen(props: {
       }
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-muted-foreground">{props.message || "AI 将结合所选简历与这段岗位描述生成本轮问题。"}</p>
-          <Button size="lg" disabled={!props.canStart} onClick={props.onStart} title={props.canStart ? undefined : "请先选择简历并填写至少 10 个字的 JD。"}>
+          <p className="text-xs leading-5 text-muted-foreground">{props.message || t("setup.hint")}</p>
+          <Button size="lg" disabled={!props.canStart} onClick={props.onStart} title={props.canStart ? undefined : t("setup.disabledHint")}>
             {props.isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <Sparkles data-icon="inline-start" />}
-            {props.isWorking ? "正在生成问题" : "生成题目并开始"}
+            {props.isWorking ? t("setup.generating") : t("setup.start")}
           </Button>
         </div>
       }
@@ -592,7 +599,9 @@ function SessionScreen({
   onFinish: () => void;
   onBack: () => void;
 }) {
-  if (!activeQuestion) return <div className="rounded-lg border border-line bg-surface p-6">这次练习没有可用题目。</div>;
+  const t = useTranslations("interview");
+
+  if (!activeQuestion) return <div className="rounded-lg border border-line bg-surface p-6">{t("session.noQuestions")}</div>;
   const index = session.currentQuestionIndex;
   const value = draftAnswers[activeQuestion.id] ?? session.answers[activeQuestion.id]?.content ?? "";
   return (
@@ -600,12 +609,12 @@ function SessionScreen({
       <div className="grid min-h-[650px] lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="border-b border-line bg-surface-low p-5 lg:border-r lg:border-b-0">
           <div className="flex flex-col gap-1">
-            <Badge variant="outline">{MODE_OPTIONS.find((item) => item.value === session.mode)?.label}</Badge>
+            <Badge variant="outline">{t(MODE_OPTIONS.find((item) => item.value === session.mode)?.labelKey ?? "modes.comprehensive.label")}</Badge>
             <h2 className="mt-2 text-sm font-semibold">{session.context.company} · {session.context.title}</h2>
             <p className="text-xs text-muted-foreground">{session.context.resumeName}</p>
           </div>
           <Separator className="my-4" />
-          <nav className="flex flex-col gap-2" aria-label="面试问题列表">
+          <nav className="flex flex-col gap-2" aria-label={t("session.questionList")}>
             {session.questions.map((question, questionIndex) => {
               const answer = session.answers[question.id];
               return (
@@ -622,7 +631,7 @@ function SessionScreen({
                   <span className="min-w-0 font-serif text-base leading-6 font-semibold" title={question.prompt}>
                     {questionIndex + 1}. {interviewQuestionNavTitle(question)}
                   </span>
-                  {answer?.skipped ? <Badge variant="secondary">跳过</Badge> : answer?.content.trim() ? <CheckCircle2 className="shrink-0 text-brand" /> : null}
+                  {answer?.skipped ? <Badge variant="secondary">{t("session.skipped")}</Badge> : answer?.content.trim() ? <CheckCircle2 className="shrink-0 text-brand" /> : null}
                 </button>
               );
             })}
@@ -631,24 +640,24 @@ function SessionScreen({
 
         <main className="flex min-w-0 flex-col">
           <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 lg:px-7">
-            <div className="text-sm text-muted-foreground">问题 {index + 1} / {session.questions.length} · {CATEGORY_LABELS[activeQuestion.category]}</div>
-            <div className={cn("text-xs", saveState === "error" ? "text-destructive" : "text-muted-foreground")}>{saveStateLabel(saveState)}</div>
+            <div className="text-sm text-muted-foreground">{t("session.questionProgress", { current: index + 1, total: session.questions.length })} · {t(CATEGORY_KEYS[activeQuestion.category] ?? "categories.general")}</div>
+            <div className={cn("text-xs", saveState === "error" ? "text-destructive" : "text-muted-foreground")}>{saveStateLabel(saveState, t)}</div>
           </header>
           <div className="flex flex-1 flex-col gap-5 p-5 lg:p-7">
             <div>
               <h2 className="max-w-4xl font-serif text-2xl leading-10 font-semibold">{activeQuestion.prompt}</h2>
               <div className="mt-4 flex items-start gap-2 rounded-lg bg-surface-low px-4 py-3 text-sm leading-6 text-muted-foreground">
                 <Target className="mt-1 size-4 shrink-0 text-brand" />
-                <span>面试官关注：{activeQuestion.focus}</span>
+                <span>{t("session.focus", { focus: activeQuestion.focus })}</span>
               </div>
             </div>
             <label className="flex flex-1 flex-col gap-2 text-xs font-medium text-muted-foreground">
-              <span>你的回答</span>
+              <span>{t("session.answer")}</span>
               <SpeechTextarea
                 value={value}
                 onValueChange={(nextValue) => onDraftChange(activeQuestion.id, nextValue)}
                 speechSeparator=" "
-                placeholder="输入你的回答。本阶段不展示 AI 评分，避免打断模拟节奏。"
+                placeholder={t("session.answerPlaceholder")}
                 maxLength={6000}
                 wrapperClassName="flex flex-1 flex-col"
                 className="min-h-64 flex-1 resize-y bg-surface-low text-sm leading-7"
@@ -659,19 +668,19 @@ function SessionScreen({
           </div>
           <footer className="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-7">
             <Button variant="outline" disabled={index === 0 || isWorking} onClick={() => onMove(index - 1)}>
-              <ArrowLeft data-icon="inline-start" />上一题
+              <ArrowLeft data-icon="inline-start" />{t("session.previous")}
             </Button>
             <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="ghost" disabled={isWorking} onClick={onBack}>保存并退出</Button>
-              <Button variant="outline" disabled={isWorking} onClick={() => onMove(Math.min(index + 1, session.questions.length - 1), true)}>稍后回答</Button>
+              <Button variant="ghost" disabled={isWorking} onClick={onBack}>{t("session.saveExit")}</Button>
+              <Button variant="outline" disabled={isWorking} onClick={() => onMove(Math.min(index + 1, session.questions.length - 1), true)}>{t("session.answerLater")}</Button>
               {index < session.questions.length - 1 ? (
                 <Button disabled={isWorking} onClick={() => onMove(index + 1)}>
-                  保存并下一题<ArrowRight data-icon="inline-end" />
+                  {t("session.saveNext")}<ArrowRight data-icon="inline-end" />
                 </Button>
               ) : (
                 <Button disabled={isWorking} onClick={onFinish}>
                   {isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <ClipboardCheck data-icon="inline-start" />}
-                  结束本轮并生成复盘
+                  {t("session.finish")}
                 </Button>
               )}
             </div>
@@ -697,10 +706,12 @@ function ReportScreen({
   onPracticeAgain: () => void;
   onReturn: () => void;
 }) {
+  const t = useTranslations("interview");
+
   if (!report) {
     return (
       <section className="rounded-lg border border-line bg-surface p-6">
-        <h2 className="font-serif text-xl font-semibold">历史面试反馈</h2>
+        <h2 className="font-serif text-xl font-semibold">{t("report.legacyTitle")}</h2>
         <div className="mt-4 flex flex-col gap-3">
           {Object.entries(session.legacyFeedback ?? {}).map(([key, value]) => (
             <div key={key} className="rounded-lg bg-surface-low p-4">
@@ -708,24 +719,24 @@ function ReportScreen({
             </div>
           ))}
         </div>
-        <Button variant="outline" className="mt-5" onClick={onReturn}>调整素材</Button>
+        <Button variant="outline" className="mt-5" onClick={onReturn}>{t("report.adjust")}</Button>
       </section>
     );
   }
   const dimensions = [
-    ["岗位匹配", report.dimensions.jobFit],
-    ["表达结构", report.dimensions.structure],
-    ["事实证据", report.dimensions.evidence],
-    ["STAR 完整", report.dimensions.star],
+    [t("report.dimensions.jobFit"), report.dimensions.jobFit],
+    [t("report.dimensions.structure"), report.dimensions.structure],
+    [t("report.dimensions.evidence"), report.dimensions.evidence],
+    [t("report.dimensions.star"), report.dimensions.star],
   ] as const;
   return (
     <div className="flex flex-col gap-5">
       <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
-            <Badge variant="outline">报告已自动保存</Badge>
-            <h2 className="mt-3 font-serif text-2xl font-semibold">{session.context.company} · {session.context.title} 模拟面试复盘</h2>
-            <p className="mt-2 text-sm text-muted-foreground">基于岗位 JD、{session.context.resumeName} 和本轮回答生成</p>
+            <Badge variant="outline">{t("report.saved")}</Badge>
+            <h2 className="mt-3 font-serif text-2xl font-semibold">{t("report.title", { company: session.context.company, title: session.context.title })}</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{t("report.basedOn", { resumeName: session.context.resumeName })}</p>
           </div>
           <div className="flex items-end gap-2"><span className="font-serif text-5xl font-semibold text-brand">{report.overallScore}</span><span className="pb-1 text-sm text-muted-foreground">/ 100</span></div>
         </div>
@@ -737,12 +748,12 @@ function ReportScreen({
       </section>
 
       <section className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">本轮优势</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.strengths.map((item) => <li key={item}>· {item}</li>)}</ul></div>
-        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">优先改进</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.improvements.map((item) => <li key={item}>· {item}</li>)}</ul></div>
+        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">{t("report.strengths")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.strengths.map((item) => <li key={item}>· {item}</li>)}</ul></div>
+        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">{t("report.improvements")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.improvements.map((item) => <li key={item}>· {item}</li>)}</ul></div>
       </section>
 
       <section className="rounded-lg border border-line bg-surface p-5 lg:p-6">
-        <h3 className="text-base font-semibold">逐题复盘</h3>
+        <h3 className="text-base font-semibold">{t("report.questionReview")}</h3>
         <div className="mt-4 flex flex-col gap-3">
           {session.questions.map((question, index) => {
             const review = report.questionReviews.find((item) => item.questionId === question.id);
@@ -752,10 +763,10 @@ function ReportScreen({
               <details key={question.id} className="group rounded-lg border border-line bg-background p-4" open={index === 0}>
                 <summary className="cursor-pointer list-none text-sm font-semibold">{index + 1}. {question.prompt}</summary>
                 <div className="mt-4 grid gap-4 text-sm leading-6">
-                  <ReportBlock label="你的回答" value={answer?.content.trim() || "未回答 / 跳过"} />
-                  <ReportBlock label="问题诊断" value={review.diagnosis} />
-                  <ReportBlock label="改进建议" value={review.suggestion} />
-                  <ReportBlock label="参考表达" value={review.improvedAnswer} emphasized />
+                  <ReportBlock label={t("report.yourAnswer")} value={answer?.content.trim() || t("report.unanswered")} />
+                  <ReportBlock label={t("report.diagnosis")} value={review.diagnosis} />
+                  <ReportBlock label={t("report.suggestion")} value={review.suggestion} />
+                  <ReportBlock label={t("report.reference")} value={review.improvedAnswer} emphasized />
                 </div>
               </details>
             );
@@ -764,8 +775,8 @@ function ReportScreen({
       </section>
 
       <section className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center">
-        <div><h3 className="text-sm font-semibold">下一轮建议</h3><p className="mt-1 text-sm text-muted-foreground">{report.nextActions.join("；")}</p>{message ? <p className="mt-2 text-sm text-destructive">{message}</p> : null}</div>
-        <div className="flex gap-2"><Button variant="outline" disabled={isWorking} onClick={onReturn}>调整素材</Button><Button disabled={isWorking} onClick={onPracticeAgain}>{isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <RefreshCw data-icon="inline-start" />}{isWorking ? "正在生成" : "再练一轮"}</Button></div>
+        <div><h3 className="text-sm font-semibold">{t("report.nextActions")}</h3><p className="mt-1 text-sm text-muted-foreground">{report.nextActions.join(t("report.separator"))}</p>{message ? <p className="mt-2 text-sm text-destructive">{message}</p> : null}</div>
+        <div className="flex gap-2"><Button variant="outline" disabled={isWorking} onClick={onReturn}>{t("report.adjust")}</Button><Button disabled={isWorking} onClick={onPracticeAgain}>{isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <RefreshCw data-icon="inline-start" />}{isWorking ? t("report.generating") : t("report.practiceAgain")}</Button></div>
       </section>
     </div>
   );
@@ -783,12 +794,13 @@ function hasResumeContent(resume: ResumeContent) {
   return Boolean(resume.basics.name.trim() || resume.basics.email.trim() || resume.projects.length || resume.experiences.length || resume.internships.length);
 }
 
-function saveStateLabel(state: SaveState) {
-  return { idle: "回答将在输入后自动保存", saving: "正在保存...", saved: "已自动保存", error: "保存失败，请重试" }[state];
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("zh-CN");
+function saveStateLabel(state: SaveState, t: (key: string) => string) {
+  return {
+    idle: t("saveState.idle"),
+    saving: t("saveState.saving"),
+    saved: t("saveState.saved"),
+    error: t("saveState.error"),
+  }[state];
 }
 
 async function requestJson<T>(url: string, body?: unknown, method = body === undefined ? "GET" : "POST"): Promise<T> {

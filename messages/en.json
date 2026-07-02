@@ -1,0 +1,823 @@
+{
+  "app": {
+    "brandName": "LuJie",
+    "language": {
+      "label": "Language",
+      "zh-CN": "中文",
+      "en": "English"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "resume": "Resume Editor",
+      "match": "JD Matching",
+      "interview": "Interview Assistant",
+      "pipeline": "Application Tracking",
+      "settings": "Settings"
+    },
+    "navGroups": {
+      "workflow": "Career Flow",
+      "system": "System"
+    },
+    "sidebar": {
+      "localMode": "Local mode",
+      "encrypted": "API keys are encrypted locally"
+    },
+    "topbar": {
+      "notifications": "Follow-up reminders",
+      "help": "Quick help",
+      "profile": "Local account"
+    },
+    "header": {
+      "processing": "Processing...",
+      "addApplication": "Add application",
+      "optimizedVersions": "Optimized versions · {count}",
+      "optimizedVersionsHint": "Pick a previous optimization result to review",
+      "clearOptimizedVersions": "Clear optimized versions",
+      "interviewSessions": "Mock interviews · {count}",
+      "interviewSessionsHint": "Continue unfinished practice or review saved reports",
+      "clearInterviewSessions": "Clear mock interviews",
+      "completed": "Reviewed",
+      "inProgress": "In progress",
+      "deleteOptimizedVersion": "Delete optimized version",
+      "deleteInterview": "Delete mock interview"
+    },
+    "menu": {
+      "notifications": "Follow-up reminders",
+      "help": "Quick actions",
+      "profile": "Local account",
+      "close": "Close menu",
+      "unknownCompany": "Unknown company",
+      "unknownTitle": "Unknown role",
+      "followUpDate": "Follow-up date: {date}",
+      "noReminders": "No due follow-ups.",
+      "openPipeline": "View application tracking",
+      "openResume": "Open resume editor",
+      "openMatch": "Open JD matching",
+      "openSettings": "Check local settings",
+      "followUpsDue": "Due follow-ups",
+      "resumeVersions": "Resume versions",
+      "mode": "Mode: local single user",
+      "provider": "Provider: {provider}",
+      "backDashboard": "Back to dashboard"
+    },
+    "pages": {
+      "resumeOptimizationTitle": "AI Resume Optimization",
+      "resumeOptimizationSubtitle": "Improve clarity, density, and result presentation based on the current resume, then keep editing the generated version.",
+      "matchSubtitle": "Reframe resume emphasis around the target JD, strengthen evidence from real experience, and generate an editable tailored version.",
+      "pipelineSubtitle": "Track sources, stages, interview rounds, and follow-up dates so every application stays manageable from submission to offer.",
+      "interviewSubtitle": "Generate mock questions from the selected resume and target role, practice answer by answer, and receive structured review notes.",
+      "defaultSubtitle": "A career workspace from resume to offer"
+    },
+    "dashboard": {
+      "metrics": {
+        "submitted": "Applications",
+        "active": "Active flows",
+        "followUpsDue": "Due follow-ups",
+        "offers": "Offers"
+      },
+      "sections": {
+        "priority": "Priority",
+        "quickStart": "Quick start",
+        "stages": "Pipeline stages"
+      },
+      "emptyActions": "Set stage dates for applications and the three most urgent tasks will appear here.",
+      "quickActions": {
+        "resume": "Edit resume",
+        "match": "JD matching",
+        "pipeline": "Add application",
+        "interview": "Mock interview"
+      },
+      "stages": {
+        "APPLIED": "Applied",
+        "ASSESSMENT": "Assessment",
+        "INTERVIEW": "Interview",
+        "OFFER": "Offer",
+        "REJECTED": "Rejected",
+        "ARCHIVED": "Archived"
+      },
+      "actions": {
+        "READY": "Finish matching {company} · {title}",
+        "ASSESSMENT": "Prepare for {company} · {title} assessment",
+        "INTERVIEW": "Prepare for {company} · {title} interview",
+        "DEFAULT": "Follow up on {company} · {title}"
+      },
+      "schedule": {
+        "stageDate": "Stage date",
+        "deadline": "Application deadline",
+        "nextFollowUp": "Next follow-up",
+        "appliedAt": "Applied date",
+        "updatedAt": "Last updated"
+      },
+      "priority": {
+        "HIGH": "High",
+        "NORMAL": "Normal",
+        "LOW": "Low"
+      }
+    },
+    "resumeLibrary": {
+      "title": "My Resumes",
+      "count": "{count} resumes · {optimizedCount} optimized versions",
+      "importing": "Parsing...",
+      "import": "Import resume",
+      "create": "New resume",
+      "search": "Search resumes...",
+      "sortRecent": "Recently edited",
+      "sortRecentOptimized": "Recently optimized",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "empty": "No matching resumes",
+      "deleteOriginal": "Delete original resume",
+      "deleteResume": "Delete resume",
+      "kind": {
+        "original": "Original",
+        "optimized": "Optimized"
+      },
+      "template": {
+        "label": "Template",
+        "main": "Main resume",
+        "version": "Resume version"
+      },
+      "status": {
+        "saved": "Saved to local SQLite",
+        "importReview": "Resume import is complete. Some content was categorized by AI; review carefully before use."
+      },
+      "updatedAt": {
+        "edited": "Edited {date}",
+        "created": "Created {date}",
+        "editedUnknown": "Last edit unknown",
+        "createdUnknown": "Created time unknown"
+      },
+      "templates": {
+        "classic": "Classic",
+        "modern": "Modern",
+        "minimal": "Minimal",
+        "professional": "Professional",
+        "two-column": "Two-column",
+        "creative": "Creative",
+        "ats": "ATS",
+        "academic": "Academic",
+        "elegant": "Elegant",
+        "executive": "Executive",
+        "developer": "Developer",
+        "designer": "Designer",
+        "startup": "Startup",
+        "formal": "Formal",
+        "infographic": "Infographic",
+        "compact": "Compact",
+        "euro": "Euro",
+        "clean": "Clean",
+        "bold": "Bold",
+        "timeline": "Timeline",
+        "nordic": "Nordic",
+        "corporate": "Corporate",
+        "consultant": "Consulting",
+        "finance": "Finance",
+        "medical": "Medical",
+        "gradient": "Gradient",
+        "metro": "Metro",
+        "material": "Material",
+        "coder": "Coder",
+        "blocks": "Blocks",
+        "magazine": "Magazine",
+        "artistic": "Artistic",
+        "retro": "Retro",
+        "neon": "Neon",
+        "watercolor": "Watercolor",
+        "swiss": "Swiss",
+        "japanese": "Japanese",
+        "berlin": "Berlin",
+        "luxe": "Luxe",
+        "rose": "Rose",
+        "architect": "Architect",
+        "legal": "Legal",
+        "teacher": "Teacher",
+        "scientist": "Scientist",
+        "engineer": "Engineer",
+        "sidebar": "Sidebar",
+        "card": "Card",
+        "zigzag": "Zigzag",
+        "ribbon": "Ribbon",
+        "mosaic": "Mosaic"
+      }
+    }
+  },
+  "resumeSourcePicker": {
+    "title": "Select resume",
+    "library": "Resume library",
+    "upload": "Upload file",
+    "doubleClickEdit": "Double-click to edit",
+    "empty": "No resumes yet. Create and save one in the resume editor first.",
+    "parsing": "Parsing resume...",
+    "import": "Import resume",
+    "waiting": "This may take a while. Keep the page open.",
+    "drag": "Drag or click to upload",
+    "supported": "Supports PDF / DOC / DOCX / images / TXT / MD / JSON",
+    "selected": "Selected {fileName} · {count} chars",
+    "snapshotOnly": "The file is used only as a resume snapshot for this action and will not overwrite your library."
+  },
+  "jdPreparation": {
+    "uploadJd": "Upload JD",
+    "uploadUnsupported": "JD upload currently supports txt or md files.",
+    "uploadEmpty": "The uploaded JD file is empty.",
+    "uploadImported": "Imported {count} characters of JD text from {fileName}.",
+    "aiDialog": {
+      "title": "AI setup required",
+      "message": "Enable AI in Settings and test the connection before continuing.",
+      "later": "Later",
+      "settings": "Open settings"
+    }
+  },
+  "match": {
+    "steps": {
+      "select": "Select resume and JD",
+      "optimize": "AI matching",
+      "current": "Current resume",
+      "generalOptimize": "AI resume optimization",
+      "preview": "Preview and edit"
+    },
+    "resume": {
+      "original": "Original resume",
+      "mainDetail": "Original · {skills} skills · {projects} projects",
+      "originalDetail": "Original · {date}",
+      "optimizedDetail": "Optimized · {date}"
+    },
+    "upload": {
+      "waitingFile": "Waiting for file",
+      "selectResume": "Select a resume"
+    },
+    "status": {
+      "localParsing": "Using local parsing. Accuracy may be limited...",
+      "parsing": "Parsing resume. This may take a while...",
+      "imported": "Resume parsed and imported: {fileName}.",
+      "fileReadFailed": "Failed to read file.",
+      "localVersionOpened": "Opened local optimized version.",
+      "needResume": "Select or upload a resume first.",
+      "needJd": "Paste the job description first.",
+      "generating": "Analyzing the JD and generating an optimized resume...",
+      "generated": "Optimization generated. Highlighted areas can be edited on the right.",
+      "failed": "JD matching failed. Try again later."
+    },
+    "result": {
+      "generalComplete": "AI resume optimization complete",
+      "jdComplete": "JD matching complete",
+      "jdPrefix": "JD matching",
+      "back": "Back to JD"
+    },
+    "resumePickerDescription": "Choose the base resume · {count} total",
+    "form": {
+      "title": "Paste target JD",
+      "description": "Paste responsibilities, requirements, and nice-to-haves. LuJie will extract priorities from the selected resume and generate a matched version.",
+      "jdLabel": "Job description / Requirements / Nice-to-haves *",
+      "jdPlaceholder": "Paste the target JD, including responsibilities, requirements, nice-to-haves, and business context...",
+      "settingsTitle": "Optimization settings",
+      "settingsDescription": "Choose the rewrite focus. All edits stay within the facts already present in the original resume."
+    },
+    "preferences": {
+      "impact": "Emphasize outcomes",
+      "impactDescription": "Prioritize responsibilities and result evidence",
+      "quantify": "Add quantified wording",
+      "quantifyDescription": "Rewrite existing results without inventing numbers",
+      "ats": "ATS friendly",
+      "atsDescription": "Improve keywords and formatting for screening",
+      "skills": "Highlight matched skills",
+      "skillsDescription": "Surface skills aligned with the JD first"
+    },
+    "currentBase": "Current base: {name}",
+    "edit": "Edit",
+    "generatingButton": "Generating...",
+    "startButton": "Start JD matching",
+    "aiSetup": {
+      "title": "Qwen setup required",
+      "later": "Later"
+    }
+  },
+  "interview": {
+    "steps": {
+      "setup": "Select interview material",
+      "session": "Mock Q&A",
+      "report": "AI review"
+    },
+    "resume": {
+      "mainDetail": "Original · {skills} skills · {projects} projects",
+      "originalDetail": "Original · {date}",
+      "optimizedDetail": "Optimized · {date}",
+      "uploaded": "Uploaded resume",
+      "historySnapshot": "{name} (historical snapshot)"
+    },
+    "modes": {
+      "comprehensive": {
+        "label": "Full mock",
+        "description": "8 questions covering the full early-career flow"
+      },
+      "project": {
+        "label": "Project deep dive",
+        "description": "6 questions to test project authenticity and tradeoffs"
+      },
+      "behavioral": {
+        "label": "Behavioral",
+        "description": "6 questions focused on STAR answers"
+      },
+      "hr": {
+        "label": "HR round",
+        "description": "6 questions for motivation, planning, and questions back"
+      }
+    },
+    "categories": {
+      "general": "Previous questions",
+      "selfIntroduction": "Self introduction",
+      "motivation": "Role motivation",
+      "project": "Project deep dive",
+      "professional": "Professional skills",
+      "behavioral": "Behavioral",
+      "failure": "Failure review",
+      "reverseQuestion": "Questions back",
+      "hr": "HR round"
+    },
+    "setup": {
+      "resumePickerDescription": "Choose the resume for this round · {count} total",
+      "title": "Paste target JD",
+      "description": "Paste responsibilities, requirements, and skills. LuJie will generate mock questions from the selected resume and role.",
+      "jdLabel": "Job description / Requirements / Nice-to-haves *",
+      "jdPlaceholder": "Paste the target JD, or describe role direction, responsibilities, requirements, and business context...",
+      "settingsTitle": "Interview settings",
+      "settingsDescription": "Choose the focus for this round. Questions stay fixed after generation.",
+      "hint": "AI will generate this round of questions from the selected resume and JD.",
+      "disabledHint": "Select a resume and enter at least 10 JD characters first.",
+      "generating": "Generating questions",
+      "start": "Generate and start"
+    },
+    "session": {
+      "noQuestions": "No questions are available for this practice.",
+      "questionList": "Interview question list",
+      "skipped": "Skipped",
+      "questionProgress": "Question {current} / {total}",
+      "focus": "Interviewer focus: {focus}",
+      "answer": "Your answer",
+      "answerPlaceholder": "Type your answer. AI scoring is hidden during practice to keep the flow uninterrupted.",
+      "previous": "Previous",
+      "saveExit": "Save and exit",
+      "answerLater": "Answer later",
+      "saveNext": "Save and next",
+      "finish": "Finish and generate review"
+    },
+    "report": {
+      "legacyTitle": "Previous interview feedback",
+      "adjust": "Adjust material",
+      "dimensions": {
+        "jobFit": "Role fit",
+        "structure": "Structure",
+        "evidence": "Evidence",
+        "star": "STAR completeness"
+      },
+      "saved": "Report saved automatically",
+      "title": "{company} · {title} mock interview review",
+      "basedOn": "Generated from the JD, {resumeName}, and this round of answers",
+      "strengths": "Strengths",
+      "improvements": "Priority improvements",
+      "questionReview": "Question-by-question review",
+      "yourAnswer": "Your answer",
+      "unanswered": "Unanswered / skipped",
+      "diagnosis": "Diagnosis",
+      "suggestion": "Improvement suggestion",
+      "reference": "Reference answer",
+      "nextActions": "Next-round suggestions",
+      "separator": "; ",
+      "generating": "Generating",
+      "practiceAgain": "Practice again"
+    },
+    "saveState": {
+      "idle": "Answers autosave as you type",
+      "saving": "Saving...",
+      "saved": "Autosaved",
+      "error": "Save failed. Try again"
+    },
+    "status": {
+      "restoring": "Restoring interview record...",
+      "restoreFailed": "Failed to restore interview record.",
+      "answerSaveFailed": "Failed to save answer. Try again.",
+      "localParsing": "Using local parsing. Accuracy may be limited...",
+      "parsing": "Parsing resume. This may take a while...",
+      "imported": "Resume parsed and imported: {fileName}.",
+      "fileReadFailed": "Failed to read file.",
+      "questionsGenerated": "Mock interview questions generated. Answers will autosave.",
+      "questionFailed": "Failed to generate questions. Try again later.",
+      "generatingQuestions": "Generating questions from the JD and resume...",
+      "savingLastAnswer": "Saving the final answer...",
+      "generatingReport": "AI is generating the review report from this round...",
+      "reportSaved": "Interview review report generated and saved.",
+      "reportFailed": "Failed to generate report. Answers are kept and you can retry.",
+      "answerSavedExit": "This answer was saved. You can continue later.",
+      "retrying": "Generating a fresh set of questions from this material..."
+    },
+    "aiSetup": {
+      "title": "Qwen setup required",
+      "later": "Later"
+    }
+  },
+  "pipeline": {
+    "status": {
+      "READY": "Ready",
+      "APPLIED": "Applied",
+      "ASSESSMENT": "Assessment",
+      "INTERVIEW": "Interview",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
+    "round": {
+      "FIRST": "First round",
+      "SECOND": "Second round",
+      "THIRD": "Third round",
+      "HR": "HR round"
+    },
+    "priority": {
+      "HIGH": "High priority",
+      "NORMAL": "Normal",
+      "LOW": "Low priority"
+    },
+    "source": {
+      "shixiseng": "Shixiseng",
+      "boss": "BOSS Zhipin",
+      "liepin": "Liepin",
+      "zhaopin": "Zhaopin",
+      "51job": "51job",
+      "official": "Official site",
+      "referral": "Referral",
+      "email": "Email",
+      "other": "Other"
+    },
+    "statusDate": {
+      "READY": "Application deadline",
+      "APPLIED": "Applied date",
+      "ASSESSMENT": "Assessment date",
+      "INTERVIEW": "Interview date",
+      "OFFER": "Offer date",
+      "REJECTED": "Rejection date",
+      "ARCHIVED": "Archived date"
+    },
+    "statusShortDate": {
+      "READY": "Deadline",
+      "APPLIED": "Applied",
+      "ASSESSMENT": "Assessment",
+      "INTERVIEW": "Interview",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
+    "overview": {
+      "title": "Overview",
+      "metrics": {
+        "total": "Tracked roles",
+        "active": "Active flows",
+        "interviewRate": "Interview rate",
+        "offerRate": "Offer rate"
+      },
+      "statusChart": "Stage distribution",
+      "sourceChart": "Source mix",
+      "jobCount": "Roles",
+      "count": "{count}",
+      "sourceCount": "{count} · {percent}%",
+      "noSourceData": "No source data"
+    },
+    "board": {
+      "dropInto": "Release to move into {status}",
+      "empty": "No roles"
+    },
+    "add": {
+      "title": "Add application",
+      "description": "Record the role, source, and follow-up date. It will appear on the application board after saving.",
+      "close": "Close add application dialog",
+      "submit": "Add to tracking"
+    },
+    "edit": {
+      "title": "Edit application",
+      "description": "Update role details, follow-up dates, and current stage. Delete it at the bottom if needed.",
+      "close": "Close edit dialog",
+      "deleteConfirm": "Delete the application for “{company} · {title}”?",
+      "delete": "Delete application",
+      "cancel": "Cancel",
+      "save": "Save changes"
+    },
+    "fields": {
+      "company": "Company",
+      "title": "Role title",
+      "source": "Source",
+      "status": "Current status",
+      "stage": "Current stage",
+      "nextFollowUp": "Next follow-up",
+      "priority": "Priority",
+      "link": "Job link",
+      "notes": "Notes",
+      "jd": "Job description / JD",
+      "optional": " (optional)"
+    },
+    "placeholders": {
+      "company": "Company you applied to",
+      "title": "e.g. Front-end Intern",
+      "link": "e.g. official job link or chat link",
+      "notes": "e.g. referral, progress, material status",
+      "jd": "e.g. responsibilities, requirements, nice-to-haves; fill in the full JD later",
+      "jdShort": "e.g. responsibilities, requirements, nice-to-haves"
+    },
+    "card": {
+      "unknownCompany": "Unknown company",
+      "unknownTitle": "Unknown role",
+      "application": "role",
+      "editAria": "Edit {company} application",
+      "editTitle": "Edit application",
+      "edit": "Edit",
+      "noNotes": "No notes",
+      "source": "Source: {source}",
+      "stageDate": "{label}: {date}",
+      "notRecorded": "Not recorded",
+      "followUp": "Follow-up: {date}",
+      "notSet": "Not set",
+      "priority": "Priority: {priority}",
+      "resume": "Resume: {resume}",
+      "unbound": "Unbound",
+      "progress": "Application progress",
+      "interviewRound": "Interview ({round})",
+      "dragHint": "Drag the whole card to change stage"
+    },
+    "timeline": {
+      "future": "Upcoming",
+      "current": "Current",
+      "win": "Won",
+      "terminal": "Closed",
+      "done": "Done"
+    }
+  },
+  "resumeWorkbench": {
+    "untitled": "Untitled resume",
+    "loading": "Loading resume editor...",
+    "status": {
+      "saved": "Saved to local SQLite",
+      "importReview": "Resume import is complete. Some content was categorized by AI; review carefully before use.",
+      "versionNotFound": "Resume version not found. Opened the original resume.",
+      "autoSaving": "Autosaving...",
+      "saving": "Saving...",
+      "autoSaved": "Autosaved to local SQLite",
+      "mainSaved": "Original resume saved to local SQLite",
+      "resumeSaved": "Resume saved to local SQLite",
+      "autoSaveFailed": "Autosave failed. Click save to retry.",
+      "saveFailed": "Save failed. Try again later.",
+      "localParsing": "Using local fallback parsing. Accuracy may be limited...",
+      "importing": "Parsing and importing resume. This may take a while...",
+      "importFailed": "Import failed: {message}",
+      "retryLater": "Try again later",
+      "optimizing": "AI is optimizing the resume. This may take a while...",
+      "optimizeDone": "AI optimization complete. A new version was generated; review it carefully before use.",
+      "optimizeFailed": "AI optimization failed: {message}",
+      "exporting": "Exporting...",
+      "exported": {
+        "pdf": "PDF exported",
+        "word": "Word exported",
+        "image": "Image exported"
+      },
+      "exportFailed": "Export failed. Try again later.",
+      "parsed": "Parsed",
+      "unsaved": "Unsaved"
+    },
+    "aiSetup": {
+      "title": "Qwen setup required",
+      "later": "Later",
+      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a Qwen API key and has no local fallback."
+    },
+    "toolbar": {
+      "back": "Back to resumes",
+      "resumeName": "Resume name",
+      "rename": "Rename resume",
+      "meta": "Template {template} · {kind}",
+      "mainResume": "Main resume",
+      "versionResume": "Resume version",
+      "undo": "Undo",
+      "redo": "Redo",
+      "optimizing": "Optimizing...",
+      "optimize": "AI optimize resume",
+      "export": "Export",
+      "closeTheme": "Close theme",
+      "theme": "Theme",
+      "hidePreview": "Hide preview",
+      "showPreview": "Show preview",
+      "save": "Save"
+    },
+    "templateBar": {
+      "label": "Template"
+    },
+    "exportDialog": {
+      "title": "Export resume",
+      "description": "Choose a format and download the current resume.",
+      "close": "Close export dialog",
+      "exporting": "Exporting...",
+      "cancel": "Cancel",
+      "formats": {
+        "pdf": {
+          "title": "PDF",
+          "subtitle": "Export by pages"
+        },
+        "word": {
+          "title": "Word",
+          "subtitle": "Editable with similar layout"
+        },
+        "image": {
+          "title": "PNG image",
+          "subtitle": "High-resolution paged images"
+        }
+      }
+    },
+    "themePanel": {
+      "title": "Theme editor",
+      "description": "Colors, typography, and page density update the preview in real time.",
+      "close": "Close theme panel",
+      "recommendedColors": "Recommended colors",
+      "presets": {
+        "deep": "Deep slate",
+        "gray": "Calm gray",
+        "blue": "Campus blue",
+        "gold": "Classic gold"
+      },
+      "primaryColor": "Primary color",
+      "accentColor": "Accent color",
+      "font": "Font",
+      "fontSize": "Font size",
+      "fontSizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "lineSpacing": "Line spacing",
+      "sectionSpacing": "Section spacing",
+      "margins": "Page margins",
+      "margin": {
+        "top": "Top",
+        "right": "Right",
+        "bottom": "Bottom",
+        "left": "Left"
+      },
+      "avatarStyle": "Avatar style",
+      "avatar": {
+        "oneInch": "ID photo",
+        "circle": "Circle"
+      },
+      "reset": "Reset theme"
+    }
+  },
+  "optimizationResult": {
+    "summaryTitle": "Optimization summary",
+    "openEditor": "Open in editor",
+    "openEditorAria": "Open optimized resume in editor",
+    "before": "Original",
+    "after": "Optimized",
+    "afterSubtitle": "Generated optimized resume. Continue refining it in the editor.",
+    "untitled": "Untitled resume"
+  },
+  "settings": {
+    "languageTitle": "Language",
+    "languageDescription": "Switch the app interface language. Resume content, JDs, and local data are not translated automatically.",
+    "localDataTitle": "Local data",
+    "localDataDescription": "Clear local SQLite resumes, optimized versions, applications, interviews, and AI settings, then restore the built-in sample data.",
+    "resetConfirm": "Clear local SQLite resumes, application progress, interview records, and AI settings, then restore built-in sample data?",
+    "resetting": "Restoring sample data",
+    "reset": "Clear and restore sample data",
+    "resetFailed": "Failed to reset local data.",
+    "ai": {
+      "title": "AI Model",
+      "model": "Model",
+      "providerPlaceholder": "Select provider",
+      "modelPlaceholder": "Select model",
+      "customModel": "Custom model ID",
+      "customModelPlaceholder": "e.g. deepseek-chat / qwen-plus / openai/gpt-5.5",
+      "apiKey": "API Key",
+      "apiKeyOptional": "API Key (optional)",
+      "apiKeySavedPlaceholder": "Saved; leave blank to keep it",
+      "apiKeyPlaceholder": "Paste your API key",
+      "enable": "Enable AI features",
+      "savedKey": "API key saved",
+      "missingKey": "No API key saved",
+      "runtime": "Runtime",
+      "runtimeLocal": "Local mode",
+      "dataLocation": "Data location",
+      "keyStorage": "Key storage",
+      "testStatus": "Test status",
+      "deleteKey": "Delete key",
+      "testing": "Testing...",
+      "test": "Test connection",
+      "saving": "Saving...",
+      "save": "Save settings",
+      "selected": "{provider} selected. Save to apply.",
+      "deletingKey": "Deleting saved API key...",
+      "savingSettings": "Saving AI settings...",
+      "saveFailed": "Failed to save AI settings.",
+      "keyDeleted": "AI key deleted.",
+      "settingsSaved": "AI settings saved.",
+      "keyDeletedStatus": "API key deleted and AI features disabled.",
+      "settingsSavedStatus": "AI settings saved. Test the connection next.",
+      "testingConnection": "Testing connection...",
+      "testFailed": "Connection test failed.",
+      "testComplete": "Connection test complete.",
+      "status": {
+        "success": "Passed",
+        "failed": "Failed",
+        "untested": "Untested"
+      }
+    }
+  },
+  "editor": {
+    "sections": {
+      "personalInfo": "Personal Info",
+      "summary": "Summary",
+      "workExperience": "Work Experience",
+      "internshipExperience": "Internship Experience",
+      "education": "Education",
+      "skills": "Skills",
+      "projects": "Projects",
+      "certifications": "Certifications",
+      "selfEvaluation": "Self Evaluation",
+      "languages": "Languages",
+      "github": "GitHub Projects",
+      "qrCodes": "QR Codes",
+      "custom": "Custom Section"
+    },
+    "sidebar": {
+      "sections": "Resume Sections",
+      "addSection": "Add Section"
+    },
+    "invalidSectionContent": "Invalid section content",
+    "aiPolish": "AI Optimize",
+    "toolbar": {
+      "preview": "Preview"
+    },
+    "mobile": {
+      "edit": "Edit",
+      "preview": "Preview"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "jobTitle": "Target role",
+      "email": "Email",
+      "phone": "Phone",
+      "location": "Location",
+      "website": "Website",
+      "github": "GitHub",
+      "linkedin": "LinkedIn",
+      "wechat": "WeChat",
+      "age": "Age",
+      "gender": "Gender",
+      "politicalStatus": "Political status",
+      "ethnicity": "Ethnicity",
+      "hometown": "Hometown",
+      "maritalStatus": "Marital status",
+      "yearsOfExperience": "Years of experience",
+      "educationLevel": "Highest education",
+      "description": "Description",
+      "company": "Company",
+      "position": "Position",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "highlights": "Highlights",
+      "technologies": "Technologies / keywords",
+      "institution": "School",
+      "degree": "Degree",
+      "field": "Major",
+      "gpa": "GPA",
+      "skillCategory": "Skill category",
+      "projectName": "Project name",
+      "certName": "Certificate name",
+      "issuer": "Issuer",
+      "certDate": "Date",
+      "language": "Language",
+      "proficiency": "Proficiency",
+      "repoUrl": "Repository URL",
+      "repoName": "Repository name",
+      "stars": "Stars",
+      "qrAutoGenerate": "Detect links",
+      "qrLabel": "Label",
+      "qrUrl": "URL",
+      "qrUrlInvalid": "Invalid URL",
+      "qrAdd": "Add QR code",
+      "addItem": "Add item",
+      "clear": "Clear",
+      "dateDisplay": "{year}-{month}",
+      "months": {
+        "01": "01",
+        "02": "02",
+        "03": "03",
+        "04": "04",
+        "05": "05",
+        "06": "06",
+        "07": "07",
+        "08": "08",
+        "09": "09",
+        "10": "10",
+        "11": "11",
+        "12": "12"
+      }
+    }
+  },
+  "themeEditor": {
+    "avatar": {
+      "circle": "Circle",
+      "oneInch": "ID photo"
+    }
+  }
+}

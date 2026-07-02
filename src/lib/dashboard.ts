@@ -68,6 +68,11 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
       return [{
         applicationId: application.id,
         jobId: job.id,
+        company: job.company,
+        titleText: job.title,
+        status: application.status,
+        scheduleKey: schedule.key,
+        priorityLabelKey: application.priority,
         title: priorityActionTitle(application.status, job),
         detail: `${schedule.label}：${schedule.date} · ${applicationPriorityLabels[application.priority]}`,
         date: schedule.date,
@@ -100,12 +105,12 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
 
 function resolvePrioritySchedule(application: DashboardApplication, job: DashboardJob) {
   if (application.stageDate) {
-    return { date: application.stageDate, label: applicationStatusDateLabels[application.status] };
+    return { date: application.stageDate, label: applicationStatusDateLabels[application.status], key: "stageDate" as const };
   }
-  if (job.deadline) return { date: job.deadline, label: "岗位截止日期" };
-  if (application.nextFollowUpAt) return { date: application.nextFollowUpAt, label: "下次跟进日期" };
-  if (application.appliedAt) return { date: application.appliedAt, label: "投递日期" };
-  return { date: application.updatedAt.slice(0, 10), label: "最近更新" };
+  if (job.deadline) return { date: job.deadline, label: "岗位截止日期", key: "deadline" as const };
+  if (application.nextFollowUpAt) return { date: application.nextFollowUpAt, label: "下次跟进日期", key: "nextFollowUp" as const };
+  if (application.appliedAt) return { date: application.appliedAt, label: "投递日期", key: "appliedAt" as const };
+  return { date: application.updatedAt.slice(0, 10), label: "最近更新", key: "updatedAt" as const };
 }
 
 function priorityActionTitle(status: ApplicationStatus, job: DashboardJob) {

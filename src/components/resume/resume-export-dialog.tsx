@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react";
 import { Download, FileText, FileType, Image as ImageIcon, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,13 +20,11 @@ export type ResumeExportFormat = "pdf" | "word" | "image";
 
 const exportOptions: Array<{
   format: ResumeExportFormat;
-  title: string;
-  subtitle: string;
   icon: LucideIcon;
 }> = [
-  { format: "pdf", title: "PDF", subtitle: "按分页导出", icon: FileText },
-  { format: "word", title: "Word", subtitle: "可编辑，版式近似", icon: FileType },
-  { format: "image", title: "PNG 图片", subtitle: "分页高清长图", icon: ImageIcon },
+  { format: "pdf", icon: FileText },
+  { format: "word", icon: FileType },
+  { format: "image", icon: ImageIcon },
 ];
 
 export function ResumeExportDialog({
@@ -39,6 +38,8 @@ export function ResumeExportDialog({
   onOpenChange: (open: boolean) => void;
   onExport: (format: ResumeExportFormat) => void;
 }) {
+  const t = useTranslations("resumeWorkbench.exportDialog");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl gap-0 p-0" showCloseButton={false}>
@@ -47,11 +48,11 @@ export function ResumeExportDialog({
             <div>
               <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
                 <Download className="h-5 w-5 text-emerald-600" />
-                导出简历
+                {t("title")}
               </DialogTitle>
-              <DialogDescription className="mt-2">选择导出格式下载当前简历。</DialogDescription>
+              <DialogDescription className="mt-2">{t("description")}</DialogDescription>
             </div>
-            <DialogClose render={<Button variant="ghost" size="icon" title="关闭导出窗口" />}>
+            <DialogClose render={<Button variant="ghost" size="icon" title={t("close")} />}>
               <X />
             </DialogClose>
           </div>
@@ -73,15 +74,15 @@ export function ResumeExportDialog({
                 )}
               >
                 <Icon className="h-8 w-8" />
-                <span className="text-base font-semibold">{active ? "正在导出..." : option.title}</span>
-                <span className="text-xs text-muted-foreground">{option.subtitle}</span>
+                <span className="text-base font-semibold">{active ? t("exporting") : t(`formats.${option.format}.title`)}</span>
+                <span className="text-xs text-muted-foreground">{t(`formats.${option.format}.subtitle`)}</span>
               </button>
             );
           })}
         </div>
 
         <DialogFooter className="p-4">
-          <DialogClose render={<Button variant="outline" disabled={Boolean(exportingFormat)} />}>取消</DialogClose>
+          <DialogClose render={<Button variant="outline" disabled={Boolean(exportingFormat)} />}>{t("cancel")}</DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>

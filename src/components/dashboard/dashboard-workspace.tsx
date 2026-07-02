@@ -18,6 +18,7 @@ import {
 } from "@/lib/dashboard";
 import type { ApplicationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 type DashboardWorkspaceProps = {
   summary: DashboardSummary;
@@ -31,32 +32,36 @@ const priorityRowMeta = [
   { badge: "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200", hover: "hover:bg-blue-50/60" },
 ] as const;
 
-const stageMeta: Record<Exclude<ApplicationStatus, "READY">, { label: string; bar: string }> = {
-  APPLIED: { label: "已投递", bar: "bg-primary" },
-  ASSESSMENT: { label: "笔试 / 测评", bar: "bg-amber-500" },
-  INTERVIEW: { label: "面试中", bar: "bg-blue-600" },
-  OFFER: { label: "Offer", bar: "bg-emerald-600" },
-  REJECTED: { label: "拒绝", bar: "bg-red-500" },
-  ARCHIVED: { label: "归档", bar: "bg-zinc-400" },
+const stageMeta: Record<Exclude<ApplicationStatus, "READY">, { bar: string }> = {
+  APPLIED: { bar: "bg-primary" },
+  ASSESSMENT: { bar: "bg-amber-500" },
+  INTERVIEW: { bar: "bg-blue-600" },
+  OFFER: { bar: "bg-emerald-600" },
+  REJECTED: { bar: "bg-red-500" },
+  ARCHIVED: { bar: "bg-zinc-400" },
 };
 
 export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: DashboardWorkspaceProps) {
+  const t = useTranslations("app.dashboard");
   const maxStageCount = Math.max(1, ...Object.values(summary.stageCounts));
 
   return (
     <div className="space-y-5">
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricButton icon={BriefcaseBusiness} label="投递岗位" value={summary.metrics.submitted} onClick={() => onNavigate("pipeline")} />
-        <MetricButton icon={ClipboardList} label="活跃流程" value={summary.metrics.active} onClick={() => onNavigate("pipeline")} />
-        <MetricButton icon={CalendarClock} label="到期跟进" value={summary.metrics.followUpsDue} onClick={() => onNavigate("pipeline")} />
-        <MetricButton icon={Trophy} label="Offer" value={summary.metrics.offers} onClick={() => onNavigate("pipeline")} />
+        <MetricButton icon={BriefcaseBusiness} label={t("metrics.submitted")} value={summary.metrics.submitted} onClick={() => onNavigate("pipeline")} />
+        <MetricButton icon={ClipboardList} label={t("metrics.active")} value={summary.metrics.active} onClick={() => onNavigate("pipeline")} />
+        <MetricButton icon={CalendarClock} label={t("metrics.followUpsDue")} value={summary.metrics.followUpsDue} onClick={() => onNavigate("pipeline")} />
+        <MetricButton icon={Trophy} label={t("metrics.offers")} value={summary.metrics.offers} onClick={() => onNavigate("pipeline")} />
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(240px,0.75fr)]">
-        <DashboardSection title="优先处理">
+        <DashboardSection title={t("sections.priority")}>
           <div className="divide-y divide-line">
             {summary.actions.map((action, index) => {
               const rowMeta = priorityRowMeta[index] ?? priorityRowMeta[2];
+              const actionKey = action.status === "READY" || action.status === "ASSESSMENT" || action.status === "INTERVIEW"
+                ? action.status
+                : "DEFAULT";
               return (
               <button
                 key={action.applicationId}
@@ -68,37 +73,41 @@ export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: Da
                   {index + 1}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">{action.title}</span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{action.detail}</span>
+                  <span className="block truncate text-sm font-semibold text-foreground group-hover:text-primary">
+                    {t(`actions.${actionKey}`, { company: action.company, title: action.titleText })}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {t(`schedule.${action.scheduleKey}`)}: {action.date} · {t(`priority.${action.priorityLabelKey}`)}
+                  </span>
                 </span>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />
               </button>
               );
             })}
             {!summary.actions.length ? (
-              <p className="py-6 text-sm text-muted-foreground">为投递岗位设置阶段日期后，这里会显示最紧急的三项任务。</p>
+              <p className="py-6 text-sm text-muted-foreground">{t("emptyActions")}</p>
             ) : null}
           </div>
         </DashboardSection>
 
-        <DashboardSection title="快速开始">
+        <DashboardSection title={t("sections.quickStart")}>
           <div className="divide-y divide-line">
-            <QuickAction icon={FilePenLine} label="编辑简历" onClick={() => onNavigate("resume")} />
-            <QuickAction icon={Target} label="JD 匹配" onClick={() => onNavigate("match")} />
-            <QuickAction icon={Plus} label="新增投递" onClick={onAddApplication} />
-            <QuickAction icon={Mic} label="模拟面试" onClick={() => onNavigate("interview")} />
+            <QuickAction icon={FilePenLine} label={t("quickActions.resume")} onClick={() => onNavigate("resume")} />
+            <QuickAction icon={Target} label={t("quickActions.match")} onClick={() => onNavigate("match")} />
+            <QuickAction icon={Plus} label={t("quickActions.pipeline")} onClick={onAddApplication} />
+            <QuickAction icon={Mic} label={t("quickActions.interview")} onClick={() => onNavigate("interview")} />
           </div>
         </DashboardSection>
       </div>
 
-      <DashboardSection title="求职阶段">
+      <DashboardSection title={t("sections.stages")}>
           <div className="space-y-4 py-2">
             {DASHBOARD_STAGE_STATUSES.map((status) => {
               const count = summary.stageCounts[status];
               const meta = stageMeta[status];
               return (
                 <div key={status} className="grid grid-cols-[88px_minmax(0,1fr)_28px] items-center gap-3">
-                  <span className="text-xs text-muted-foreground">{meta.label}</span>
+                  <span className="text-xs text-muted-foreground">{t(`stages.${status}`)}</span>
                   <div className="h-2 overflow-hidden rounded-full bg-surface-mid">
                     <div
                       className={cn("h-full rounded-full", meta.bar)}

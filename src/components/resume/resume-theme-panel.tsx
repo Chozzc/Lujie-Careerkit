@@ -2,16 +2,17 @@
 
 import type { ReactNode } from "react";
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ThemeConfig } from "@/types/resume";
 
 const themeColorPresets = [
-  { primaryColor: "#111827", accentColor: "#315f92", label: "深蓝灰" },
-  { primaryColor: "#1f2937", accentColor: "#64748b", label: "冷静灰" },
-  { primaryColor: "#172554", accentColor: "#2563eb", label: "校招蓝" },
-  { primaryColor: "#27272a", accentColor: "#a16207", label: "稳重金" },
+  { primaryColor: "#111827", accentColor: "#315f92", labelKey: "presets.deep" },
+  { primaryColor: "#1f2937", accentColor: "#64748b", labelKey: "presets.gray" },
+  { primaryColor: "#172554", accentColor: "#2563eb", labelKey: "presets.blue" },
+  { primaryColor: "#27272a", accentColor: "#a16207", labelKey: "presets.gold" },
 ];
 
 export function ResumeThemePanel({
@@ -27,30 +28,31 @@ export function ResumeThemePanel({
   onReset: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations("resumeWorkbench.themePanel");
   const margin = theme.margin ?? defaultMargin;
 
   return (
     <aside className="fixed bottom-0 right-0 top-12 z-40 flex w-80 shrink-0 flex-col border-l border-line bg-surface p-4 shadow-2xl xl:static xl:shadow-none">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-serif text-lg font-semibold">主题编辑</h2>
-          <p className="mt-1 text-xs text-muted-foreground">颜色、字体和页面密度会实时作用到右侧预览。</p>
+          <h2 className="font-serif text-lg font-semibold">{t("title")}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{t("description")}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} title="关闭主题面板">
+        <Button variant="ghost" size="icon" onClick={onClose} title={t("close")}>
           <X />
         </Button>
       </div>
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
         <section>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">推荐配色</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">{t("recommendedColors")}</p>
           <div className="grid grid-cols-2 gap-2">
             {themeColorPresets.map((preset) => {
               const active =
                 theme.primaryColor === preset.primaryColor && theme.accentColor === preset.accentColor;
               return (
                 <button
-                  key={preset.label}
+                  key={preset.labelKey}
                   type="button"
                   onClick={() =>
                     onChange({
@@ -68,7 +70,7 @@ export function ResumeThemePanel({
                       <span className="h-4 w-4" style={{ backgroundColor: preset.primaryColor }} />
                       <span className="h-4 w-4" style={{ backgroundColor: preset.accentColor }} />
                     </span>
-                    {preset.label}
+                    {t(preset.labelKey)}
                   </span>
                   {active && <Check className="h-3.5 w-3.5" />}
                 </button>
@@ -79,18 +81,18 @@ export function ResumeThemePanel({
 
         <section className="grid grid-cols-2 gap-3">
           <ColorField
-            label="主色"
+            label={t("primaryColor")}
             value={theme.primaryColor}
             onChange={(value) => onChange({ primaryColor: value })}
           />
           <ColorField
-            label="强调色"
+            label={t("accentColor")}
             value={theme.accentColor}
             onChange={(value) => onChange({ accentColor: value })}
           />
         </section>
 
-        <ThemeField label="字体">
+        <ThemeField label={t("font")}>
           <select
             value={theme.fontFamily}
             onChange={(event) => onChange({ fontFamily: event.target.value })}
@@ -104,7 +106,7 @@ export function ResumeThemePanel({
           </select>
         </ThemeField>
 
-        <ThemeField label="字号">
+        <ThemeField label={t("fontSize")}>
           <div className="grid grid-cols-3 gap-2">
             {(["small", "medium", "large"] as const).map((size) => (
               <button
@@ -116,14 +118,14 @@ export function ResumeThemePanel({
                   theme.fontSize === size ? "bg-primary text-white" : "bg-surface-low text-muted-foreground",
                 )}
               >
-                {size === "small" ? "小" : size === "medium" ? "中" : "大"}
+                {t(`fontSizes.${size}`)}
               </button>
             ))}
           </div>
         </ThemeField>
 
         <RangeField
-          label="行距"
+          label={t("lineSpacing")}
           value={theme.lineSpacing}
           min={1.1}
           max={1.9}
@@ -132,7 +134,7 @@ export function ResumeThemePanel({
           onChange={(value) => onChange({ lineSpacing: value })}
         />
         <RangeField
-          label="模块间距"
+          label={t("sectionSpacing")}
           value={theme.sectionSpacing}
           min={8}
           max={32}
@@ -142,16 +144,16 @@ export function ResumeThemePanel({
         />
 
         <section>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">页边距</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">{t("margins")}</p>
           <div className="grid grid-cols-2 gap-2">
             {([
-              ["top", "上"],
-              ["right", "右"],
-              ["bottom", "下"],
-              ["left", "左"],
-            ] as const).map(([key, label]) => (
+              ["top", "margin.top"],
+              ["right", "margin.right"],
+              ["bottom", "margin.bottom"],
+              ["left", "margin.left"],
+            ] as const).map(([key, labelKey]) => (
               <label key={key} className="block text-xs text-muted-foreground">
-                {label}
+                {t(labelKey)}
                 <input
                   type="number"
                   min={0}
@@ -172,11 +174,11 @@ export function ResumeThemePanel({
           </div>
         </section>
 
-        <ThemeField label="头像样式">
+        <ThemeField label={t("avatarStyle")}>
           <div className="grid grid-cols-2 gap-2">
             {([
-              ["oneInch", "一寸照"],
-              ["circle", "圆形"],
+              ["oneInch", "avatar.oneInch"],
+              ["circle", "avatar.circle"],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -187,7 +189,7 @@ export function ResumeThemePanel({
                   theme.avatarStyle === value ? "bg-primary text-white" : "bg-surface-low text-muted-foreground",
                 )}
               >
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
@@ -195,7 +197,7 @@ export function ResumeThemePanel({
       </div>
 
       <Button variant="outline" onClick={onReset} className="mt-4">
-        重置主题
+        {t("reset")}
       </Button>
     </aside>
   );

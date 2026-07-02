@@ -1,8 +1,9 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Button } from "@/components/ui/button";
 import { TEMPLATES } from "@/lib/constants";
-import { resumeTemplateLabels as templateLabels } from "@/lib/resume-library";
 import type { Resume } from "@/types/resume";
 
 export function ResumeTemplateBar({
@@ -12,9 +13,12 @@ export function ResumeTemplateBar({
   resume: Resume;
   onTemplateChange: (template: string) => void;
 }) {
+  const t = useTranslations("resumeWorkbench.templateBar");
+  const templateT = useTranslations("app.resumeLibrary.templates");
+
   return (
     <div data-tour="template-gallery" className="flex h-11 shrink-0 items-center border-b bg-background px-4">
-      <span className="mr-2 shrink-0 text-[0.6875rem] font-medium text-muted-foreground">模板</span>
+      <span className="mr-2 shrink-0 text-[0.6875rem] font-medium text-muted-foreground">{t("label")}</span>
       <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto">
         {TEMPLATES.map((template) => (
           <Button
@@ -24,7 +28,7 @@ export function ResumeTemplateBar({
             className="h-7 shrink-0 px-2 text-xs"
             onClick={() => onTemplateChange(template)}
           >
-            {templateLabels[template] ?? template}
+            {templateT(template)}
           </Button>
         ))}
       </div>

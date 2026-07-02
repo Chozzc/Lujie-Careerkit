@@ -17,9 +17,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
-  <img alt="Version" src="https://img.shields.io/github/v/tag/Chozzc/Lujie-Careerkit?label=version" />
   <img alt="Docker Image" src="https://github.com/Chozzc/Lujie-Careerkit/actions/workflows/docker-image.yml/badge.svg" />
-  <img alt="GHCR" src="https://img.shields.io/badge/GHCR-ghcr.io%2Fchozzc%2Flujie--careerkit-24292f?logo=github" />
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
@@ -114,7 +112,7 @@ docker compose up -d --build
 
 打开 [http://localhost:3000](http://localhost:3000)。SQLite 数据会保存在 Docker volume `lujie-data` 中。长期使用前，建议先在命令行环境或本地 `.env` 文件里设置自己的 `LUJIE_SETTINGS_SECRET`。
 
-GitHub Container Registry 镜像发布并设为公开后，也可以直接运行：
+也可以直接使用已发布到 GitHub Container Registry 的公开镜像：
 
 ```bash
 docker run -d --name lujie-careerkit \
@@ -126,7 +124,7 @@ docker run -d --name lujie-careerkit \
 
 容器默认使用 `DATABASE_URL=file:/data/dev.db`。API Key 仍然在应用内设置页配置。
 
-使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前发布版本，可以把镜像标签换成 `v0.1.4`。
+使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前已发布的 Docker 版本，可以把镜像标签换成 `v0.1.4`。
 
 ## 环境变量
 
@@ -149,6 +147,13 @@ OPENAI_MODEL="qwen3.6-flash"
 AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
+
+### 未发布
+
+- 接入真实 `next-intl` 多语言能力，并加入应用内语言切换。
+- 完成主工作台、控制中心、简历库、设置、JD 匹配优化、面试助手、投递跟进和简历编辑器核心控件的中英文界面文案。
+- 切换语言时不自动改写用户简历、JD、投递记录和本地数据。
+- 修复 `next-intl` 迁移过程中发现的测试与构建配置问题。
 
 ### v0.1.4
 

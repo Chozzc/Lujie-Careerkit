@@ -10,18 +10,18 @@ import {
 
 import type { NavKey } from "@/lib/navigation";
 
-export type NavItem = { key: NavKey; label: string; icon: LucideIcon };
+export type NavItem = { key: NavKey; labelKey: NavKey; icon: LucideIcon };
 
 export const navItems: NavItem[] = [
-  { key: "dashboard", label: "控制中心", icon: LayoutDashboard },
-  { key: "resume", label: "简历编辑器", icon: FileText },
-  { key: "match", label: "JD匹配优化", icon: Target },
-  { key: "interview", label: "面试助手", icon: Mic },
-  { key: "pipeline", label: "投递岗位跟进", icon: ClipboardList },
-  { key: "settings", label: "设置", icon: Settings },
+  { key: "dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { key: "resume", labelKey: "resume", icon: FileText },
+  { key: "match", labelKey: "match", icon: Target },
+  { key: "interview", labelKey: "interview", icon: Mic },
+  { key: "pipeline", labelKey: "pipeline", icon: ClipboardList },
+  { key: "settings", labelKey: "settings", icon: Settings },
 ];
 
-export const navGroups: Array<{ label: string; items: NavItem[] }> = [
-  { label: "求职流程", items: navItems.filter((item) => item.key !== "settings") },
-  { label: "系统", items: navItems.filter((item) => item.key === "settings") },
+export const navGroups: Array<{ labelKey: "workflow" | "system"; items: NavItem[] }> = [
+  { labelKey: "workflow", items: navItems.filter((item) => item.key !== "settings") },
+  { labelKey: "system", items: navItems.filter((item) => item.key === "settings") },
 ];

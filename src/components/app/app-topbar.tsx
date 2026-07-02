@@ -3,8 +3,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import Image from "next/image";
 import { Bell, HelpCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { HeaderIconButton, HeaderMenuPanel, type HeaderMenuKey } from "@/components/app/header-menu";
+import { LanguageSwitcher } from "@/components/app/language-switcher";
 import { navItems } from "@/components/app/navigation";
 import type { ApplicationView, JobView } from "@/components/app/types";
 import { buildDashboardSummary } from "@/lib/dashboard";
@@ -32,6 +34,8 @@ export function AppTopbar({
   provider: string;
   onNavigate: (key: NavKey) => void;
 }) {
+  const t = useTranslations("app");
+
   return (
     <header
       className={cn(
@@ -43,7 +47,7 @@ export function AppTopbar({
         <div className="flex items-center gap-3 lg:hidden">
           <div className="flex items-center gap-2">
             <Image src="/brand/lujie-mark.svg" alt="" width={28} height={28} className="shrink-0" priority />
-            <span className="font-serif text-xl font-semibold text-primary">录阶</span>
+            <span className="font-serif text-xl font-semibold text-primary">{t("brandName")}</span>
           </div>
           <select
             className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
@@ -52,15 +56,16 @@ export function AppTopbar({
           >
             {navItems.map((item) => (
               <option key={item.key} value={item.key}>
-                {item.label}
+                {t(`nav.${item.labelKey}`)}
               </option>
             ))}
           </select>
         </div>
         <div className="hidden h-10 w-72 lg:block" aria-hidden />
         <div className="relative flex items-center gap-2 text-primary">
+          <LanguageSwitcher compact />
           <HeaderIconButton
-            label="跟进提醒"
+            label={t("topbar.notifications")}
             active={headerMenu === "notifications"}
             onClick={() => setHeaderMenu((current) => (current === "notifications" ? null : "notifications"))}
           >
@@ -70,7 +75,7 @@ export function AppTopbar({
             )}
           </HeaderIconButton>
           <HeaderIconButton
-            label="帮助入口"
+            label={t("topbar.help")}
             active={headerMenu === "help"}
             onClick={() => setHeaderMenu((current) => (current === "help" ? null : "help"))}
           >
@@ -83,7 +88,7 @@ export function AppTopbar({
               "grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-semibold text-white transition hover:bg-primary/90",
               headerMenu === "profile" && "ring-2 ring-primary/20",
             )}
-            aria-label="本地账户"
+            aria-label={t("topbar.profile")}
           >
             L
           </button>

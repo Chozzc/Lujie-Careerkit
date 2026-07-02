@@ -2,6 +2,7 @@
 
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import type { NavKey } from "@/lib/navigation";
 import { navKeyFromPathname, pathnameForNavKey } from "@/lib/navigation";
@@ -73,6 +74,7 @@ export function CareerKitApp({
   initialResumeMode?: ResumeMode;
   initialResumeVersionId?: string;
 }) {
+  const t = useTranslations("app");
   const [active, setActive] = useState<NavKey>(initialView);
   const [resumeMode, setResumeMode] = useState<ResumeMode>(initialResumeMode);
   const [resumeEditorVersionId, setResumeEditorVersionId] = useState(initialResumeVersionId);
@@ -85,7 +87,7 @@ export function CareerKitApp({
   const [, setSelectedJobId] = useState(initialData.jobs[0]?.id ?? "");
   const [appSettings, setAppSettings] = useState(initialData.settings);
   const [aiSettings, setAiSettings] = useState<RedactedAiSettings | null>(initialData.settings?.ai ?? null);
-  const [toast, setToast] = useState("准备就绪");
+  const [toast, setToast] = useState("");
   const [headerMenu, setHeaderMenu] = useState<HeaderMenuKey | null>(null);
   const [optimizedMenuOpen, setOptimizedMenuOpen] = useState(false);
   const [interviewMenuOpen, setInterviewMenuOpen] = useState(false);
@@ -297,20 +299,20 @@ export function CareerKitApp({
   const isResumeOptimizationResult = active === "resume" && Boolean(currentResumeOptimizationResult);
   const isResumeEditor = active === "resume" && resumeMode === "editor" && !isResumeOptimizationResult;
   const pageTitle = isResumeOptimizationResult
-    ? "AI简历优化"
+    ? t("pages.resumeOptimizationTitle")
     : active === "match"
-      ? "JD匹配优化"
-      : navItems.find((item) => item.key === active)?.label;
+      ? t("nav.match")
+      : t(`nav.${navItems.find((item) => item.key === active)?.labelKey ?? "dashboard"}`);
   const pageSubtitle =
     isResumeOptimizationResult
-      ? "基于当前简历优化表达清晰度、信息密度和成果呈现，生成可继续编辑的专属版本。"
+      ? t("pages.resumeOptimizationSubtitle")
       : active === "match"
-      ? "基于目标 JD 重新梳理简历重点，强化真实经历中的匹配证据，生成可继续编辑的专属版本。"
+      ? t("pages.matchSubtitle")
       : active === "pipeline"
-        ? "记录投递渠道、当前阶段、面试轮次和跟进日期，把每个岗位从投递到 Offer 的进展集中管理。"
+        ? t("pages.pipelineSubtitle")
         : active === "interview"
-          ? "结合所选简历与目标岗位生成模拟问题，完成逐题练习后获得结构化反馈与复盘建议。"
-          : "简历到 Offer 的校招实习工作台";
+          ? t("pages.interviewSubtitle")
+          : t("pages.defaultSubtitle");
 
   async function saveResume(contentOverride?: ResumeContent, target: ResumeSaveTarget = { kind: "main" }, name?: string) {
     const nextContent = contentOverride ?? resume;

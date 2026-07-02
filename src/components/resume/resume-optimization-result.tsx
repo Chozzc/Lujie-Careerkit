@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FileText } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { ZoomableResumeCanvas } from "@/components/preview/zoomable-resume-canvas";
 import { WorkflowStepper } from "@/components/shared/workflow-stepper";
@@ -37,7 +38,7 @@ export function ResumeOptimizationResult({
   summaryItems,
   backLabel,
   onBack,
-  openEditorLabel = "进入编辑器修改",
+  openEditorLabel,
   onOpenEditor,
 }: {
   workflowLabels: string[];
@@ -51,6 +52,7 @@ export function ResumeOptimizationResult({
   openEditorLabel?: string;
   onOpenEditor: () => void;
 }) {
+  const t = useTranslations("optimizationResult");
   const diffSections = buildResumeDiffSections(before, after);
 
   return (
@@ -59,7 +61,7 @@ export function ResumeOptimizationResult({
       <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
-            <p className="text-sm font-medium text-primary">优化结果总结</p>
+            <p className="text-sm font-medium text-primary">{t("summaryTitle")}</p>
             <h2 className="mt-2 font-serif text-2xl font-semibold">{title}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
@@ -78,7 +80,7 @@ export function ResumeOptimizationResult({
               onClick={onOpenEditor}
               className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
             >
-              {openEditorLabel}
+              {openEditorLabel ?? t("openEditor")}
             </button>
           </div>
         </div>
@@ -94,13 +96,13 @@ export function ResumeOptimizationResult({
 
       <section className="grid items-stretch gap-5 xl:grid-cols-2">
         <ResumeDocumentComparePane
-          title="原简历"
-          subtitle={buildResumeDisplayName(before, "未命名简历")}
+          title={t("before")}
+          subtitle={buildResumeDisplayName(before, t("untitled"))}
           resume={before}
         />
         <ResumeDocumentComparePane
-          title="优化后"
-          subtitle="已生成优化后简历，可进入编辑器继续微调。"
+          title={t("after")}
+          subtitle={t("afterSubtitle")}
           resume={after}
           optimized
           changedSections={diffSections}
@@ -108,8 +110,8 @@ export function ResumeOptimizationResult({
             <button
               type="button"
               onClick={onOpenEditor}
-              aria-label="进入编辑器修改优化后简历"
-              title="进入编辑器修改"
+              aria-label={t("openEditorAria")}
+              title={t("openEditor")}
               className="grid h-9 w-9 place-items-center rounded-lg border border-line bg-white text-primary hover:bg-primary-soft"
             >
               <FileText className="h-5 w-5" />

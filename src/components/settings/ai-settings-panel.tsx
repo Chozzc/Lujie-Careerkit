@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { KeyRound, PlugZap, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   AI_PROVIDER_GROUPS,
@@ -11,7 +12,7 @@ import {
   getDefaultAiModel,
   providerRequiresApiKey,
 } from "@/lib/ai/provider-registry";
-import type { AiTestStatus, RedactedAiSettings } from "@/lib/ai/settings";
+import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ const DEFAULT_SETTINGS: RedactedAiSettings = {
 };
 
 export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSettingsPanelProps) {
+  const t = useTranslations("settings.ai");
   const initial = settings ?? DEFAULT_SETTINGS;
   const initialProvider = getAiProvider(initial.aiProvider);
   const initialModel = initial.aiModel || initialProvider.defaultModel;
@@ -99,7 +101,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
   const requiresKey = providerRequiresApiKey(providerId);
   const canEditBaseUrl = Boolean(provider.baseUrlEditable);
   const selectedModelValue = customModel ? CUSTOM_MODEL_VALUE : model;
-  const apiKeyStatus = saved.hasApiKey ? "已保存 API Key" : "未保存 API Key";
+  const apiKeyStatus = saved.hasApiKey ? t("savedKey") : t("missingKey");
 
   function buildSettingsPayload(clearApiKey: boolean): AiSettingsRequestPayload {
     return {
@@ -132,7 +134,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
     setModel(nextProvider.defaultModel);
     setBaseUrl(nextProvider.baseUrl);
     setCustomModel(false);
-    setStatus(`${nextProvider.label} 已选中，保存后生效。`);
+    setStatus(t("selected", { provider: nextProvider.label }));
   }
 
   function handleModelSelect(value: string) {
@@ -152,7 +154,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
 
   async function saveSettings({ clearApiKey }: { clearApiKey: boolean }) {
     setIsSaving(true);
-    setStatus(clearApiKey ? "正在删除已保存的 API Key..." : "正在保存 AI 设置...");
+    setStatus(clearApiKey ? t("deletingKey") : t("savingSettings"));
     try {
       const response = await fetch("/api/settings/ai", {
         method: "PATCH",
@@ -161,16 +163,16 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
       });
       const payload = (await response.json()) as SettingsResponse | ErrorResponse;
       if (!response.ok) {
-        throw new Error(getResponseMessage(payload, "AI 设置保存失败。"));
+        throw new Error(getResponseMessage(payload, t("saveFailed")));
       }
       if (!("settings" in payload)) {
-        throw new Error(getResponseMessage(payload, "AI 设置保存失败。"));
+        throw new Error(getResponseMessage(payload, t("saveFailed")));
       }
       applyReturnedSettings(payload.settings);
-      onStatus(clearApiKey ? "AI Key 已删除。" : "AI 设置已保存。");
-      setStatus(clearApiKey ? "已删除 API Key，并关闭 AI 功能。" : "AI 设置已保存，建议立即测试连接。");
+      onStatus(clearApiKey ? t("keyDeleted") : t("settingsSaved"));
+      setStatus(clearApiKey ? t("keyDeletedStatus") : t("settingsSavedStatus"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : "AI 设置保存失败。";
+      const message = error instanceof Error ? error.message : t("saveFailed");
       setStatus(message);
       onStatus(message);
     } finally {
@@ -180,7 +182,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
 
   async function handleTest() {
     setIsTesting(true);
-    setStatus("正在测试连接...");
+    setStatus(t("testingConnection"));
     try {
       const response = await fetch("/api/settings/ai/test", {
         method: "POST",
@@ -189,17 +191,17 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
       });
       const payload = (await response.json()) as SettingsResponse | ErrorResponse;
       if (!response.ok) {
-        throw new Error(getResponseMessage(payload, "连接测试失败。"));
+        throw new Error(getResponseMessage(payload, t("testFailed")));
       }
       if (!("settings" in payload)) {
-        throw new Error(getResponseMessage(payload, "连接测试失败。"));
+        throw new Error(getResponseMessage(payload, t("testFailed")));
       }
       applyReturnedSettings(payload.settings);
-      const message = payload.result?.message ?? "连接测试完成。";
+      const message = payload.result?.message ?? t("testComplete");
       setStatus(message);
       onStatus(message);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "连接测试失败。";
+      const message = error instanceof Error ? error.message : t("testFailed");
       setStatus(message);
       onStatus(message);
     } finally {
@@ -212,7 +214,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
       <CardContent className="flex flex-col gap-5 px-4 py-4 sm:px-5">
         <section className="flex flex-col gap-4">
           <div>
-            <h3 className="text-base font-semibold">AI 模型配置</h3>
+            <h3 className="text-base font-semibold">{t("title")}</h3>
           </div>
 
           <form id="ai-settings-form" onSubmit={handleSave} className="flex flex-col gap-5">
@@ -220,7 +222,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
               <Field label="Provider" htmlFor="ai-provider">
                 <Select value={providerId} onValueChange={(value) => value && handleProviderChange(value)}>
                   <SelectTrigger id="ai-provider" className="w-full">
-                    <SelectValue placeholder="选择 Provider" />
+                    <SelectValue placeholder={t("providerPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent
                     side="bottom"
@@ -243,10 +245,10 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
                 </Select>
               </Field>
 
-              <Field label="模型" htmlFor="ai-model-select">
+              <Field label={t("model")} htmlFor="ai-model-select">
                 <Select value={selectedModelValue} onValueChange={(value) => value && handleModelSelect(value)}>
                   <SelectTrigger id="ai-model-select" className="w-full">
-                    <SelectValue placeholder="选择模型" />
+                    <SelectValue placeholder={t("modelPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent
                     side="bottom"
@@ -255,7 +257,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
                     collisionAvoidance={{ side: "none", align: "shift" }}
                     className="max-h-80"
                   >
-                    <SelectItem value={CUSTOM_MODEL_VALUE}>手动输入模型 ID</SelectItem>
+                    <SelectItem value={CUSTOM_MODEL_VALUE}>{t("customModel")}</SelectItem>
                     {provider.models.map((item) => (
                       <SelectItem key={item} value={item}>
                         {item}
@@ -268,7 +270,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
                     id="ai-model-custom"
                     value={model}
                     onChange={(event) => setModel(event.target.value)}
-                    placeholder="例如 deepseek-chat / qwen-plus / openai/gpt-5.5"
+                    placeholder={t("customModelPlaceholder")}
                     className="mt-2"
                     required
                   />
@@ -288,13 +290,13 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
                 />
               </Field>
 
-              <Field label={requiresKey ? "API Key" : "API Key（可选）"} htmlFor="ai-api-key">
+              <Field label={requiresKey ? t("apiKey") : t("apiKeyOptional")} htmlFor="ai-api-key">
                 <Input
                   id="ai-api-key"
                   type="password"
                   value={apiKey}
                   onChange={(event) => setApiKey(event.target.value)}
-                  placeholder={saved.hasApiKey ? "已保存，留空表示沿用" : "粘贴你的 API Key"}
+                  placeholder={saved.hasApiKey ? t("apiKeySavedPlaceholder") : t("apiKeyPlaceholder")}
                   autoComplete="off"
                 />
               </Field>
@@ -303,7 +305,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="flex items-center justify-between rounded-lg border border-line bg-surface-low px-4 py-3">
                 <Label htmlFor="ai-enabled" className="text-sm font-medium">
-                  启用 AI 功能
+                  {t("enable")}
                 </Label>
                 <Switch id="ai-enabled" checked={enabled} onCheckedChange={setEnabled} />
               </div>
@@ -328,10 +330,10 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
         <Separator />
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <InfoTile label="运行模式" value="本地模式" />
-          <InfoTile label="数据位置" value="SQLite" />
-          <InfoTile label="密钥保存" value={apiKeyStatus} />
-          <InfoTile label="测试状态" value={statusLabel(saved.aiLastTestStatus)} />
+          <InfoTile label={t("runtime")} value={t("runtimeLocal")} />
+          <InfoTile label={t("dataLocation")} value="SQLite" />
+          <InfoTile label={t("keyStorage")} value={apiKeyStatus} />
+          <InfoTile label={t("testStatus")} value={t(`status.${saved.aiLastTestStatus}`)} />
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -339,15 +341,15 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
         <div className="flex flex-wrap justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => saveSettings({ clearApiKey: true })} disabled={isSaving || isTesting || !saved.hasApiKey}>
             <Trash2 className="h-4 w-4" />
-            删除 Key
+            {t("deleteKey")}
           </Button>
           <Button type="button" variant="outline" onClick={handleTest} disabled={isSaving || isTesting}>
             <PlugZap className="h-4 w-4" />
-            {isTesting ? "测试中..." : "测试连接"}
+            {isTesting ? t("testing") : t("test")}
           </Button>
           <Button type="submit" form="ai-settings-form" disabled={isSaving || isTesting}>
             <KeyRound className="h-4 w-4" />
-            {isSaving ? "保存中..." : "保存设置"}
+            {isSaving ? t("saving") : t("save")}
           </Button>
         </div>
       </CardFooter>
@@ -383,10 +385,4 @@ function Field({
       {children}
     </div>
   );
-}
-
-function statusLabel(status: AiTestStatus) {
-  if (status === "success") return "已通过";
-  if (status === "failed") return "失败";
-  return "未测试";
 }

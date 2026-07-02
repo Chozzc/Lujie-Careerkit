@@ -2,6 +2,7 @@
 
 import type { RefObject } from "react";
 import { ArrowDownUp, LayoutGrid, List, Plus, Search, Trash2, Upload } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import type { ResumeLibraryCard, ResumeLibrarySortMode } from "@/lib/resume-library";
@@ -45,14 +46,17 @@ export function ResumeLibraryView({
   onOpenCard: (card: ResumeLibraryCard) => void;
   onDeleteCard: (card: ResumeLibraryCard) => void;
 }) {
+  const t = useTranslations("app.resumeLibrary");
+  const optimizedCount = cards.filter((card) => card.kind === "优化后简历").length;
+
   return (
     <section className="text-foreground">
       <div className="flex flex-col">
         <header className="flex flex-col gap-5 border-b border-line pb-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="font-serif text-3xl font-semibold tracking-normal">我的简历</h1>
+            <h1 className="font-serif text-3xl font-semibold tracking-normal">{t("title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              共 {cards.length} 份简历 · {cards.filter((card) => card.kind === "优化后简历").length} 份岗位优化版本
+              {t("count", { count: cards.length, optimizedCount })}
             </p>
             {status !== savedStatus && <p className="mt-3 text-xs text-muted-foreground">{status}</p>}
           </div>
@@ -75,11 +79,11 @@ export function ResumeLibraryView({
               disabled={isImportingResume}
             >
               <Upload className="h-4 w-4" />
-              {isImportingResume ? "解析中..." : "导入简历"}
+              {isImportingResume ? t("importing") : t("import")}
             </Button>
             <Button onClick={onCreateResume} className="gap-2">
               <Plus className="h-4 w-4" />
-              新建简历
+              {t("create")}
             </Button>
           </div>
         </header>
@@ -90,7 +94,7 @@ export function ResumeLibraryView({
             <input
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="搜索简历..."
+              placeholder={t("search")}
               className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
             />
           </label>
@@ -103,8 +107,8 @@ export function ResumeLibraryView({
                 onChange={(event) => onSortModeChange(event.target.value as ResumeLibrarySortMode)}
                 className="bg-transparent outline-none"
               >
-                <option value="recent">最近编辑</option>
-                <option value="recentOptimized">最近优化</option>
+                <option value="recent">{t("sortRecent")}</option>
+                <option value="recentOptimized">{t("sortRecentOptimized")}</option>
               </select>
             </label>
             <div className="flex h-10 overflow-hidden rounded-lg border border-line bg-surface">
@@ -112,8 +116,8 @@ export function ResumeLibraryView({
                 type="button"
                 onClick={() => onViewModeChange("grid")}
                 className={cn("grid w-10 place-items-center", viewMode === "grid" && "bg-primary text-white")}
-                aria-label="网格视图"
-                title="网格视图"
+                aria-label={t("gridView")}
+                title={t("gridView")}
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
@@ -121,8 +125,8 @@ export function ResumeLibraryView({
                 type="button"
                 onClick={() => onViewModeChange("list")}
                 className={cn("grid w-10 place-items-center", viewMode === "list" && "bg-primary text-white")}
-                aria-label="列表视图"
-                title="列表视图"
+                aria-label={t("listView")}
+                title={t("listView")}
               >
                 <List className="h-4 w-4" />
               </button>
@@ -151,7 +155,7 @@ export function ResumeLibraryView({
 
         {cards.length === 0 && (
           <div className="mt-12 grid min-h-48 place-items-center rounded-xl border border-dashed border-line text-sm text-muted-foreground">
-            没有匹配的简历
+            {t("empty")}
           </div>
         )}
       </div>
@@ -170,6 +174,13 @@ function ResumeCard({
   onOpen: () => void;
   onDelete: () => void;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("app.resumeLibrary");
+  const kindLabel = card.kind === "优化后简历" ? t("kind.optimized") : t("kind.original");
+  const updatedAtLabel = card.updatedAtDate
+    ? t(`updatedAt.${card.updatedAtKind}`, { date: new Date(card.updatedAtDate).toLocaleDateString(locale) })
+    : t(`updatedAt.${card.updatedAtKind}`);
+
   return (
     <article
       role="button"
@@ -202,7 +213,7 @@ function ResumeCard({
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className="rounded-full bg-surface-mid px-2 py-1 text-[0.6875rem] text-muted-foreground">
-              {card.kind}
+              {kindLabel}
             </span>
             <button
               type="button"
@@ -211,16 +222,16 @@ function ResumeCard({
                 onDelete();
               }}
               className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
-              aria-label={card.id === "main" ? "删除原简历" : "删除简历"}
-              title={card.id === "main" ? "删除原简历" : "删除简历"}
+              aria-label={card.id === "main" ? t("deleteOriginal") : t("deleteResume")}
+              title={card.id === "main" ? t("deleteOriginal") : t("deleteResume")}
             >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>
         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="rounded-md bg-primary-soft px-2 py-1 text-primary">{card.template}</span>
-          <span>{card.updatedAt}</span>
+          <span className="rounded-md bg-primary-soft px-2 py-1 text-primary">{t(`templates.${card.templateKey}`)}</span>
+          <span>{updatedAtLabel}</span>
         </div>
       </div>
     </article>

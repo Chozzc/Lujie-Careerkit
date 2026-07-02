@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import type { NavKey } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ export function AppSidebar({
   isResumeEditor: boolean;
   onNavigate: (key: NavKey) => void;
 }) {
+  const t = useTranslations("app");
+
   return (
     <aside
       className={cn(
@@ -25,7 +28,7 @@ export function AppSidebar({
       <div className="mb-8 flex flex-col items-center">
         <div className="flex items-center justify-center gap-3">
           <Image src="/brand/lujie-mark.svg" alt="" width={44} height={44} className="shrink-0" priority />
-          <p className="font-serif text-3xl font-semibold leading-none tracking-normal text-primary">录阶</p>
+          <p className="font-serif text-3xl font-semibold leading-none tracking-normal text-primary">{t("brandName")}</p>
         </div>
         <p className="mt-2 text-[0.625rem] font-medium uppercase tracking-[0.28em] text-muted-foreground">
           LuJie CareerKit
@@ -34,8 +37,8 @@ export function AppSidebar({
 
       <nav className="flex flex-1 flex-col gap-7">
         {navGroups.map((group) => (
-          <div key={group.label} className="flex flex-col gap-2">
-            <p className="px-3 text-xs font-medium text-muted-foreground">{group.label}</p>
+          <div key={group.labelKey} className="flex flex-col gap-2">
+            <p className="px-3 text-xs font-medium text-muted-foreground">{t(`navGroups.${group.labelKey}`)}</p>
             {group.items.map((item) => {
               const Icon = item.icon;
               return (
@@ -50,7 +53,7 @@ export function AppSidebar({
                   )}
                 >
                   <Icon className="h-5 w-5" />
-                  {item.label}
+                  {t(`nav.${item.labelKey}`)}
                 </button>
               );
             })}
@@ -58,8 +61,8 @@ export function AppSidebar({
         ))}
       </nav>
       <div className="border-t border-line pt-5 text-xs leading-5 text-muted-foreground">
-        <p>本地模式</p>
-        <p>API Key 本机加密保存</p>
+        <p>{t("sidebar.localMode")}</p>
+        <p>{t("sidebar.encrypted")}</p>
       </div>
     </aside>
   );

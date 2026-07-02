@@ -17,9 +17,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
-  <img alt="Version" src="https://img.shields.io/github/v/tag/Chozzc/Lujie-Careerkit?label=version" />
   <img alt="Docker Image" src="https://github.com/Chozzc/Lujie-Careerkit/actions/workflows/docker-image.yml/badge.svg" />
-  <img alt="GHCR" src="https://img.shields.io/badge/GHCR-ghcr.io%2Fchozzc%2Flujie--careerkit-24292f?logo=github" />
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
@@ -114,7 +112,7 @@ docker compose up -d --build
 
 Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in the Docker volume `lujie-data`. For long-term use, set `LUJIE_SETTINGS_SECRET` in your shell or a local `.env` file before starting Compose.
 
-After the GitHub Container Registry image is published and made public, you can also run:
+Or use the published GitHub Container Registry image directly:
 
 ```bash
 docker run -d --name lujie-careerkit \
@@ -126,7 +124,7 @@ docker run -d --name lujie-careerkit \
 
 The container uses `DATABASE_URL=file:/data/dev.db` by default. API keys are still configured from the in-app Settings page.
 
-Use `latest` to follow the newest `main` build, or replace it with `v0.1.4` for the fixed release image.
+Use `latest` to follow the newest `main` build. Use `v0.1.4` when you want to pin the current published Docker release.
 
 ## Environment Variables
 
@@ -149,6 +147,13 @@ OPENAI_MODEL="qwen3.6-flash"
 AI features stay disabled until the settings are saved and the connection test succeeds.
 
 ## Release Notes
+
+### Unreleased
+
+- Added real `next-intl` multilingual support with an in-app language switcher.
+- Localized the main workspace shell, Dashboard, Resume Library, Settings, JD Matching, Interview Assistant, Application Tracking, and core Resume Editor controls.
+- Kept user data, resume content, JD text, and locally stored records unchanged when switching languages.
+- Fixed test/build configuration issues found during the `next-intl` migration.
 
 ### v0.1.4
 
