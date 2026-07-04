@@ -657,9 +657,15 @@ export async function updateResumeVersion(input: {
 }
 
 export async function saveJobAnalysis(jobId: string, analysis: JobAnalysis) {
+  const company = cleanJobLabel(analysis.company);
+  const title = cleanJobLabel(analysis.title);
   return prisma.job.update({
     where: { id: jobId },
-    data: { analysis },
+    data: {
+      analysis,
+      ...(company ? { company } : {}),
+      ...(title ? { title } : {}),
+    },
   });
 }
 

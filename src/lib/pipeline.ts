@@ -78,6 +78,8 @@ type PipelineApplicationInput = {
   jobId: string;
   status: ApplicationStatus;
   nextFollowUpAt: string | null;
+  appliedAt?: string | null;
+  stageDate?: string | null;
 };
 
 type PipelineJobInput = {
@@ -101,6 +103,7 @@ export type ApplicationTimelineItem = {
 };
 
 export const interviewPipelineStatuses = ["INTERVIEW"] as const satisfies ApplicationStatus[];
+export const activePipelineStatuses = ["APPLIED", "ASSESSMENT", ...interviewPipelineStatuses] as const satisfies ApplicationStatus[];
 
 const applicationJourneyStatuses = ["APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER"] as const satisfies ApplicationStatus[];
 
@@ -114,6 +117,20 @@ export function chunkPipelineStatuses(size = 3): VisiblePipelineStatus[][] {
 
 export function isVisiblePipelineStatus(status: ApplicationStatus): status is VisiblePipelineStatus {
   return visiblePipelineStatuses.includes(status as VisiblePipelineStatus);
+}
+
+export function isActivePipelineStatus(status: ApplicationStatus) {
+  return activePipelineStatuses.includes(status as (typeof activePipelineStatuses)[number]);
+}
+
+export function getApplicationDueDate(
+  application: Pick<PipelineApplicationInput, "status" | "nextFollowUpAt" | "appliedAt" | "stageDate">,
+  today = new Date(),
+) {
+  if (!isActivePipelineStatus(application.status)) return null;
+  const dueDate = application.nextFollowUpAt ?? application.stageDate ?? defaultNextFollowUpDate(application.appliedAt ?? "");
+  if (!dueDate) return null;
+  return dateTime(dueDate) <= today.getTime() ? dueDate : null;
 }
 
 export function defaultNextFollowUpDate(appliedAt: string, days = 7) {
@@ -171,7 +188,6 @@ export function buildPipelineOverview(
     isVisiblePipelineStatus(application.status),
   );
   const jobById = new Map(input.jobs.map((job) => [job.id, job]));
-  const activeStatuses = new Set<ApplicationStatus>(["APPLIED", "ASSESSMENT", ...interviewPipelineStatuses]);
   const terminalStatuses = new Set<ApplicationStatus>(["OFFER", "REJECTED", "ARCHIVED"]);
   const total = visibleApplications.length;
 
@@ -188,17 +204,14 @@ export function buildPipelineOverview(
   }
 
   const sourceCounts = Array.from(sourceCountMap.entries()).map(([source, count]) => ({ source, count }));
-  const active = visibleApplications.filter((application) => activeStatuses.has(application.status)).length;
+  const active = visibleApplications.filter((application) => isActivePipelineStatus(application.status)).length;
   const terminal = visibleApplications.filter((application) => terminalStatuses.has(application.status)).length;
   const interviewReachedStatuses = new Set<ApplicationStatus>([...interviewPipelineStatuses, "OFFER"]);
   const interviewCount = visibleApplications.filter((application) =>
     interviewReachedStatuses.has(application.status),
   ).length;
   const offerCount = visibleApplications.filter((application) => application.status === "OFFER").length;
-  const followUpsDue = visibleApplications.filter((application) => {
-    if (!application.nextFollowUpAt || !activeStatuses.has(application.status)) return false;
-    return new Date(application.nextFollowUpAt) <= today;
-  }).length;
+  const followUpsDue = visibleApplications.filter((application) => getApplicationDueDate(application, today)).length;
 
   return {
     total,
@@ -210,6 +223,11 @@ export function buildPipelineOverview(
     statusCounts,
     sourceCounts,
   };
+}
+
+function dateTime(value: string) {
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 }
 
 function getTimelineStepDate(input: ApplicationTimelineInput, status: ApplicationStatus) {

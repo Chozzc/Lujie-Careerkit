@@ -28,7 +28,7 @@ export function AppTopbar({
   isResumeEditor: boolean;
   headerMenu: HeaderMenuKey | null;
   setHeaderMenu: Dispatch<SetStateAction<HeaderMenuKey | null>>;
-  followUpReminders: Array<{ application: ApplicationView; job?: JobView }>;
+  followUpReminders: Array<{ application: ApplicationView; job?: JobView; dueDate: string | null }>;
   dashboard: ReturnType<typeof buildDashboardSummary>;
   resumeVersionCount: number;
   provider: string;

@@ -105,6 +105,7 @@
         "stageDate": "阶段日期",
         "deadline": "岗位截止日期",
         "nextFollowUp": "下次跟进日期",
+        "suggestedFollowUp": "建议跟进日期",
         "appliedAt": "投递日期",
         "updatedAt": "最近更新"
       },

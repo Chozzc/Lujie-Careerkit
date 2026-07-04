@@ -10,7 +10,7 @@ import { hasResumeContent } from "@/lib/resume-library";
 import { buildResumeDisplayName } from "@/lib/resume-naming";
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
-import { interviewPipelineStatuses, normalizeApplicationPriority } from "@/lib/pipeline";
+import { normalizeApplicationPriority } from "@/lib/pipeline";
 import type { ApplicationStatus, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { InterviewWorkspace } from "@/components/interview/interview-workspace";
 import { SettingsView } from "@/components/settings/settings-view";
 import { inferJobIdentity } from "@/lib/job-identity";
-import { buildDashboardSummary } from "@/lib/dashboard";
+import { buildDashboardSummary, getDashboardDueDate } from "@/lib/dashboard";
 import { AI_ROUTE_WARMUP_PATHS, warmAiRoutes } from "@/lib/ai-route-prewarm";
 import {
   MatchView,
@@ -124,18 +124,10 @@ export function CareerKitApp({
     [applications, jobs],
   );
   const followUpReminders = useMemo(() => {
-    const activeStatuses = new Set<ApplicationStatus>(["APPLIED", "ASSESSMENT", ...interviewPipelineStatuses]);
     const today = new Date();
     return applications
-      .filter((application) => {
-        if (!application.nextFollowUpAt || !activeStatuses.has(application.status)) return false;
-        return new Date(application.nextFollowUpAt) <= today;
-      })
-      .map((application) => ({
-        application,
-        job: jobById.get(application.jobId),
-      }))
-      .filter((item) => item.job)
+      .map((application) => ({ application, job: jobById.get(application.jobId), dueDate: getDashboardDueDate(application, today) }))
+      .filter((item) => item.job && item.dueDate)
       .slice(0, 4);
   }, [applications, jobById]);
 
@@ -485,20 +477,38 @@ export function CareerKitApp({
     setApplications((current) => [application, ...current]);
     setSelectedJobId(job.id);
 
-    const tailored = (await postJson("/api/ai/resume-tailor", {
-      jobId: job.id,
-      applicationId: application.id,
-      jd: `${identity.company} - ${identity.title}\n${jd}`,
-      resumeVersionId: input.resumeVersionId,
-      resumeContent: input.resumeContent,
-      preferences: input.preferences,
-    })) as {
+    let tailored: {
       analysis: JobAnalysis;
       version: ResumeVersionView;
       optimization?: ResumeOptimizationMeta;
       source?: "ai" | "fallback";
       message?: string;
     };
+    try {
+      tailored = (await postJson("/api/ai/resume-tailor", {
+        jobId: job.id,
+        applicationId: application.id,
+        jd: `${identity.company} - ${identity.title}\n${jd}`,
+        resumeVersionId: input.resumeVersionId,
+        resumeContent: input.resumeContent,
+        preferences: input.preferences,
+      })) as {
+        analysis: JobAnalysis;
+        version: ResumeVersionView;
+        optimization?: ResumeOptimizationMeta;
+        source?: "ai" | "fallback";
+        message?: string;
+      };
+    } catch (error) {
+      setJobs((current) => current.filter((item) => item.id !== job.id));
+      setApplications((current) => current.filter((item) => item.id !== application.id));
+      try {
+        await postJson(`/api/jobs/${job.id}`, {}, "DELETE");
+      } catch {
+        // Ignore cleanup failures so the original AI error stays visible.
+      }
+      throw error;
+    }
     const version = normalizeVersion(tailored.version);
 
     setJobs((current) =>

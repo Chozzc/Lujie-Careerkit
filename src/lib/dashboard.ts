@@ -1,7 +1,6 @@
-import { applicationPriorityLabels, applicationStatusDateLabels } from "./pipeline";
+import { defaultNextFollowUpDate, getApplicationDueDate, isActivePipelineStatus } from "./pipeline";
 import type { ApplicationPriority, ApplicationStatus } from "./types";
 
-const ACTIVE_STATUSES = new Set<ApplicationStatus>(["APPLIED", "ASSESSMENT", "INTERVIEW"]);
 const PRIORITY_STATUSES = new Set<ApplicationStatus>(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW"]);
 const SUBMITTED_STATUSES = new Set<ApplicationStatus>([
   "APPLIED",
@@ -57,13 +56,14 @@ type DashboardInput = {
 export function buildDashboardSummary(input: DashboardInput, today = new Date()) {
   const jobById = new Map(input.jobs.map((job) => [job.id, job]));
   const submitted = input.applications.filter((application) => SUBMITTED_STATUSES.has(application.status));
-  const active = input.applications.filter((application) => ACTIVE_STATUSES.has(application.status));
-  const dueApplications = active.filter((application) => isDue(application.nextFollowUpAt, today));
+  const active = input.applications.filter((application) => isActivePipelineStatus(application.status));
+  const dueApplications = active.filter((application) => Boolean(getDashboardDueDate(application, today)));
   const actions = input.applications
     .flatMap((application) => {
       if (!PRIORITY_STATUSES.has(application.status)) return [];
       const job = jobById.get(application.jobId);
       if (!job) return [];
+      if (application.status === "READY" && hasPlaceholderIdentity(job)) return [];
       const schedule = resolvePrioritySchedule(application, job);
       return [{
         applicationId: application.id,
@@ -73,8 +73,6 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
         status: application.status,
         scheduleKey: schedule.key,
         priorityLabelKey: application.priority,
-        title: priorityActionTitle(application.status, job),
-        detail: `${schedule.label}：${schedule.date} · ${applicationPriorityLabels[application.priority]}`,
         date: schedule.date,
         priority: application.priority,
         target: priorityActionTarget(application.status),
@@ -103,31 +101,43 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
   };
 }
 
-function resolvePrioritySchedule(application: DashboardApplication, job: DashboardJob) {
-  if (application.stageDate) {
-    return { date: application.stageDate, label: applicationStatusDateLabels[application.status], key: "stageDate" as const };
-  }
-  if (job.deadline) return { date: job.deadline, label: "岗位截止日期", key: "deadline" as const };
-  if (application.nextFollowUpAt) return { date: application.nextFollowUpAt, label: "下次跟进日期", key: "nextFollowUp" as const };
-  if (application.appliedAt) return { date: application.appliedAt, label: "投递日期", key: "appliedAt" as const };
-  return { date: application.updatedAt.slice(0, 10), label: "最近更新", key: "updatedAt" as const };
+export function getDashboardDueDate(application: DashboardApplication, today = new Date()) {
+  return getApplicationDueDate(application, today);
 }
 
-function priorityActionTitle(status: ApplicationStatus, job: DashboardJob) {
-  if (status === "READY") return `完成 ${job.company} · ${job.title} 的岗位匹配`;
-  if (status === "ASSESSMENT") return `准备 ${job.company} · ${job.title} 的笔试 / 测评`;
-  if (status === "INTERVIEW") return `准备 ${job.company} · ${job.title} 面试`;
-  return `跟进 ${job.company} · ${job.title}`;
+function resolvePrioritySchedule(application: DashboardApplication, job: DashboardJob) {
+  const activeSchedule = resolveActiveSchedule(application);
+  if (activeSchedule) return activeSchedule;
+  if (application.status === "READY" && job.deadline) return { date: job.deadline, key: "deadline" as const };
+  return { date: application.updatedAt.slice(0, 10), key: "updatedAt" as const };
+}
+
+function resolveActiveSchedule(application: DashboardApplication) {
+  if (!isActivePipelineStatus(application.status)) return null;
+  if (application.nextFollowUpAt) {
+    return { date: application.nextFollowUpAt, key: "nextFollowUp" as const };
+  }
+  if (application.stageDate) {
+    return { date: application.stageDate, key: "stageDate" as const };
+  }
+  const suggestedFollowUp = defaultNextFollowUpDate(application.appliedAt ?? "");
+  return suggestedFollowUp
+    ? { date: suggestedFollowUp, key: "suggestedFollowUp" as const }
+    : null;
+}
+
+function hasPlaceholderIdentity(job: DashboardJob) {
+  return isPlaceholderLabel(job.company) || isPlaceholderLabel(job.title);
+}
+
+function isPlaceholderLabel(value: string) {
+  return /待|未知|未识别|目标公司|目标岗位/.test(value.trim());
 }
 
 function priorityActionTarget(status: ApplicationStatus): DashboardTarget {
   if (status === "READY") return "match";
   if (status === "INTERVIEW") return "interview";
   return "pipeline";
-}
-
-function isDue(value: string | null, today: Date) {
-  return Boolean(value && dateTime(value) <= today.getTime());
 }
 
 function dateTime(value: string | null) {

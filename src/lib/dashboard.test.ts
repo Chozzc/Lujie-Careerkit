@@ -42,6 +42,38 @@ describe("buildDashboardSummary", () => {
     expect(summary).not.toHaveProperty("resumeHealth");
   });
 
+  it("counts due active work from explicit follow-up dates, stage dates, and stale applied dates", () => {
+    const summary = buildDashboardSummary(
+      {
+        applications: [
+          application("applied", "job-applied", "APPLIED", null, null, "2026-06-20T08:00:00.000Z", {
+            appliedAt: "2026-06-01",
+          }),
+          application("assessment", "job-assessment", "ASSESSMENT", null, null, "2026-06-20T08:00:00.000Z", {
+            stageDate: "2026-06-03",
+          }),
+          application("interview", "job-interview", "INTERVIEW", null, "2026-06-04", "2026-06-20T08:00:00.000Z", {
+            stageDate: "2026-06-12",
+          }),
+          application("offer", "job-offer", "OFFER", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
+          application("archived", "job-archived", "ARCHIVED", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
+          application("ready", "job-ready", "READY", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
+        ],
+        jobs: [
+          job("job-applied", "百度", "前端开发实习生"),
+          job("job-assessment", "网易", "后端开发实习生"),
+          job("job-interview", "腾讯", "产品实习生"),
+          job("job-offer", "字节跳动", "算法实习生"),
+          job("job-archived", "美团", "后端开发实习生"),
+          job("job-ready", "京东", "数据分析实习生"),
+        ],
+      },
+      new Date("2026-06-10T12:00:00.000Z"),
+    );
+
+    expect(summary.metrics).toMatchObject({ active: 3, followUpsDue: 3, offers: 1 });
+  });
+
   it("returns useful empty states without inventing actions or scores", () => {
     const summary = buildDashboardSummary({ applications: [], jobs: [] });
 
@@ -49,6 +81,21 @@ describe("buildDashboardSummary", () => {
     expect(summary).not.toHaveProperty("recentVersions");
     expect(summary).not.toHaveProperty("recentInterviews");
     expect(summary.actions).toEqual([]);
+  });
+
+  it("does not surface placeholder ready jobs as priority actions", () => {
+    const summary = buildDashboardSummary({
+      applications: [
+        application("placeholder", "job-placeholder", "READY", null, null, "2026-06-20T08:00:00.000Z"),
+        application("real", "job-real", "READY", null, null, "2026-06-19T08:00:00.000Z"),
+      ],
+      jobs: [
+        job("job-placeholder", "目标公司", "目标岗位"),
+        job("job-real", "美团", "后端开发实习生"),
+      ],
+    });
+
+    expect(summary.actions.map((action) => action.applicationId)).toEqual(["real"]);
   });
 
   it("takes the three earliest active dates and uses manual priority for matching dates", () => {

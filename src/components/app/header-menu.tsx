@@ -48,7 +48,7 @@ export function HeaderMenuPanel({
   onClose,
 }: {
   menu: HeaderMenuKey;
-  reminders: Array<{ application: ApplicationView; job?: JobView }>;
+  reminders: Array<{ application: ApplicationView; job?: JobView; dueDate: string | null }>;
   dashboard: ReturnType<typeof buildDashboardSummary>;
   resumeVersionCount: number;
   provider: string;
@@ -76,12 +76,10 @@ export function HeaderMenuPanel({
       {menu === "notifications" && (
         <div className="space-y-3">
           {reminders.length > 0 ? (
-            reminders.map(({ application, job }) => (
+            reminders.map(({ application, job, dueDate }) => (
               <div key={application.id} className="rounded-lg bg-surface-low p-3">
                 <p className="font-medium">{job?.company ?? t("unknownCompany")} · {job?.title ?? t("unknownTitle")}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("followUpDate", { date: application.nextFollowUpAt ?? "" })}
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("followUpDate", { date: dueDate ?? "" })}</p>
               </div>
             ))
           ) : (

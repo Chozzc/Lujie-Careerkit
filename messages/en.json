@@ -105,6 +105,7 @@
         "stageDate": "Stage date",
         "deadline": "Application deadline",
         "nextFollowUp": "Next follow-up",
+        "suggestedFollowUp": "Suggested follow-up",
         "appliedAt": "Applied date",
         "updatedAt": "Last updated"
       },

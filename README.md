@@ -189,6 +189,15 @@ No. Resume editing and application tracking work locally. AI features such as JD
 
 By default, data is stored on your machine in `prisma/dev.db`. This is local runtime data and should not be committed to GitHub.
 
+### How are Dashboard metrics calculated?
+
+- **Applications**: roles that have entered the application tracking board, excluding JD matching drafts that have not been submitted.
+- **Active flows**: roles still in progress, including applied, assessment, and interview stages.
+- **Due follow-ups**: active flows only. LuJie first uses the manually set next follow-up date, then the current stage date; if only an applied date exists, it uses seven days after applying as the suggested follow-up date.
+- **Offers**: roles marked as Offer.
+
+When JD matching creates a temporary role and the AI call fails, LuJie cleans up that temporary role so placeholder tasks such as “Target company · Target role” do not stay on the Dashboard. Historical local test data can be reset from Settings with “Clear and restore sample data”.
+
 ### What is `LUJIE_SETTINGS_SECRET`?
 
 It is the local encryption secret used to encrypt API keys saved in SQLite. If you change it, API keys already saved in the old database may no longer decrypt, so you may need to save the key again in Settings.
