@@ -128,9 +128,20 @@ export function getApplicationDueDate(
   today = new Date(),
 ) {
   if (!isActivePipelineStatus(application.status)) return null;
-  const dueDate = application.nextFollowUpAt ?? application.stageDate ?? defaultNextFollowUpDate(application.appliedAt ?? "");
+  const dueDate = getApplicationActionDate(application);
   if (!dueDate) return null;
   return dateTime(dueDate) <= today.getTime() ? dueDate : null;
+}
+
+export function getApplicationActionDate(
+  application: Pick<PipelineApplicationInput, "status" | "nextFollowUpAt" | "appliedAt" | "stageDate">,
+) {
+  if (!isActivePipelineStatus(application.status)) return null;
+  if (application.nextFollowUpAt) return application.nextFollowUpAt;
+  if (application.status === "APPLIED") {
+    return defaultNextFollowUpDate(application.appliedAt ?? application.stageDate ?? "") || null;
+  }
+  return application.stageDate ?? (defaultNextFollowUpDate(application.appliedAt ?? "") || null);
 }
 
 export function defaultNextFollowUpDate(appliedAt: string, days = 7) {

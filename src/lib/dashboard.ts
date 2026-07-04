@@ -1,4 +1,4 @@
-import { defaultNextFollowUpDate, getApplicationDueDate, isActivePipelineStatus } from "./pipeline";
+import { getApplicationActionDate, getApplicationDueDate, isActivePipelineStatus } from "./pipeline";
 import type { ApplicationPriority, ApplicationStatus } from "./types";
 
 const PRIORITY_STATUSES = new Set<ApplicationStatus>(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW"]);
@@ -74,6 +74,7 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
         scheduleKey: schedule.key,
         priorityLabelKey: application.priority,
         date: schedule.date,
+        isDue: dateTime(schedule.date) <= today.getTime(),
         priority: application.priority,
         target: priorityActionTarget(application.status),
       }];
@@ -114,16 +115,18 @@ function resolvePrioritySchedule(application: DashboardApplication, job: Dashboa
 
 function resolveActiveSchedule(application: DashboardApplication) {
   if (!isActivePipelineStatus(application.status)) return null;
+  const date = getApplicationActionDate(application);
+  if (!date) return null;
   if (application.nextFollowUpAt) {
-    return { date: application.nextFollowUpAt, key: "nextFollowUp" as const };
+    return { date, key: "nextFollowUp" as const };
+  }
+  if (application.status === "APPLIED") {
+    return { date, key: "suggestedFollowUp" as const };
   }
   if (application.stageDate) {
-    return { date: application.stageDate, key: "stageDate" as const };
+    return { date, key: "stageDate" as const };
   }
-  const suggestedFollowUp = defaultNextFollowUpDate(application.appliedAt ?? "");
-  return suggestedFollowUp
-    ? { date: suggestedFollowUp, key: "suggestedFollowUp" as const }
-    : null;
+  return { date, key: "suggestedFollowUp" as const };
 }
 
 function hasPlaceholderIdentity(job: DashboardJob) {

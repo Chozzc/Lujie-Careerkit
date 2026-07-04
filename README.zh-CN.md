@@ -84,7 +84,7 @@ docker run -d --name lujie-careerkit \
 
 `LUJIE_SETTINGS_SECRET` 用于加密本机保存的设置密钥，请替换成一串足够长的随机字符串。
 
-使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前已发布的 Docker 版本，可以把镜像标签换成 `v0.1.5`。
+使用 `latest` 会跟随最新的 `main` 构建；如果想固定到当前已发布的 Docker 版本，可以把镜像标签换成 `v0.1.6`。
 
 ### 本地开发
 
@@ -138,6 +138,13 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
 
+### v0.1.6
+
+- 修复控制中心的到期跟进计算：已投递且未设置下次跟进时，按投递后 7 天作为建议跟进日。
+- 优先处理列表会为已到期事项显示“已到期”，并补充对应的浅色背景提示。
+- 更新 Docker 固定版本说明，可使用 `ghcr.io/chozzc/lujie-careerkit:v0.1.6`。
+- 优化 README 的常见问题顺序与 Star 趋势展示。
+
 ### v0.1.5
 
 - 加入中英文双语界面，支持在应用内切换语言。
@@ -177,32 +184,36 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 ## Star 趋势
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Chozzc/Lujie-Careerkit&type=Date)](https://star-history.com/#Chozzc/Lujie-Careerkit&Date)
+<a href="https://www.star-history.com/?type=date&repos=Chozzc%2FLujie-Careerkit">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
+  </picture>
+</a>
 
 ## 常见问题
 
-### 必须配置 API Key 才能使用吗？
+### 1. 必须配置 API Key 才能使用吗？
 
 不是。简历编辑、投递跟进等基础功能可以本地使用；JD 匹配、模拟面试、AI 复盘等 AI 功能需要配置 OpenAI-compatible 服务的 API Key。
 
-### 我的数据保存在哪里？
+### 2. 我的数据保存在哪里？
 
 默认保存在本机的 `prisma/dev.db`。这是本地运行数据，不应该提交到 GitHub。
 
-### 控制中心的数据怎么计算？
+### 3. 控制中心的数据怎么计算？
 
 - **投递岗位**：统计已进入投递跟进看板的岗位，不包含还未投递的 JD 匹配草稿。
 - **活跃流程**：统计仍在推进中的岗位，包括已投递、笔试 / 测评、面试中。
-- **到期跟进**：只统计活跃流程。优先使用手动设置的下次跟进日期，其次使用当前阶段日期；如果只有投递日期，则按投递后 7 天作为建议跟进日。
+- **到期跟进**：只统计活跃流程。优先使用手动设置的下次跟进日期；已投递且未设置下次跟进时，按投递后 7 天作为建议跟进日；笔试 / 测评和面试中使用当前阶段日期。
 - **Offer**：统计已标记为 Offer 的岗位。
 
-JD 匹配生成岗位时，如果 AI 调用失败，会自动清理本次创建的临时岗位，避免控制中心出现“目标公司 · 目标岗位”这类占位待办。历史本地测试数据可以在设置页通过“清空并恢复示例数据”重置。
-
-### `LUJIE_SETTINGS_SECRET` 是什么？
+### 4. `LUJIE_SETTINGS_SECRET` 是什么？
 
 它是本地加密密钥，用来加密保存到 SQLite 的 API Key。换掉这个值后，旧数据库里已经保存的 API Key 可能无法解密，需要重新在设置页保存。
 
-### 可以换成别的模型服务吗？
+### 5. 可以换成别的模型服务吗？
 
 可以。只要服务兼容 OpenAI 接口，就可以在设置页填写对应的 Base URL、模型名称和 API Key。
 

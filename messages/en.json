@@ -81,6 +81,7 @@
         "stages": "Pipeline stages"
       },
       "emptyActions": "Set stage dates for applications and the three most urgent tasks will appear here.",
+      "overdueSuffix": " (due)",
       "quickActions": {
         "resume": "Edit resume",
         "match": "JD matching",

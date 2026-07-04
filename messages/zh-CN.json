@@ -81,6 +81,7 @@
         "stages": "求职阶段"
       },
       "emptyActions": "为投递岗位设置阶段日期后，这里会显示最紧急的三项任务。",
+      "overdueSuffix": "（已到期）",
       "quickActions": {
         "resume": "编辑简历",
         "match": "JD 匹配",

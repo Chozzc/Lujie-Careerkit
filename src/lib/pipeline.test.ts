@@ -7,6 +7,7 @@ import {
   chunkPipelineStatuses,
   companySuggestions,
   defaultNextFollowUpDate,
+  getApplicationDueDate,
   visiblePipelineStatuses,
 } from "./pipeline";
 
@@ -90,6 +91,18 @@ describe("pipeline presentation helpers", () => {
   it("defaults the next follow-up date to one week after applying", () => {
     expect(defaultNextFollowUpDate("2026-06-06")).toBe("2026-06-13");
     expect(defaultNextFollowUpDate("")).toBe("");
+  });
+
+  it("uses the suggested follow-up date for applied applications without a manual follow-up", () => {
+    const application = {
+      status: "APPLIED" as const,
+      appliedAt: "2026-06-30",
+      stageDate: "2026-06-30",
+      nextFollowUpAt: null,
+    };
+
+    expect(getApplicationDueDate(application, new Date("2026-07-05T00:00:00.000Z"))).toBeNull();
+    expect(getApplicationDueDate(application, new Date("2026-07-07T00:00:00.000Z"))).toBe("2026-07-07");
   });
 
   it("builds a compact card progress line from application status", () => {

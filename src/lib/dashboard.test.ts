@@ -136,8 +136,35 @@ describe("buildDashboardSummary", () => {
 
     expect(summary.actions.map((action) => action.applicationId)).toEqual([
       "soon-high",
-      "soon-low",
       "middle",
+      "late-high",
+    ]);
+  });
+
+  it("sorts applied applications by suggested follow-up when no explicit follow-up is set", () => {
+    const summary = buildDashboardSummary(
+      {
+        applications: [
+          application("baidu", "job-baidu", "APPLIED", null, "2026-07-05", "2026-06-20T08:00:00.000Z", {
+            appliedAt: "2026-06-23",
+            stageDate: "2026-06-23",
+          }),
+          application("huawei", "job-huawei", "APPLIED", null, null, "2026-06-30T08:00:00.000Z", {
+            appliedAt: "2026-06-30",
+            stageDate: "2026-06-30",
+          }),
+        ],
+        jobs: [
+          job("job-baidu", "Baidu", "Frontend Intern"),
+          job("job-huawei", "Huawei", "AI Test Intern"),
+        ],
+      },
+      new Date("2026-07-04T12:00:00.000Z"),
+    );
+
+    expect(summary.actions.map((action) => [action.applicationId, action.date, action.scheduleKey])).toEqual([
+      ["baidu", "2026-07-05", "nextFollowUp"],
+      ["huawei", "2026-07-07", "suggestedFollowUp"],
     ]);
   });
 });

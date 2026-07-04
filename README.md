@@ -84,7 +84,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. Use `v0.1.5` when you want to pin the current published Docker release.
+Use `latest` to follow the newest `main` build. Use `v0.1.6` when you want to pin the current published Docker release.
 
 ### Local Development
 
@@ -138,6 +138,13 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.1.6
+
+- Fixed Dashboard due follow-up calculation: applied roles without a manual follow-up now use seven days after applying as the suggested follow-up date.
+- Added a due label and clearer row background for overdue priority actions.
+- Updated the pinned Docker image note. The fixed version tag is `ghcr.io/chozzc/lujie-careerkit:v0.1.6`.
+- Improved FAQ ordering and Star History rendering in the README.
+
 ### v0.1.5
 
 - Added Chinese and English UI, with in-app language switching.
@@ -177,32 +184,36 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Chozzc/Lujie-Careerkit&type=Date)](https://star-history.com/#Chozzc/Lujie-Careerkit&Date)
+<a href="https://www.star-history.com/?type=date&repos=Chozzc%2FLujie-Careerkit">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
+  </picture>
+</a>
 
 ## FAQ
 
-### Do I need an API key to use it?
+### 1. Do I need an API key to use it?
 
 No. Resume editing and application tracking work locally. AI features such as JD matching, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
 
-### Where is my data stored?
+### 2. Where is my data stored?
 
 By default, data is stored on your machine in `prisma/dev.db`. This is local runtime data and should not be committed to GitHub.
 
-### How are Dashboard metrics calculated?
+### 3. How are Dashboard metrics calculated?
 
 - **Applications**: roles that have entered the application tracking board, excluding JD matching drafts that have not been submitted.
 - **Active flows**: roles still in progress, including applied, assessment, and interview stages.
-- **Due follow-ups**: active flows only. LuJie first uses the manually set next follow-up date, then the current stage date; if only an applied date exists, it uses seven days after applying as the suggested follow-up date.
+- **Due follow-ups**: active flows only. LuJie first uses the manually set next follow-up date; applied roles without one use seven days after applying as the suggested follow-up date; assessment and interview roles use the current stage date.
 - **Offers**: roles marked as Offer.
 
-When JD matching creates a temporary role and the AI call fails, LuJie cleans up that temporary role so placeholder tasks such as “Target company · Target role” do not stay on the Dashboard. Historical local test data can be reset from Settings with “Clear and restore sample data”.
-
-### What is `LUJIE_SETTINGS_SECRET`?
+### 4. What is `LUJIE_SETTINGS_SECRET`?
 
 It is the local encryption secret used to encrypt API keys saved in SQLite. If you change it, API keys already saved in the old database may no longer decrypt, so you may need to save the key again in Settings.
 
-### Can I use another model provider?
+### 5. Can I use another model provider?
 
 Yes. Any OpenAI-compatible provider can be configured by entering its Base URL, model name, and API key in Settings.
 
