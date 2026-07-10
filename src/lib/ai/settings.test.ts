@@ -43,6 +43,24 @@ describe("AI settings helpers", () => {
     expect(patch.aiBaseUrl).toBe("https://api.deepseek.com/v1");
   });
 
+  it("defaults to enabled while keeping keyless providers unavailable at runtime", () => {
+    expect(validateAiSettingsInput({}).aiEnabled).toBe(true);
+
+    const stored = {
+      aiProvider: "openai",
+      aiModel: "gpt-5.5",
+      aiBaseUrl: "https://api.openai.com/v1",
+      aiApiKey: "",
+      aiEnabled: true,
+      aiTemperature: 0.3,
+      aiLastTestedAt: null,
+      aiLastTestStatus: "untested",
+    } as const;
+
+    expect(redactAiSettings(stored).aiEnabled).toBe(true);
+    expect(getEffectiveAiSettings(stored).enabled).toBe(false);
+  });
+
   it("preserves an existing key unless clearApiKey is requested", () => {
     const existingKey = encryptLocalSecret("sk-existing-value");
 

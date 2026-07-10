@@ -11,7 +11,6 @@ import {
 import { getAiSettingsMaintenancePatch } from "./ai/settings-migration";
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER_ID, LEGACY_DEFAULT_AI_MODELS, getAiProvider } from "./ai/provider-registry";
 import { analyzeJobInput } from "./job-analysis";
-import { normalizeApplicationPriority } from "./pipeline";
 import { prisma } from "./db";
 import {
   interviewModeSchema,
@@ -24,7 +23,7 @@ import { resolveResumeContentTitle } from "./resume-naming";
 import { buildTailoredResumeVersion } from "./resume-versioning";
 import { shouldRefreshSampleResumeVersion, shouldSeedSampleResumeVersion } from "./resume-version-seeding";
 import { sampleApplications, sampleJobs, sampleResume, sampleResumeVersions } from "./sample-data";
-import type { ApplicationPriority, InterviewRound, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
+import type { InterviewRound, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
 
 export async function ensureSeedData() {
   await ensureSchema();
@@ -88,7 +87,6 @@ export async function ensureSeedData() {
         resumeVersionId,
         appliedAt: application.appliedAt ? new Date(application.appliedAt) : null,
         stageDate: application.stageDate ? new Date(application.stageDate) : null,
-        priority: normalizeApplicationPriority(application.priority),
         nextFollowUpAt: application.nextFollowUpAt ? new Date(application.nextFollowUpAt) : null,
         notes: application.notes,
         interviewRound: application.interviewRound ?? "",
@@ -135,7 +133,7 @@ async function ensureSettings() {
       aiModel: defaultModel,
       aiBaseUrl: defaultBaseUrl,
       aiApiKey: "",
-      aiEnabled: false,
+      aiEnabled: true,
       aiTemperature: 0.3,
       aiLastTestStatus: "untested",
     },
@@ -254,6 +252,7 @@ async function dedupeTailoredResumeVersions() {
 }
 
 async function ensureSchema() {
+  // ponytail: legacy SQLite files may retain removed columns; use a backup-and-rebuild migration only if physical cleanup is needed.
   const statements = [
     `CREATE TABLE IF NOT EXISTS "Resume" (
       "id" TEXT NOT NULL PRIMARY KEY,
@@ -293,7 +292,6 @@ async function ensureSchema() {
       "status" TEXT NOT NULL DEFAULT 'READY',
       "appliedAt" DATETIME,
       "stageDate" DATETIME,
-      "priority" TEXT NOT NULL DEFAULT 'NORMAL',
       "nextFollowUpAt" DATETIME,
       "notes" TEXT NOT NULL DEFAULT '',
       "interviewRound" TEXT NOT NULL DEFAULT '',
@@ -338,7 +336,7 @@ async function ensureSchema() {
         "aiModel" TEXT NOT NULL DEFAULT 'qwen3.7-max',
         "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://dashscope.aliyuncs.com/compatible-mode/v1',
       "aiApiKey" TEXT NOT NULL DEFAULT '',
-      "aiEnabled" BOOLEAN NOT NULL DEFAULT false,
+      "aiEnabled" BOOLEAN NOT NULL DEFAULT true,
       "aiTemperature" REAL NOT NULL DEFAULT 0.3,
       "aiLastTestedAt" DATETIME,
       "aiLastTestStatus" TEXT NOT NULL DEFAULT 'untested',
@@ -370,7 +368,6 @@ async function ensureSchema() {
   );
   await ensureColumn("Application", "interviewRound", `ALTER TABLE "Application" ADD COLUMN "interviewRound" TEXT NOT NULL DEFAULT ''`);
   await ensureColumn("Application", "stageDate", `ALTER TABLE "Application" ADD COLUMN "stageDate" DATETIME`);
-  await ensureColumn("Application", "priority", `ALTER TABLE "Application" ADD COLUMN "priority" TEXT NOT NULL DEFAULT 'NORMAL'`);
   await ensureColumn("InterviewSession", "mode", `ALTER TABLE "InterviewSession" ADD COLUMN "mode" TEXT NOT NULL DEFAULT 'comprehensive'`);
   await ensureColumn("InterviewSession", "status", `ALTER TABLE "InterviewSession" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'IN_PROGRESS'`);
   await ensureColumn("InterviewSession", "context", `ALTER TABLE "InterviewSession" ADD COLUMN "context" JSONB`);
@@ -384,7 +381,7 @@ async function ensureSchema() {
   await ensureColumn("Settings", "aiModel", `ALTER TABLE "Settings" ADD COLUMN "aiModel" TEXT NOT NULL DEFAULT 'qwen3.7-max'`);
   await ensureColumn("Settings", "aiBaseUrl", `ALTER TABLE "Settings" ADD COLUMN "aiBaseUrl" TEXT NOT NULL DEFAULT 'https://dashscope.aliyuncs.com/compatible-mode/v1'`);
   await ensureColumn("Settings", "aiApiKey", `ALTER TABLE "Settings" ADD COLUMN "aiApiKey" TEXT NOT NULL DEFAULT ''`);
-  await ensureColumn("Settings", "aiEnabled", `ALTER TABLE "Settings" ADD COLUMN "aiEnabled" BOOLEAN NOT NULL DEFAULT false`);
+  await ensureColumn("Settings", "aiEnabled", `ALTER TABLE "Settings" ADD COLUMN "aiEnabled" BOOLEAN NOT NULL DEFAULT true`);
   await ensureColumn("Settings", "aiTemperature", `ALTER TABLE "Settings" ADD COLUMN "aiTemperature" REAL NOT NULL DEFAULT 0.3`);
   await ensureColumn("Settings", "aiLastTestedAt", `ALTER TABLE "Settings" ADD COLUMN "aiLastTestedAt" DATETIME`);
   await ensureColumn("Settings", "aiLastTestStatus", `ALTER TABLE "Settings" ADD COLUMN "aiLastTestStatus" TEXT NOT NULL DEFAULT 'untested'`);
@@ -476,7 +473,6 @@ export async function getAppData() {
       resumeVersionId: application.resumeVersionId,
       appliedAt: toDateInput(application.appliedAt),
       stageDate: toDateInput(application.stageDate),
-      priority: normalizeApplicationPriority(application.priority),
       nextFollowUpAt: toDateInput(application.nextFollowUpAt),
       notes: application.notes,
       interviewRound: normalizeInterviewRound(applicationInterviewRounds.get(application.id) ?? application.interviewRound),
@@ -801,7 +797,6 @@ export async function createJobWithApplication(input: {
   applicationStatus?: ApplicationStatus;
   appliedAt?: string | null;
   stageDate?: string | null;
-  priority?: ApplicationPriority;
   nextFollowUpAt?: string | null;
   notes?: string;
   interviewRound?: InterviewRound;
@@ -837,7 +832,6 @@ export async function createJobWithApplication(input: {
             : new Date()
           : null,
       stageDate: stageDate ? new Date(stageDate) : null,
-      priority: normalizeApplicationPriority(input.priority),
       nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
       notes:
         input.notes ||
@@ -856,7 +850,6 @@ export async function updateApplication(input: {
   id: string;
   status?: ApplicationStatus;
   stageDate?: string | null;
-  priority?: ApplicationPriority;
   nextFollowUpAt?: string | null;
   notes?: string;
   resumeVersionId?: string | null;
@@ -879,7 +872,6 @@ export async function updateApplication(input: {
           : input.status && input.status !== existingApplication?.status
             ? new Date()
             : undefined,
-      priority: input.priority ? normalizeApplicationPriority(input.priority) : undefined,
       nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : input.nextFollowUpAt,
       notes: input.notes,
       resumeVersionId: input.resumeVersionId,
@@ -915,7 +907,6 @@ export async function updateJobWithApplication(input: {
   status?: ApplicationStatus;
   appliedAt?: string | null;
   stageDate?: string | null;
-  priority?: ApplicationPriority;
   nextFollowUpAt?: string | null;
   notes?: string;
   interviewRound?: InterviewRound;
@@ -944,7 +935,6 @@ export async function updateJobWithApplication(input: {
             ? new Date(input.stageDate)
             : input.appliedAt,
         stageDate: input.stageDate ? new Date(input.stageDate) : input.stageDate,
-        priority: input.priority ? normalizeApplicationPriority(input.priority) : undefined,
         nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : input.nextFollowUpAt,
         notes: input.notes,
       },

@@ -24,4 +24,20 @@ describe("AI resume snapshot", () => {
     expect(JSON.stringify(snapshot)).not.toContain("13800000000");
     expect(JSON.stringify(snapshot)).not.toContain("template");
   });
+
+  it("removes embedded logos before sending resume content to AI", () => {
+    const snapshot = buildAiResumeSnapshot({
+      basics: { name: "陈同学" },
+      experiences: [{ company: "示例公司", logo: "data:image/png;base64,logo" }],
+      internships: [{ company: "实习公司", logo: "data:image/png;base64,logo" }],
+      projects: [{ name: "示例项目", logo: "data:image/png;base64,logo" }],
+    });
+
+    expect(JSON.stringify(snapshot)).not.toContain("data:image");
+    expect(snapshot).toMatchObject({
+      experiences: [{ company: "示例公司" }],
+      internships: [{ company: "实习公司" }],
+      projects: [{ name: "示例项目" }],
+    });
+  });
 });

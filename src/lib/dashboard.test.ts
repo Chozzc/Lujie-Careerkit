@@ -83,7 +83,7 @@ describe("buildDashboardSummary", () => {
     expect(summary.actions).toEqual([]);
   });
 
-  it("does not surface placeholder ready jobs as priority actions", () => {
+  it("does not surface placeholder ready jobs as upcoming actions", () => {
     const summary = buildDashboardSummary({
       applications: [
         application("placeholder", "job-placeholder", "READY", null, null, "2026-06-20T08:00:00.000Z"),
@@ -98,29 +98,24 @@ describe("buildDashboardSummary", () => {
     expect(summary.actions.map((action) => action.applicationId)).toEqual(["real"]);
   });
 
-  it("takes the three earliest active dates and uses manual priority for matching dates", () => {
+  it("sorts actions by their resolved date without manual ordering", () => {
     const summary = buildDashboardSummary(
       {
         applications: [
           application("late-high", "job-late", "ASSESSMENT", null, null, "2026-06-20T08:00:00.000Z", {
             stageDate: "2026-06-30",
-            priority: "HIGH",
           }),
           application("soon-low", "job-soon-low", "APPLIED", null, null, "2026-06-20T08:00:00.000Z", {
             stageDate: "2026-06-24",
-            priority: "LOW",
           }),
           application("soon-high", "job-soon-high", "INTERVIEW", null, null, "2026-06-20T08:00:00.000Z", {
             stageDate: "2026-06-24",
-            priority: "HIGH",
           }),
           application("middle", "job-middle", "ASSESSMENT", null, null, "2026-06-20T08:00:00.000Z", {
             stageDate: "2026-06-25",
-            priority: "NORMAL",
           }),
           application("terminal", "job-terminal", "OFFER", null, null, "2026-06-20T08:00:00.000Z", {
             stageDate: "2026-06-23",
-            priority: "HIGH",
           }),
         ],
         jobs: [
@@ -183,7 +178,6 @@ function application(
   options: {
     appliedAt?: string | null;
     stageDate?: string | null;
-    priority?: "HIGH" | "NORMAL" | "LOW";
   } = {},
 ) {
   return {
@@ -194,7 +188,6 @@ function application(
     appliedAt: options.appliedAt ?? null,
     nextFollowUpAt,
     stageDate: options.stageDate ?? null,
-    priority: options.priority ?? "NORMAL",
     updatedAt,
   };
 }

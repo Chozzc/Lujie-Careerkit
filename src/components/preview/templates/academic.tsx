@@ -14,6 +14,7 @@ import type {
   CustomContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
+import { EntryLogo } from '../entry-logo';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
@@ -86,11 +87,14 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
       <div className="space-y-2.5">
         {items.map((item: any) => (
           <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="text-sm font-bold text-zinc-800">{item.position}</span>
-                {item.company && <span className="text-sm text-zinc-600">, {item.company}</span>}
-                {item.location && <span className="text-sm text-zinc-500">, {item.location}</span>}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.company || item.position} className="h-6 w-6" />
+                <div className="min-w-0">
+                  <span className="text-sm font-bold text-zinc-800">{item.position}</span>
+                  {item.company && <span className="text-sm text-zinc-600">, {item.company}</span>}
+                  {item.location && <span className="text-sm text-zinc-500">, {item.location}</span>}
+                </div>
               </div>
               <span className="shrink-0 text-xs text-zinc-500">{item.startDate} – {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
@@ -159,10 +163,13 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
       <div className="space-y-2.5">
         {items.map((item: any) => (
           <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="text-sm font-bold text-zinc-800">{item.name}</span>
-                {item.url && <span className="text-xs text-zinc-500 ml-1">[{item.url}]</span>}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.name} className="h-6 w-6" />
+                <div className="min-w-0">
+                  <span className="text-sm font-bold text-zinc-800">{item.name}</span>
+                  {item.url && <span className="text-xs text-zinc-500 ml-1">[{item.url}]</span>}
+                </div>
               </div>
               {item.startDate && (
                 <span className="shrink-0 text-xs text-zinc-500">

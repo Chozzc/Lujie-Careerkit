@@ -114,7 +114,8 @@ export function ZoomableResumeCanvas({
   }, [updateZoom, zoom, zoomStep]);
 
   function handleCanvasMouseDown(event: ReactMouseEvent<HTMLDivElement>) {
-    if (event.button !== 1) return;
+    if (event.button !== 0 && event.button !== 1) return;
+    if (event.target instanceof Element && event.target.closest("button, input")) return;
     event.preventDefault();
     dragRef.current = {
       startX: event.clientX,
@@ -141,7 +142,7 @@ export function ZoomableResumeCanvas({
         backgroundImage: "radial-gradient(circle at 1px 1px, rgba(100,116,139,0.2) 1px, transparent 0)",
         backgroundSize: "24px 24px",
       }}
-      title="滚轮缩放，中键拖动画布"
+      title="滚轮缩放，左键/中键拖动画布"
       onMouseDown={handleCanvasMouseDown}
       onAuxClick={(event) => {
         if (event.button === 1) event.preventDefault();
@@ -193,7 +194,7 @@ export function ZoomableResumeCanvas({
 
       <div className="pointer-events-none absolute bottom-3 left-3 z-20 flex items-center gap-1.5 rounded-lg border border-line bg-white/90 px-2.5 py-1.5 text-[0.6875rem] text-muted-foreground shadow-sm backdrop-blur">
         <Move className="h-3.5 w-3.5" />
-        滚轮缩放 · 中键拖动画布
+        滚轮缩放 · 左键/中键拖动画布
       </div>
 
       <div

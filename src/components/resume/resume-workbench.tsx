@@ -110,6 +110,7 @@ const DEFAULT_EDITOR_THEME: ThemeConfig = {
   accentColor: "#e94560",
   fontFamily: "Inter",
   fontSize: "medium",
+  logoSize: "medium",
   lineSpacing: 1.5,
   margin: { top: 20, right: 24, bottom: 20, left: 24 },
   sectionSpacing: 16,

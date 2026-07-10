@@ -19,6 +19,7 @@ const DEFAULT_RESUME_THEME = {
   accentColor: "#e94560",
   fontFamily: "Inter",
   fontSize: "medium",
+  logoSize: "medium" as const,
   lineSpacing: 1.5,
   margin: { top: 20, right: 24, bottom: 20, left: 24 },
   sectionSpacing: 16,
@@ -70,6 +71,7 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
       items: content.projects.map((item) => ({
         id: generateId("project"),
         name: item.name,
+        logo: item.logo,
         description: item.role,
         technologies: [],
         highlights: item.highlights,
@@ -178,6 +180,7 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
     projects:
       projects?.items.map((item) => ({
         name: item.name,
+        logo: item.logo,
         role: item.description,
         highlights: item.highlights,
       })) ?? [],
@@ -208,6 +211,7 @@ function toWorkExperienceItem(prefix: string) {
     id: generateId(prefix),
     company: item.company,
     position: item.role,
+    logo: item.logo,
     location: "",
     startDate: item.start,
     endDate: item.end === "至今" ? null : item.end,
@@ -222,6 +226,7 @@ function fromWorkExperienceItem(item: WorkExperienceContent["items"][number]) {
   return {
     company: item.company,
     role: item.position,
+    logo: item.logo,
     start: item.startDate,
     end: item.current ? "至今" : item.endDate ?? "",
     highlights: item.highlights,
@@ -341,6 +346,7 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
               ...previous,
               company: next.company,
               position: next.position,
+              logo: previous.logo ?? next.logo,
               startDate: next.startDate,
               endDate: next.endDate,
               current: next.current,
@@ -360,6 +366,7 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
             (previous, next) => ({
               ...previous,
               name: next.name,
+              logo: previous.logo ?? next.logo,
               description: next.description,
               highlights: next.highlights,
             }),

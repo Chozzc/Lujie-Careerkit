@@ -138,12 +138,23 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.1.8
+
+- The canvas now pans with either the left or middle mouse button; the wheel still zooms.
+- Simplified application tracking by removing manual priority and showing Dashboard actions by upcoming dates.
+- Updated built-in application dates and notes. AI features default to enabled, while a working provider and API key are still required.
+- Removed the duplicate language setting in favor of the top-bar switcher.
+
+### v0.1.7
+
+- Work and project entries now support uploaded logos and common built-in icons.
+- The Theme Editor now offers small, medium, and large Logo / icon sizes for supported resume previews.
+
 ### v0.1.6
 
 - Fixed Dashboard due follow-up calculation: applied roles without a manual follow-up now use seven days after applying as the suggested follow-up date.
 - Added a due label and clearer row background for overdue priority actions.
 - Updated the pinned Docker image note. The fixed version tag is `ghcr.io/chozzc/lujie-careerkit:v0.1.6`.
-- Improved FAQ ordering and Star History rendering in the README.
 
 ### v0.1.5
 
@@ -181,16 +192,6 @@ AI features stay disabled until the settings are saved and the connection test s
 ### v0.1.0
 
 - Initial open-source release with the resume library, structured resume editor, JD matching, application tracking, mock interviews, AI review, and local SQLite storage.
-
-## Star History
-
-<a href="https://www.star-history.com/?type=date&repos=Chozzc%2FLujie-Careerkit">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
-  </picture>
-</a>
 
 ## FAQ
 

@@ -16,7 +16,6 @@ import {
 } from "@/lib/resume-upload";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type {
-  ApplicationPriority,
   ApplicationStatus,
   InterviewRound,
   JobAnalysis,
@@ -59,7 +58,6 @@ export type MatchApplicationView = {
   resumeVersionId: string | null;
   appliedAt: string | null;
   stageDate: string | null;
-  priority: ApplicationPriority;
   nextFollowUpAt: string | null;
   notes: string;
   updatedAt: string;
@@ -560,7 +558,6 @@ function buildSyntheticApplicationForVersion(version: MatchResumeVersionView, jo
     resumeVersionId: version.id,
     appliedAt: null,
     stageDate: null,
-    priority: "NORMAL",
     nextFollowUpAt: null,
     notes: "来自本地优化版本。",
     updatedAt: version.updatedAt,

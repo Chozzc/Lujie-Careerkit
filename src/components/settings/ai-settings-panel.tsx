@@ -63,7 +63,7 @@ const DEFAULT_SETTINGS: RedactedAiSettings = {
   aiProvider: DEFAULT_PROVIDER.id,
   aiModel: getDefaultAiModel(DEFAULT_PROVIDER.id),
   aiBaseUrl: DEFAULT_PROVIDER.baseUrl,
-  aiEnabled: false,
+  aiEnabled: true,
   aiTemperature: 0.3,
   aiLastTestedAt: null,
   aiLastTestStatus: "untested",

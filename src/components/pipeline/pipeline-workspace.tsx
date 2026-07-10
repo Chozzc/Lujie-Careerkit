@@ -43,7 +43,6 @@ import {
 
 import { SpeechTextarea } from "@/components/shared/speech-textarea";
 import {
-  applicationPriorityOptions,
   applicationSourceOptions,
   buildApplicationTimeline,
   buildPipelineOverview,
@@ -54,7 +53,7 @@ import {
   visiblePipelineStatuses,
 } from "@/lib/pipeline";
 import type { ApplicationTimelineItem } from "@/lib/pipeline";
-import type { ApplicationPriority, ApplicationStatus, InterviewRound } from "@/lib/types";
+import type { ApplicationStatus, InterviewRound } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ApplicationView, JobView, ResumeVersionView } from "@/components/app/types";
 
@@ -511,7 +510,7 @@ function AddApplicationForm({
           />
         </FormField>
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <FormField label={statusDateLabel(applicationStatus, t)} optional>
           <Input
             name="stageDate"
@@ -527,9 +526,6 @@ function AddApplicationForm({
             value={nextFollowUpAt}
             onChange={(event) => setNextFollowUpAt(event.target.value)}
           />
-        </FormField>
-        <FormField label={t("fields.priority")} required>
-          <ApplicationPrioritySelect name="priority" defaultValue="NORMAL" required />
         </FormField>
       </div>
       <FormField label={t("fields.link")} optional>
@@ -651,7 +647,6 @@ function PipelineApplicationCard({
           {t("card.stageDate", { label: statusShortDateLabel(application.status, t), date: application.stageDate ?? application.appliedAt ?? t("card.notRecorded") })}
         </span>
         <span className="rounded-md bg-surface-low px-2 py-1">{t("card.followUp", { date: application.nextFollowUpAt ?? t("card.notSet") })}</span>
-        <span className="rounded-md bg-surface-low px-2 py-1">{t("card.priority", { priority: priorityLabel(application.priority, t) })}</span>
         <span className="rounded-md bg-surface-low px-2 py-1">{t("card.resume", { resume: version?.name ?? t("card.unbound") })}</span>
       </div>
       <div className="mt-3 rounded-lg border border-line bg-surface-low px-3 py-3">
@@ -818,9 +813,6 @@ function PipelineEditDialogContent({
             </FormField>
             <FormField label={t("fields.nextFollowUp")} optional>
               <Input name="nextFollowUpAt" type="date" defaultValue={application.nextFollowUpAt ?? ""} />
-            </FormField>
-            <FormField label={t("fields.priority")} required>
-              <ApplicationPrioritySelect name="priority" defaultValue={application.priority} required />
             </FormField>
           </div>
 
@@ -997,32 +989,6 @@ function PipelineStageSelect({
   );
 }
 
-function ApplicationPrioritySelect({
-  name,
-  defaultValue,
-  required,
-}: {
-  name: string;
-  defaultValue: ApplicationPriority;
-  required?: boolean;
-}) {
-  const t = useTranslations("pipeline");
-  return (
-    <select
-      name={name}
-      defaultValue={defaultValue}
-      required={required}
-      className="w-full rounded-lg border border-line bg-surface-low px-3 py-3 text-sm text-foreground outline-none focus:border-primary"
-    >
-      {applicationPriorityOptions.map((priority) => (
-        <option key={priority} value={priority}>
-          {priorityLabel(priority, t)}
-        </option>
-      ))}
-    </select>
-  );
-}
-
 function isPipelineStatus(value: string): value is (typeof visiblePipelineStatuses)[number] {
   return visiblePipelineStatuses.includes(value as (typeof visiblePipelineStatuses)[number]);
 }
@@ -1065,10 +1031,6 @@ function pipelineStageOptionLabel(value: string, t: PipelineT) {
   if (value === "INTERVIEW:THIRD") return interviewRoundLabel("THIRD", t);
   if (value === "INTERVIEW:HR") return interviewRoundLabel("HR", t);
   return isPipelineStatus(value) ? pipelineStatusLabel(value, t) : value;
-}
-
-function priorityLabel(priority: ApplicationPriority, t: PipelineT) {
-  return t(`priority.${priority}`);
 }
 
 function statusDateLabel(status: ApplicationStatus, t: PipelineT) {

@@ -9,6 +9,7 @@ import { EditableDate } from '../fields/editable-date';
 import { EditableRichText } from '../fields/editable-rich-text';
 import { EditableList } from '../fields/editable-list';
 import { FieldWrapper } from '../fields/field-wrapper';
+import { LogoPicker } from '../fields/logo-picker';
 import { generateId } from '@/lib/utils';
 import type { ResumeSection, WorkExperienceContent, WorkExperienceItem } from '@/types/resume';
 
@@ -70,6 +71,7 @@ export function WorkExperienceSection({ section, onUpdate }: Props) {
               <EditableText label={t('company')} value={item.company} onChange={(v) => updateItem(index, { company: v })} />
               <EditableText label={t('position')} value={item.position} onChange={(v) => updateItem(index, { position: v })} />
             </FieldWrapper>
+            <LogoPicker label={t('logo')} value={item.logo} onChange={(v) => updateItem(index, { logo: v })} />
             <FieldWrapper>
               <EditableDate label={t('startDate')} value={item.startDate} onChange={(v) => updateItem(index, { startDate: v })} />
               <EditableDate label={t('endDate')} value={item.endDate || ''} onChange={(v) => updateItem(index, { endDate: v || null, current: !v })} />

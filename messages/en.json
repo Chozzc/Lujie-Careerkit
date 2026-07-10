@@ -76,11 +76,11 @@
         "offers": "Offers"
       },
       "sections": {
-        "priority": "Priority",
+        "actions": "Upcoming actions",
         "quickStart": "Quick start",
         "stages": "Pipeline stages"
       },
-      "emptyActions": "Set stage dates for applications and the three most urgent tasks will appear here.",
+      "emptyActions": "Set stage dates for applications and the next three items to handle will appear here.",
       "overdueSuffix": " (due)",
       "quickActions": {
         "resume": "Edit resume",
@@ -109,11 +109,6 @@
         "suggestedFollowUp": "Suggested follow-up",
         "appliedAt": "Applied date",
         "updatedAt": "Last updated"
-      },
-      "priority": {
-        "HIGH": "High",
-        "NORMAL": "Normal",
-        "LOW": "Low"
       }
     },
     "resumeLibrary": {
@@ -432,11 +427,6 @@
       "THIRD": "Third round",
       "HR": "HR round"
     },
-    "priority": {
-      "HIGH": "High priority",
-      "NORMAL": "Normal",
-      "LOW": "Low priority"
-    },
     "source": {
       "shixiseng": "Shixiseng",
       "boss": "BOSS Zhipin",
@@ -507,7 +497,6 @@
       "status": "Current status",
       "stage": "Current stage",
       "nextFollowUp": "Next follow-up",
-      "priority": "Priority",
       "link": "Job link",
       "notes": "Notes",
       "jd": "Job description / JD",
@@ -534,7 +523,6 @@
       "notRecorded": "Not recorded",
       "followUp": "Follow-up: {date}",
       "notSet": "Not set",
-      "priority": "Priority: {priority}",
       "resume": "Resume: {resume}",
       "unbound": "Unbound",
       "progress": "Application progress",
@@ -643,6 +631,12 @@
       "font": "Font",
       "fontSize": "Font size",
       "fontSizes": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "logoSize": "Logo / icon size",
+      "logoSizes": {
         "small": "Small",
         "medium": "Medium",
         "large": "Large"
@@ -774,6 +768,32 @@
       "description": "Description",
       "company": "Company",
       "position": "Position",
+      "logo": "Logo / common icons",
+      "uploadLogo": "Upload logo",
+      "replaceLogo": "Replace logo",
+      "removeLogo": "Remove",
+      "commonIcons": "Common icons",
+      "chooseIcon": "Choose icon",
+      "changeIcon": "Change icon",
+      "iconNames": {
+        "building": "Company",
+        "briefcase": "Work",
+        "code": "Code",
+        "cpu": "AI / tech",
+        "chart": "Data analysis",
+        "palette": "Design",
+        "rocket": "Startup",
+        "users": "Teamwork",
+        "landmark": "Organization",
+        "graduation-cap": "Education",
+        "book-open": "Research",
+        "trophy": "Award",
+        "shield-check": "Security",
+        "globe": "Global / web",
+        "mail": "Email",
+        "phone": "Phone"
+      },
+      "logoUploadFailed": "Upload a PNG, JPG, or WebP image under 4MB",
       "startDate": "Start date",
       "endDate": "End date",
       "highlights": "Highlights",

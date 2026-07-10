@@ -29,6 +29,7 @@ export const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
     z.object({
       company: z.string(),
       role: z.string(),
+      logo: z.string().optional(),
       start: z.string(),
       end: z.string(),
       highlights: z.array(z.string()),
@@ -38,6 +39,7 @@ export const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
     z.object({
       company: z.string(),
       role: z.string(),
+      logo: z.string().optional(),
       start: z.string(),
       end: z.string(),
       highlights: z.array(z.string()),
@@ -47,6 +49,7 @@ export const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
     z.object({
       name: z.string(),
       role: z.string(),
+      logo: z.string().optional(),
       highlights: z.array(z.string()),
     }),
   ),
@@ -115,6 +118,7 @@ export function coerceResumeContent(value: unknown, fallbackName = "未命名简
         projects: itemList(resume.projects).map((item) => ({
           name: text(item.name) || text(item.title),
           role: text(item.role) || text(item.description),
+          logo: logo(item.logo),
           highlights: textList(item.highlights),
         })),
         skills: textList(resume.skills),
@@ -191,6 +195,7 @@ export function normalizeResumeContent(content: ResumeContent, fallbackName = "�
     projects: content.projects.map((item) => ({
       name: clean(item.name),
       role: clean(item.role),
+      logo: logo(item.logo),
       highlights: cleanList(item.highlights),
     })).filter((item) => item.name || item.role || item.highlights.length),
     skills: unique(cleanList(content.skills)),
@@ -227,6 +232,7 @@ function normalizeWorkList(items: ResumeContent["experiences"]) {
   return items.map((item) => ({
     company: clean(item.company),
     role: clean(item.role),
+    logo: logo(item.logo),
     start: clean(item.start),
     end: clean(item.end),
     highlights: cleanList(item.highlights),
@@ -237,6 +243,7 @@ function workItemList(value: unknown): ResumeContent["experiences"] {
   return itemList(value).map((item) => ({
     company: text(item.company),
     role: text(item.role) || text(item.position),
+    logo: logo(item.logo),
     start: text(item.start) || text(item.startDate),
     end: text(item.end) || text(item.endDate),
     highlights: textList(item.highlights),
@@ -262,6 +269,11 @@ function text(value: unknown): string {
   const orderedKeys = ["name", "title", "label", "text", "award", "certificate", "issuer", "organization", "date", "level", "content", "description", "summary"];
   const orderedText = orderedKeys.map((key) => text(record[key])).filter(Boolean);
   return (orderedText.length ? orderedText : Object.values(record).map(text).filter(Boolean)).join(" ");
+}
+
+function logo(value: unknown): string | undefined {
+  const raw = text(value);
+  return /^data:image\/(?:png|jpe?g|webp);base64,/i.test(raw) || /^icon:(?:building|briefcase|code|cpu|chart|palette|rocket|users|landmark|graduation-cap|book-open|trophy|shield-check|globe|mail|phone)$/i.test(raw) ? raw : undefined;
 }
 
 function toRecord(value: unknown): Record<string, unknown> {

@@ -8,7 +8,6 @@ export type ApplicationStatus =
   | "ARCHIVED";
 
 export type InterviewRound = "" | "FIRST" | "SECOND" | "THIRD" | "HR";
-export type ApplicationPriority = "HIGH" | "NORMAL" | "LOW";
 
 export type ResumeContent = {
   editor?: ResumeEditorSettings;
@@ -34,6 +33,7 @@ export type ResumeContent = {
   experiences: Array<{
     company: string;
     role: string;
+    logo?: string;
     start: string;
     end: string;
     highlights: string[];
@@ -41,6 +41,7 @@ export type ResumeContent = {
   internships: Array<{
     company: string;
     role: string;
+    logo?: string;
     start: string;
     end: string;
     highlights: string[];
@@ -48,6 +49,7 @@ export type ResumeContent = {
   projects: Array<{
     name: string;
     role: string;
+    logo?: string;
     highlights: string[];
   }>;
   skills: string[];
@@ -67,6 +69,7 @@ export type ResumeEditorSettings = {
     accentColor?: string;
     fontFamily?: string;
     fontSize?: string;
+    logoSize?: "small" | "medium" | "large";
     lineSpacing?: number;
     margin?: {
       top?: number;
@@ -131,7 +134,6 @@ export type ApplicationRecord = {
   resumeVersionId: string | null;
   appliedAt: string | null;
   stageDate: string | null;
-  priority: ApplicationPriority;
   nextFollowUpAt: string | null;
   notes: string;
 };

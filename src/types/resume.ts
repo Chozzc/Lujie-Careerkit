@@ -38,6 +38,7 @@ export interface WorkExperienceItem {
   id: string;
   company: string;
   position: string;
+  logo?: string;
   location?: string;
   startDate: string;
   endDate: string | null;
@@ -82,6 +83,7 @@ export interface SkillsContent {
 export interface ProjectItem {
   id: string;
   name: string;
+  logo?: string;
   url?: string;
   startDate?: string;
   endDate?: string;
@@ -173,6 +175,7 @@ export interface ThemeConfig {
   accentColor: string;
   fontFamily: string;
   fontSize: string;
+  logoSize?: 'small' | 'medium' | 'large';
   lineSpacing: number;
   margin: { top: number; right: number; bottom: number; left: number };
   sectionSpacing: number;

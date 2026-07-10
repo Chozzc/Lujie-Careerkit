@@ -63,4 +63,23 @@ describe("resume content normalization", () => {
     expect(normalized.awards).toEqual(["2025中国高校计算机大赛三等奖"]);
     expect(normalized.customSections?.[0]?.content).toBe("技术驱动艺术\n高产出与奖项验证");
   });
+
+  it("keeps safe uploaded logos and built-in icon references", () => {
+    const normalized = normalizeResumeContent({
+      ...emptyResume,
+      experiences: [
+        { company: "示例公司", role: "开发", logo: "icon:building", start: "", end: "", highlights: [] },
+        { company: "示例团队", role: "算法", logo: "icon:cpu", start: "", end: "", highlights: [] },
+      ],
+      projects: [
+        { name: "示例项目", role: "", logo: "data:image/png;base64,logo", highlights: [] },
+        { name: "无效图标", role: "", logo: "icon:not-allowed", highlights: [] },
+      ],
+    });
+
+    expect(normalized.experiences[0].logo).toBe("icon:building");
+    expect(normalized.experiences[1].logo).toBe("icon:cpu");
+    expect(normalized.projects[0].logo).toBe("data:image/png;base64,logo");
+    expect(normalized.projects[1].logo).toBeUndefined();
+  });
 });

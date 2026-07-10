@@ -26,10 +26,10 @@ type DashboardWorkspaceProps = {
   onAddApplication: () => void;
 };
 
-const priorityRowMeta = [
-  { badge: "bg-red-100 text-red-700 ring-1 ring-inset ring-red-200", due: "bg-red-50/70", hover: "hover:bg-red-50" },
-  { badge: "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200", due: "bg-amber-50/70", hover: "hover:bg-amber-50" },
-  { badge: "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200", due: "bg-blue-50/70", hover: "hover:bg-blue-50" },
+const actionRowMeta = [
+  { badge: "bg-red-100 text-red-700 ring-1 ring-inset ring-red-200", hover: "hover:bg-red-50" },
+  { badge: "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200", hover: "hover:bg-amber-50" },
+  { badge: "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200", hover: "hover:bg-blue-50" },
 ] as const;
 
 const stageMeta: Record<Exclude<ApplicationStatus, "READY">, { bar: string }> = {
@@ -55,10 +55,10 @@ export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: Da
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(240px,0.75fr)]">
-        <DashboardSection title={t("sections.priority")}>
+        <DashboardSection title={t("sections.actions")}>
           <div className="divide-y divide-line">
             {summary.actions.map((action, index) => {
-              const rowMeta = priorityRowMeta[index] ?? priorityRowMeta[2];
+              const rowMeta = actionRowMeta[index] ?? actionRowMeta[2];
               const actionKey = action.status === "READY" || action.status === "ASSESSMENT" || action.status === "INTERVIEW"
                 ? action.status
                 : "DEFAULT";
@@ -69,7 +69,6 @@ export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: Da
                 onClick={() => onNavigate(action.target)}
                 className={cn(
                   "group flex w-full items-center gap-3 px-2 py-3.5 text-left transition-colors",
-                  action.isDue && rowMeta.due,
                   rowMeta.hover,
                 )}
               >
@@ -84,7 +83,7 @@ export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: Da
                     {action.isDue ? <span className="shrink-0">{t("overdueSuffix")}</span> : null}
                   </span>
                   <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                    {t(`schedule.${action.scheduleKey}`)}: {action.date} · {t(`priority.${action.priorityLabelKey}`)}
+                    {t(`schedule.${action.scheduleKey}`)}: {action.date}
                   </span>
                 </span>
                 <ArrowRight className="size-4 shrink-0 text-muted-foreground group-hover:text-primary" />

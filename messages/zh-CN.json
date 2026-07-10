@@ -76,11 +76,11 @@
         "offers": "Offer"
       },
       "sections": {
-        "priority": "优先处理",
+        "actions": "近期处理",
         "quickStart": "快速开始",
         "stages": "求职阶段"
       },
-      "emptyActions": "为投递岗位设置阶段日期后，这里会显示最紧急的三项任务。",
+      "emptyActions": "为投递岗位设置阶段日期后，这里会显示最近需要处理的三项任务。",
       "overdueSuffix": "（已到期）",
       "quickActions": {
         "resume": "编辑简历",
@@ -109,11 +109,6 @@
         "suggestedFollowUp": "建议跟进日期",
         "appliedAt": "投递日期",
         "updatedAt": "最近更新"
-      },
-      "priority": {
-        "HIGH": "高",
-        "NORMAL": "普通",
-        "LOW": "低"
       }
     },
     "resumeLibrary": {
@@ -432,11 +427,6 @@
       "THIRD": "三面",
       "HR": "HR 面"
     },
-    "priority": {
-      "HIGH": "高优先级",
-      "NORMAL": "普通",
-      "LOW": "低优先级"
-    },
     "source": {
       "shixiseng": "实习僧",
       "boss": "BOSS直聘",
@@ -507,7 +497,6 @@
       "status": "当前状态",
       "stage": "当前阶段",
       "nextFollowUp": "下次跟进日期",
-      "priority": "求职优先级",
       "link": "招聘链接",
       "notes": "投递备注",
       "jd": "岗位描述 / JD",
@@ -534,7 +523,6 @@
       "notRecorded": "未记录",
       "followUp": "跟进：{date}",
       "notSet": "未设置",
-      "priority": "优先：{priority}",
       "resume": "简历：{resume}",
       "unbound": "未绑定",
       "progress": "投递进度",
@@ -643,6 +631,12 @@
       "font": "字体",
       "fontSize": "字号",
       "fontSizes": {
+        "small": "小",
+        "medium": "中",
+        "large": "大"
+      },
+      "logoSize": "Logo / 图标大小",
+      "logoSizes": {
         "small": "小",
         "medium": "中",
         "large": "大"
@@ -774,6 +768,32 @@
       "description": "描述",
       "company": "公司",
       "position": "职位",
+      "logo": "Logo / 常用图标",
+      "uploadLogo": "上传 Logo",
+      "replaceLogo": "替换 Logo",
+      "removeLogo": "移除",
+      "commonIcons": "常用图标",
+      "chooseIcon": "选择图标",
+      "changeIcon": "更换图标",
+      "iconNames": {
+        "building": "公司",
+        "briefcase": "工作",
+        "code": "代码",
+        "cpu": "AI / 技术",
+        "chart": "数据分析",
+        "palette": "设计创意",
+        "rocket": "创业项目",
+        "users": "团队协作",
+        "landmark": "机构",
+        "graduation-cap": "教育",
+        "book-open": "研究学习",
+        "trophy": "奖项",
+        "shield-check": "安全认证",
+        "globe": "全球 / 网络",
+        "mail": "邮箱",
+        "phone": "电话"
+      },
+      "logoUploadFailed": "请上传 4MB 以内的 PNG、JPG 或 WebP 图片",
       "startDate": "开始时间",
       "endDate": "结束时间",
       "highlights": "亮点",

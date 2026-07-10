@@ -1,6 +1,6 @@
 {
   "name": "lujie-careerkit",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "private": true,
   "scripts": {
     "postinstall": "prisma generate",
@@ -41,6 +41,9 @@
     "word-extractor": "^1.0.4",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
+  },
+  "overrides": {
+    "postcss": "8.5.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

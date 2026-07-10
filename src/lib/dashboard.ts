@@ -1,7 +1,7 @@
 import { getApplicationActionDate, getApplicationDueDate, isActivePipelineStatus } from "./pipeline";
-import type { ApplicationPriority, ApplicationStatus } from "./types";
+import type { ApplicationStatus } from "./types";
 
-const PRIORITY_STATUSES = new Set<ApplicationStatus>(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW"]);
+const ACTION_STATUSES = new Set<ApplicationStatus>(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW"]);
 const SUBMITTED_STATUSES = new Set<ApplicationStatus>([
   "APPLIED",
   "ASSESSMENT",
@@ -10,12 +10,6 @@ const SUBMITTED_STATUSES = new Set<ApplicationStatus>([
   "REJECTED",
   "ARCHIVED",
 ]);
-const PRIORITY_RANK: Record<ApplicationPriority, number> = {
-  HIGH: 0,
-  NORMAL: 1,
-  LOW: 2,
-};
-
 export const DASHBOARD_STAGE_STATUSES = [
   "APPLIED",
   "ASSESSMENT",
@@ -41,7 +35,6 @@ export type DashboardApplication = {
   resumeVersionId: string | null;
   appliedAt: string | null;
   stageDate: string | null;
-  priority: ApplicationPriority;
   nextFollowUpAt: string | null;
   updatedAt: string;
 };
@@ -60,11 +53,11 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
   const dueApplications = active.filter((application) => Boolean(getDashboardDueDate(application, today)));
   const actions = input.applications
     .flatMap((application) => {
-      if (!PRIORITY_STATUSES.has(application.status)) return [];
+      if (!ACTION_STATUSES.has(application.status)) return [];
       const job = jobById.get(application.jobId);
       if (!job) return [];
       if (application.status === "READY" && hasPlaceholderIdentity(job)) return [];
-      const schedule = resolvePrioritySchedule(application, job);
+      const schedule = resolveActionSchedule(application, job);
       return [{
         applicationId: application.id,
         jobId: job.id,
@@ -72,16 +65,13 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
         titleText: job.title,
         status: application.status,
         scheduleKey: schedule.key,
-        priorityLabelKey: application.priority,
         date: schedule.date,
         isDue: dateTime(schedule.date) <= today.getTime(),
-        priority: application.priority,
-        target: priorityActionTarget(application.status),
+        target: actionTarget(application.status),
       }];
     })
     .toSorted((left, right) => {
-      const dateDifference = dateTime(left.date) - dateTime(right.date);
-      return dateDifference || PRIORITY_RANK[left.priority] - PRIORITY_RANK[right.priority];
+      return dateTime(left.date) - dateTime(right.date);
     })
     .slice(0, 3);
 
@@ -106,7 +96,7 @@ export function getDashboardDueDate(application: DashboardApplication, today = n
   return getApplicationDueDate(application, today);
 }
 
-function resolvePrioritySchedule(application: DashboardApplication, job: DashboardJob) {
+function resolveActionSchedule(application: DashboardApplication, job: DashboardJob) {
   const activeSchedule = resolveActiveSchedule(application);
   if (activeSchedule) return activeSchedule;
   if (application.status === "READY" && job.deadline) return { date: job.deadline, key: "deadline" as const };
@@ -137,7 +127,7 @@ function isPlaceholderLabel(value: string) {
   return /待|未知|未识别|目标公司|目标岗位/.test(value.trim());
 }
 
-function priorityActionTarget(status: ApplicationStatus): DashboardTarget {
+function actionTarget(status: ApplicationStatus): DashboardTarget {
   if (status === "READY") return "match";
   if (status === "INTERVIEW") return "interview";
   return "pipeline";

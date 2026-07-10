@@ -15,6 +15,7 @@ import type {
 } from '@/types/resume';
 import { isSectionEmpty, md, degreeField } from '../utils';
 import { AvatarImage } from '../avatar-image';
+import { EntryLogo } from '../entry-logo';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function ClassicTemplate({ resume }: { resume: Resume }) {
@@ -80,13 +81,16 @@ function SectionContent({ section, lang }: { section: any; lang?: string }) {
       <div className="space-y-3">
         {items.map((item: any) => (
           <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-semibold text-zinc-800 text-sm">{item.position}</span>
-                {item.company && <span className="text-sm text-zinc-600"> at {item.company}</span>}
-                {item.location && <span className="text-sm text-zinc-400"> , {item.location}</span>}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.company || item.position} />
+                <div className="min-w-0">
+                  <span className="font-semibold text-zinc-800 text-sm">{item.position}</span>
+                  {item.company && <span className="text-sm text-zinc-600"> at {item.company}</span>}
+                  {item.location && <span className="text-sm text-zinc-400"> , {item.location}</span>}
+                </div>
               </div>
-              <span className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
+              <span className="shrink-0 text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
@@ -153,10 +157,13 @@ function SectionContent({ section, lang }: { section: any; lang?: string }) {
       <div className="space-y-3">
         {items.map((item: any) => (
           <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <span className="font-semibold text-zinc-800 text-sm">{item.name}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.name} />
+                <span className="font-semibold text-zinc-800 text-sm">{item.name}</span>
+              </div>
               {item.startDate && (
-                <span className="text-xs text-zinc-400">
+                <span className="shrink-0 text-xs text-zinc-400">
                   {item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}
                 </span>
               )}

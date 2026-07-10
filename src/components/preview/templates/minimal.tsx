@@ -3,6 +3,7 @@
 import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent, EducationContent, SkillsContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
+import { EntryLogo } from '../entry-logo';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function MinimalTemplate({ resume }: { resume: Resume }) {
@@ -67,8 +68,13 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
       <div className="space-y-4">
         {(content.items || []).map((item: any) => (
           <div key={item.id}>
-            <p className="text-sm"><span className="font-medium text-zinc-800">{item.position}</span> {item.company && <span className="text-zinc-500">/ {item.company}</span>}</p>
-            <p className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</p>
+            <div className="flex items-start gap-2">
+              <EntryLogo src={item.logo} alt={item.company || item.position} />
+              <div className="min-w-0">
+                <p className="text-sm"><span className="font-medium text-zinc-800">{item.position}</span> {item.company && <span className="text-zinc-500">/ {item.company}</span>}</p>
+                <p className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</p>
+              </div>
+            </div>
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
             {item.technologies?.length > 0 && (
               <p className="mt-0.5 text-xs text-zinc-400">{item.technologies.join(' / ')}</p>
@@ -124,8 +130,11 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
       <div className="space-y-4">
         {items.map((item: any) => (
           <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <span className="text-sm font-medium text-zinc-800">{item.name}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.name} />
+                <span className="min-w-0 text-sm font-medium text-zinc-800">{item.name}</span>
+              </div>
               {item.startDate && <span className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</span>}
             </div>
             {item.description && <p className="mt-1 text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}

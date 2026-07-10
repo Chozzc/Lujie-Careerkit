@@ -63,7 +63,7 @@ const aiSettingsInputSchema = z.object({
   aiBaseUrl: z.string().trim().optional().default(""),
   aiApiKey: z.string().optional().default(""),
   clearApiKey: z.boolean().optional().default(false),
-  aiEnabled: z.boolean().optional().default(false),
+  aiEnabled: z.boolean().optional().default(true),
   aiTemperature: z.coerce.number().min(0).max(2).optional().default(0.3),
 });
 
@@ -103,14 +103,12 @@ export function buildAiSettingsPatch(
     : validated.aiApiKey.trim()
       ? encryptLocalSecret(validated.aiApiKey)
       : previousKey;
-  const requiresApiKey = providerRequiresApiKey(validated.aiProvider);
-
   return {
     aiProvider: validated.aiProvider,
     aiModel: validated.aiModel,
     aiBaseUrl: validated.aiBaseUrl,
     aiApiKey: nextKey,
-    aiEnabled: Boolean(validated.aiEnabled && (!requiresApiKey || nextKey)),
+    aiEnabled: Boolean(validated.aiEnabled),
     aiTemperature: validated.aiTemperature,
     aiLastTestStatus: "untested",
   };
@@ -123,7 +121,7 @@ export function redactAiSettings(settings: StoredAiSettings): RedactedAiSettings
     aiProvider: effective.providerId,
     aiModel: effective.model,
     aiBaseUrl: effective.baseUrl,
-    aiEnabled: effective.enabled,
+    aiEnabled: Boolean(settings.aiEnabled),
     aiTemperature: effective.temperature,
     aiLastTestedAt: toIsoString(settings.aiLastTestedAt),
     aiLastTestStatus: normalizeTestStatus(settings.aiLastTestStatus),

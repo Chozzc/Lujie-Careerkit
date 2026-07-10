@@ -24,7 +24,6 @@ const result: MatchOptimizationResult = {
     resumeVersionId: "resume-1",
     appliedAt: null,
     stageDate: null,
-    priority: "NORMAL",
     nextFollowUpAt: null,
     notes: "",
     updatedAt: "2026-07-02T00:00:00.000Z",

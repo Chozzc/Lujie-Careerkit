@@ -3,6 +3,7 @@
 import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent, EducationContent, SkillsContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
 import { degreeField, isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
+import { EntryLogo } from '../entry-logo';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function ModernTemplate({ resume }: { resume: Resume }) {
@@ -85,8 +86,11 @@ function ModernSectionContent({ section, lang }: { section: any; lang?: string }
       <div className="space-y-4">
         {(content.items || []).map((item: any) => (
           <div key={item.id} className="border-l-2 pl-4" style={{ borderColor: '#e94560' }}>
-            <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold text-zinc-800">{item.position}</h3>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.company || item.position} />
+                <h3 className="min-w-0 text-sm font-semibold text-zinc-800">{item.position}</h3>
+              </div>
               <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-500">
                 {item.startDate} - {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}
               </span>
@@ -154,8 +158,11 @@ function ModernSectionContent({ section, lang }: { section: any; lang?: string }
       <div className="space-y-4">
         {items.map((item: any) => (
           <div key={item.id} className="border-l-2 pl-4" style={{ borderColor: '#e94560' }}>
-            <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold text-zinc-800">{item.name}</h3>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-2">
+                <EntryLogo src={item.logo} alt={item.name} />
+                <h3 className="min-w-0 text-sm font-semibold text-zinc-800">{item.name}</h3>
+              </div>
               {item.startDate && (
                 <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs text-zinc-500">
                   {item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}

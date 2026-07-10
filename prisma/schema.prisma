@@ -68,7 +68,6 @@ model Application {
   status           ApplicationStatus @default(READY)
   appliedAt        DateTime?
   stageDate        DateTime?
-  priority         String            @default("NORMAL")
   nextFollowUpAt   DateTime?
   notes            String            @default("")
   interviewRound   String            @default("")
@@ -121,7 +120,7 @@ model Settings {
   aiModel          String    @default("deepseek-v4-flash")
   aiBaseUrl        String    @default("https://api.deepseek.com/v1")
   aiApiKey         String    @default("")
-  aiEnabled        Boolean   @default(false)
+  aiEnabled        Boolean   @default(true)
   aiTemperature    Float     @default(0.3)
   aiLastTestedAt   DateTime?
   aiLastTestStatus String    @default("untested")

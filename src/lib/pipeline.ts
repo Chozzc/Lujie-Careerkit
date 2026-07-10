@@ -1,12 +1,4 @@
-import type { ApplicationPriority, ApplicationStatus } from "./types";
-
-export const applicationPriorityLabels: Record<ApplicationPriority, string> = {
-  HIGH: "高优先级",
-  NORMAL: "普通",
-  LOW: "低优先级",
-};
-
-export const applicationPriorityOptions = ["HIGH", "NORMAL", "LOW"] as const satisfies ApplicationPriority[];
+import type { ApplicationStatus } from "./types";
 
 export const applicationStatusDateLabels: Record<ApplicationStatus, string> = {
   READY: "岗位截止日期",
@@ -160,10 +152,6 @@ export function normalizeApplicationSource(source?: string) {
   if (value === "Boss" || value === "BOSS" || value === "BOSS直聘") return "BOSS直聘";
   if (applicationSourceOptions.includes(value)) return value;
   return "其他";
-}
-
-export function normalizeApplicationPriority(value?: string | null): ApplicationPriority {
-  return value === "HIGH" || value === "LOW" ? value : "NORMAL";
 }
 
 export function buildApplicationTimeline(input: ApplicationTimelineInput): ApplicationTimelineItem[] {

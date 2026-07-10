@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { LanguageSwitcher } from "@/components/app/language-switcher";
 import { AiSettingsPanel } from "@/components/settings/ai-settings-panel";
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import type { InitialData } from "@/components/app/types";
@@ -46,15 +45,6 @@ export function SettingsView({
         onSettingsChange={onAiSettingsChange}
         onStatus={onStatus}
       />
-      <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold">{t("languageTitle")}</h3>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{t("languageDescription")}</p>
-          </div>
-          <LanguageSwitcher />
-        </div>
-      </section>
       <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>

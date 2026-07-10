@@ -16,7 +16,6 @@ const jobSchema = z.object({
   interviewRound: z.enum(["", "FIRST", "SECOND", "THIRD", "HR"]).optional(),
   appliedAt: z.string().nullable().optional(),
   stageDate: z.string().nullable().optional(),
-  priority: z.enum(["HIGH", "NORMAL", "LOW"]).optional(),
   nextFollowUpAt: z.string().nullable().optional(),
   notes: z.string().optional(),
 });

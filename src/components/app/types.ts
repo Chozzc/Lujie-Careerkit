@@ -1,6 +1,6 @@
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
-import type { ApplicationPriority, ApplicationStatus, InterviewRound, JobAnalysis, ResumeContent } from "@/lib/types";
+import type { ApplicationStatus, InterviewRound, JobAnalysis, ResumeContent } from "@/lib/types";
 
 export type JobView = {
   id: string;
@@ -24,7 +24,6 @@ export type ApplicationView = {
   resumeVersionId: string | null;
   appliedAt: string | null;
   stageDate: string | null;
-  priority: ApplicationPriority;
   nextFollowUpAt: string | null;
   notes: string;
   updatedAt: string;

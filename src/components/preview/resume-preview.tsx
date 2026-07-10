@@ -131,11 +131,18 @@ const FONT_SIZE_SCALE: Record<string, { body: string; h1: string; h2: string; h3
   large:  { body: '16px', h1: '30px', h2: '19px', h3: '17px' },
 };
 
+const LOGO_SIZE_SCALE: Record<string, { container: string; icon: string }> = {
+  small: { container: '20px', icon: '12px' },
+  medium: { container: '28px', icon: '16px' },
+  large: { container: '36px', icon: '20px' },
+};
+
 const DEFAULT_THEME: ThemeConfig = {
   primaryColor: '#1a1a1a',
   accentColor: '#3b82f6',
   fontFamily: 'Inter',
   fontSize: 'medium',
+  logoSize: 'medium',
   lineSpacing: 1.5,
   margin: { top: 20, right: 20, bottom: 20, left: 20 },
   sectionSpacing: 16,
@@ -155,6 +162,7 @@ function isDark(hex: string): boolean {
 function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): string {
   const s = `[data-theme-scope="${scopeId}"]`;
   const fs = FONT_SIZE_SCALE[theme.fontSize] || FONT_SIZE_SCALE.medium;
+  const logo = LOGO_SIZE_SCALE[theme.logoSize ?? 'medium'] || LOGO_SIZE_SCALE.medium;
   const m = theme.margin;
   const needsPadding = !BACKGROUND_TEMPLATES.has(template);
   const primaryIsDark = isDark(theme.primaryColor);
@@ -177,6 +185,14 @@ function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): s
     ${s} p, ${s} li, ${s} span, ${s} td, ${s} a, ${s} div {
       font-size: ${fs.body} !important;
       line-height: ${theme.lineSpacing} !important;
+    }
+    ${s} [data-entry-logo] {
+      width: ${logo.container} !important;
+      height: ${logo.container} !important;
+    }
+    ${s} [data-entry-logo] svg {
+      width: ${logo.icon} !important;
+      height: ${logo.icon} !important;
     }
     ${s} h1 {
       color: ${theme.primaryColor} !important;

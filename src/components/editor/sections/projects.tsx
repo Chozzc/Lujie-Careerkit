@@ -9,6 +9,7 @@ import { EditableDate } from '../fields/editable-date';
 import { EditableRichText } from '../fields/editable-rich-text';
 import { EditableList } from '../fields/editable-list';
 import { FieldWrapper } from '../fields/field-wrapper';
+import { LogoPicker } from '../fields/logo-picker';
 import { generateId } from '@/lib/utils';
 import type { ResumeSection, ProjectsContent, ProjectItem } from '@/types/resume';
 
@@ -65,6 +66,7 @@ export function ProjectsSection({ section, onUpdate }: Props) {
               <EditableText label={t('projectName')} value={item.name} onChange={(v) => updateItem(index, { name: v })} />
               <EditableText label={t('website')} value={item.url || ''} onChange={(v) => updateItem(index, { url: v })} />
             </FieldWrapper>
+            <LogoPicker label={t('logo')} value={item.logo} onChange={(v) => updateItem(index, { logo: v })} />
             <FieldWrapper>
               <EditableDate label={t('startDate')} value={item.startDate || ''} onChange={(v) => updateItem(index, { startDate: v })} />
               <EditableDate label={t('endDate')} value={item.endDate || ''} onChange={(v) => updateItem(index, { endDate: v })} />

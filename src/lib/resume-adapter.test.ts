@@ -136,6 +136,18 @@ describe("resume content adapter", () => {
     expect(work.items[0].highlights).toEqual(["围绕 JD 强化后的经历表述。"]);
   });
 
+  it("keeps work and project logos through the editor round-trip", () => {
+    const logo = "data:image/png;base64,logo";
+    const content = jadeResumeToContent(contentToJadeResume({
+      ...baseResume,
+      experiences: [{ ...baseResume.experiences[0], logo }],
+      projects: [{ ...baseResume.projects[0], logo }],
+    }));
+
+    expect(content.experiences[0].logo).toBe(logo);
+    expect(content.projects[0].logo).toBe(logo);
+  });
+
   it("maps imported custom titled sections into editor custom modules", () => {
     const jadeResume = contentToJadeResume({
       ...baseResume,
@@ -177,6 +189,7 @@ describe("resume content adapter", () => {
           accentColor: "#b45309",
           fontFamily: "Inter",
           fontSize: "small",
+          logoSize: "large",
           lineSpacing: 1.35,
           margin: { top: 18, right: 20, bottom: 18, left: 20 },
           sectionSpacing: 12,
@@ -187,6 +200,7 @@ describe("resume content adapter", () => {
 
     expect(jadeResume.template).toBe("classic");
     expect(jadeResume.themeConfig.accentColor).toBe("#b45309");
+    expect(jadeResume.themeConfig.logoSize).toBe("large");
 
     jadeResume.template = "modern";
     jadeResume.themeConfig = { ...jadeResume.themeConfig, accentColor: "#315f92" };
@@ -194,5 +208,6 @@ describe("resume content adapter", () => {
 
     expect(content.editor?.template).toBe("modern");
     expect(content.editor?.themeConfig?.accentColor).toBe("#315f92");
+    expect(content.editor?.themeConfig?.logoSize).toBe("large");
   });
 });

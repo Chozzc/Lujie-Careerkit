@@ -17,7 +17,6 @@ const updateJobSchema = z.object({
   interviewRound: z.enum(["", "FIRST", "SECOND", "THIRD", "HR"]).optional(),
   appliedAt: z.string().nullable().optional(),
   stageDate: z.string().nullable().optional(),
-  priority: z.enum(["HIGH", "NORMAL", "LOW"]).optional(),
   nextFollowUpAt: z.string().nullable().optional(),
   notes: z.string().optional(),
 });
@@ -38,7 +37,6 @@ export async function PATCH(request: Request, context: RouteContext<"/api/jobs/[
     interviewRound: input.interviewRound,
     appliedAt: input.appliedAt,
     stageDate: input.stageDate,
-    priority: input.priority,
     nextFollowUpAt: input.nextFollowUpAt,
     notes: input.notes,
   });

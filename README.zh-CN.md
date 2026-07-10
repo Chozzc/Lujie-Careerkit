@@ -138,12 +138,23 @@ AI 功能会在设置保存且连接测试成功后启用。
 
 ## 版本更新
 
+### v0.1.8
+
+- 画布支持左键和中键拖动，滚轮可继续缩放。
+- 精简投递跟进：移除求职优先级，控制中心按近期待办日期展示。
+- 更新内置示例投递的日期和备注；AI 功能开关默认开启，仍需先配置可用的模型服务和 API Key。
+- 清理重复的语言设置，统一由顶栏切换。
+
+### v0.1.7
+
+- 工作经历和项目经历支持上传 Logo，或选择常用内置图标。
+- 主题编辑支持以小、中、大调整 Logo / 图标大小，并实时作用到支持该功能的简历预览。
+
 ### v0.1.6
 
 - 修复控制中心的到期跟进计算：已投递且未设置下次跟进时，按投递后 7 天作为建议跟进日。
 - 优先处理列表会为已到期事项显示“已到期”，并补充对应的浅色背景提示。
 - 更新 Docker 固定版本说明，可使用 `ghcr.io/chozzc/lujie-careerkit:v0.1.6`。
-- 优化 README 的常见问题顺序与 Star 趋势展示。
 
 ### v0.1.5
 
@@ -181,16 +192,6 @@ AI 功能会在设置保存且连接测试成功后启用。
 ### v0.1.0
 
 - 初始开源版本，包含简历库、结构化简历编辑器、JD 匹配优化、投递跟进、模拟面试、AI 复盘和本地 SQLite 数据存储。
-
-## Star 趋势
-
-<a href="https://www.star-history.com/?type=date&repos=Chozzc%2FLujie-Careerkit">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Chozzc/Lujie-Careerkit&type=date&legend=top-left" />
-  </picture>
-</a>
 
 ## 常见问题
 

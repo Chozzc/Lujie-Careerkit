@@ -124,6 +124,24 @@ export function ResumeThemePanel({
           </div>
         </ThemeField>
 
+        <ThemeField label={t("logoSize")}>
+          <div className="grid grid-cols-3 gap-2">
+            {(["small", "medium", "large"] as const).map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => onChange({ logoSize: size })}
+                className={cn(
+                  "rounded-lg border border-line px-3 py-2 text-xs",
+                  (theme.logoSize ?? "medium") === size ? "bg-primary text-white" : "bg-surface-low text-muted-foreground",
+                )}
+              >
+                {t(`logoSizes.${size}`)}
+              </button>
+            ))}
+          </div>
+        </ThemeField>
+
         <RangeField
           label={t("lineSpacing")}
           value={theme.lineSpacing}

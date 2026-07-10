@@ -10,7 +10,6 @@ import { hasResumeContent } from "@/lib/resume-library";
 import { buildResumeDisplayName } from "@/lib/resume-naming";
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
-import { normalizeApplicationPriority } from "@/lib/pipeline";
 import type { ApplicationStatus, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
 import { cn } from "@/lib/utils";
@@ -436,7 +435,6 @@ export function CareerKitApp({
         applicationStatus,
         interviewRound,
         stageDate: String(formData.get("stageDate") ?? "") || null,
-        priority: normalizeApplicationPriority(String(formData.get("priority") ?? "")),
         nextFollowUpAt: String(formData.get("nextFollowUpAt") ?? "") || null,
         notes,
       })) as { job: JobView; application: ApplicationView };
@@ -466,7 +464,6 @@ export function CareerKitApp({
       applicationStatus: "READY",
       appliedAt: null,
       stageDate: null,
-      priority: "NORMAL",
       nextFollowUpAt: null,
       notes: "来自 JD匹配优化流程。",
     })) as { job: JobView; application: ApplicationView };
@@ -606,7 +603,6 @@ export function CareerKitApp({
             status: stage.status,
             interviewRound: stage.interviewRound,
             stageDate: String(formData.get("stageDate") ?? "") || null,
-            priority: normalizeApplicationPriority(String(formData.get("priority") ?? "")),
             nextFollowUpAt: String(formData.get("nextFollowUpAt") ?? "") || null,
             notes: String(formData.get("notes") ?? "").trim(),
           },
@@ -839,7 +835,6 @@ function normalizeApplication(application: ApplicationView): ApplicationView {
     interviewRound: normalizeInterviewRound(application.interviewRound ?? ""),
     appliedAt: application.appliedAt ? String(application.appliedAt).slice(0, 10) : null,
     stageDate: application.stageDate ? String(application.stageDate).slice(0, 10) : null,
-    priority: normalizeApplicationPriority(application.priority),
     nextFollowUpAt: application.nextFollowUpAt ? String(application.nextFollowUpAt).slice(0, 10) : null,
   };
 }
@@ -935,4 +930,3 @@ function emptyResume(): ResumeContent {
     selfReview: "",
   };
 }
-
