@@ -284,7 +284,7 @@
     "generatingButton": "正在生成...",
     "startButton": "开始 JD匹配优化",
     "aiSetup": {
-      "title": "需要配置阿里百炼",
+      "title": "需要配置 AI",
       "later": "稍后再说"
     }
   },
@@ -407,7 +407,7 @@
       "retrying": "正在沿用本轮素材生成一组新问题..."
     },
     "aiSetup": {
-      "title": "需要配置阿里百炼",
+      "title": "需要配置 AI",
       "later": "稍后再说"
     }
   },
@@ -552,7 +552,7 @@
       "autoSaveFailed": "自动保存失败，请点击保存重试",
       "saveFailed": "保存失败，请稍后重试",
       "localParsing": "正在使用本地兜底解析，效果可能不佳...",
-      "importing": "正在解析并导入简历，可能需要一些时间...",
+      "importing": "正在解析并导入简历，可能需要一些时间，请勿离开此页面...",
       "importFailed": "导入失败：{message}",
       "retryLater": "请稍后重试",
       "optimizing": "正在 AI 优化简历，可能需要一些时间...",
@@ -569,9 +569,9 @@
       "unsaved": "未保存"
     },
     "aiSetup": {
-      "title": "需要配置阿里百炼",
+      "title": "需要配置 AI",
       "later": "稍后再说",
-      "optimizeMessage": "AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置阿里百炼API Key，暂不支持本地兜底。"
+      "optimizeMessage": "AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置可用的模型服务，暂不支持本地兜底。"
     },
     "toolbar": {
       "back": "返回我的简历",

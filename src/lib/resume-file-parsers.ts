@@ -1,8 +1,9 @@
 import { Buffer } from "node:buffer";
 
 export async function extractPdfText(buffer: Buffer) {
+  const { CanvasFactory } = await import("pdf-parse/worker");
   const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
+  const parser = new PDFParse({ data: buffer, CanvasFactory });
   try {
     return normalizeExtractedText((await parser.getText()).text);
   } finally {

@@ -63,8 +63,8 @@ describe("AI settings maintenance migration", () => {
         aiEnabled: false,
       }),
     ).toMatchObject({
-      aiModel: "gpt-5.5",
-      model: "gpt-5.5",
+      aiModel: "gpt-5.6",
+      model: "gpt-5.6",
       aiLastTestStatus: "untested",
     });
   });

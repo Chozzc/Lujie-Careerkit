@@ -16,5 +16,5 @@ export function aiReadinessMessage(settings: RedactedAiSettings | null) {
 }
 
 export function isResumeImportAiReady(settings: RedactedAiSettings | null) {
-  return Boolean(settings?.aiProvider === "qwen" && isAiReady(settings));
+  return isAiReady(settings);
 }

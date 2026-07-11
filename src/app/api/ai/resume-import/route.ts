@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 
-import { parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
+import { parseResumeTextWithAi, parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
 import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
 import { extractPdfText, extractWordText } from "@/lib/resume-file-parsers";
 import { normalizeResumeContent, resumeContentFromText, isResumeContentLike } from "@/lib/resume-content";
@@ -49,13 +49,28 @@ export async function POST(request: Request) {
       }
     }
 
+    const settings = await getEffectiveAiRuntimeSettings();
+
     if (preferLocalFallback) {
-      const local = await localFallback(file, kind, plainText, "未配置百炼 API Key，已使用本地兜底解析，字段归类效果可能不佳。");
+      const local = await localFallback(file, kind, plainText, "已使用本地规则解析，字段归类效果可能不佳。");
       if (local) return local;
       return Response.json({ error: "图片简历需要先配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
     }
 
-    const settings = await getEffectiveAiRuntimeSettings();
+    if (settings.providerId !== "qwen" && kind !== "image") {
+      const text = await extractLocalText(file, kind, plainText);
+      if (!text) {
+        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
+      }
+      const result = await parseResumeTextWithAi({ fileName: file.name, text, settings });
+      return ok(
+        file.name,
+        result.data,
+        result.source === "ai" ? "ai-text" : "local-fallback",
+        result.message,
+      );
+    }
+
     let aiError: unknown = null;
     try {
       return ok(file.name, await parseResumeWithQwenDoc({ file, settings }), "qwen-doc-turbo");
@@ -84,16 +99,22 @@ function ok(fileName: string, content: ReturnType<typeof normalizeResumeContent>
 }
 
 async function localFallback(file: File, kind: NonNullable<ReturnType<typeof getResumeUploadKind>>, plainText: string, message: string) {
-  if (kind === "text" || kind === "json") {
-    return ok(file.name, resumeContentFromText(file.name, plainText), "local-fallback", message);
-  }
+  const text = await extractLocalText(file, kind, plainText);
+  if (!text) return null;
+  return ok(file.name, resumeContentFromText(file.name, text), "local-fallback", message);
+}
 
-  if (kind !== "pdf" && kind !== "word") return null;
+async function extractLocalText(
+  file: File,
+  kind: NonNullable<ReturnType<typeof getResumeUploadKind>>,
+  plainText: string,
+) {
+  if (kind === "text" || kind === "json") return plainText;
+  if (kind !== "pdf" && kind !== "word") return "";
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const text = kind === "pdf" ? await extractPdfText(buffer) : await extractWordText(buffer);
-  if (text.replace(/\s/g, "").length < 10) return null;
-  return ok(file.name, resumeContentFromText(file.name, text), "local-fallback", message);
+  return text.replace(/\s/g, "").length >= 10 ? text : "";
 }
 
 function formatError(error: unknown) {

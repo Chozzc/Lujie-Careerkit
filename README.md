@@ -138,6 +138,12 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.1.9
+
+- Fixed local PDF text extraction so supported PDFs can be imported reliably on Windows.
+- When a configured non-Qwen model is available, extracted PDF and Word text can now be structured into an editable resume; Qwen remains the recommended option for images and complex files.
+- Refreshed the built-in provider and model candidates, and clarified resume-import progress and setup guidance.
+
 ### v0.1.8
 
 - The canvas now pans with either the left or middle mouse button; the wheel still zooms.

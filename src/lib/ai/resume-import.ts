@@ -1,6 +1,6 @@
-import { parseAiJsonResponse } from "./tasks";
+import { parseAiJsonResponse, runAiObjectTask, type AiObjectExecutor, type AiTaskResult } from "./tasks";
 import type { EffectiveAiSettings } from "./settings";
-import { coerceResumeContent, normalizeResumeContent } from "../resume-content";
+import { coerceResumeContent, normalizeResumeContent, resumeContentFromText, resumeContentSchema } from "../resume-content";
 import type { ResumeContent } from "../types";
 
 const QWEN_DOC_MODEL = "qwen-doc-turbo";
@@ -33,6 +33,27 @@ export async function parseResumeWithQwenDoc(input: {
   } finally {
     void deleteQwenFile(fileId, input.settings);
   }
+}
+
+export async function parseResumeTextWithAi(
+  input: { fileName: string; text: string; settings: EffectiveAiSettings },
+  dependencies: { generateObject?: AiObjectExecutor } = {},
+): Promise<AiTaskResult<ResumeContent>> {
+  const fallback = resumeContentFromText(input.fileName, input.text);
+  const result = await runAiObjectTask({
+    settings: input.settings,
+    schema: resumeContentSchema,
+    system:
+      "你是简历信息抽取助手，不是简历优化助手。只做结构识别和字段归类，保留原文语义、原句和顺序；不得润色、补写、压缩、重排或编造内容。",
+    prompt: `${buildResumeImportPrompt(input.fileName)}\n\n以下是从 PDF 或 Word 提取出的简历文本：\n\n${input.text}`,
+    fallback,
+    taskLabel: "简历文本结构化",
+  }, dependencies);
+
+  return {
+    ...result,
+    data: normalizeResumeContent(result.data, input.fileName.replace(/\.[^.]+$/, "")),
+  };
 }
 
 async function uploadQwenFile(file: File, settings: EffectiveAiSettings) {

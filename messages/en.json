@@ -284,7 +284,7 @@
     "generatingButton": "Generating...",
     "startButton": "Start JD matching",
     "aiSetup": {
-      "title": "Qwen setup required",
+      "title": "AI setup required",
       "later": "Later"
     }
   },
@@ -407,7 +407,7 @@
       "retrying": "Generating a fresh set of questions from this material..."
     },
     "aiSetup": {
-      "title": "Qwen setup required",
+      "title": "AI setup required",
       "later": "Later"
     }
   },
@@ -552,7 +552,7 @@
       "autoSaveFailed": "Autosave failed. Click save to retry.",
       "saveFailed": "Save failed. Try again later.",
       "localParsing": "Using local fallback parsing. Accuracy may be limited...",
-      "importing": "Parsing and importing resume. This may take a while...",
+      "importing": "Parsing and importing resume. This may take a while; please do not leave this page...",
       "importFailed": "Import failed: {message}",
       "retryLater": "Try again later",
       "optimizing": "AI is optimizing the resume. This may take a while...",
@@ -569,9 +569,9 @@
       "unsaved": "Unsaved"
     },
     "aiSetup": {
-      "title": "Qwen setup required",
+      "title": "AI setup required",
       "later": "Later",
-      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a Qwen API key and has no local fallback."
+      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a working model provider and has no local fallback."
     },
     "toolbar": {
       "back": "Back to resumes",

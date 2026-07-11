@@ -21,7 +21,7 @@ describe("AI provider registry", () => {
 
   it("returns stable defaults for known providers", () => {
     expect(getDefaultAiModel("deepseek")).toBe("deepseek-v4-flash");
-    expect(getDefaultAiModel("openai")).toBe("gpt-5.5");
+    expect(getDefaultAiModel("openai")).toBe("gpt-5.6");
     expect(getDefaultAiModel("qwen")).toBe("qwen3.6-flash");
     expect(getDefaultAiModel("gemini-via-openrouter")).toBe("google/gemini-3.5-flash");
     expect(getDefaultAiModel("zhipu")).toBe("glm-5.1");
@@ -36,7 +36,11 @@ describe("AI provider registry", () => {
     expect(getAiProvider("openrouter").models).toContain("anthropic/claude-sonnet-4.6");
     expect(getAiProvider("moonshot").models).toContain("kimi-k2.6");
     expect(getAiProvider("zhipu").models).toContain("glm-5.1");
-    expect(getAiProvider("zhipu").models).not.toContain("glm-4.7");
+    expect(getAiProvider("zhipu").models).toContain("glm-5.2");
+    expect(getAiProvider("deepseek").models).not.toContain("deepseek-chat");
+    expect(getAiProvider("openai").models).toContain("gpt-5.4-mini");
+    expect(getAiProvider("gemini-via-openrouter").models).not.toContain("google/gemini-3.1-flash");
+    expect(getAiProvider("xai").models).toContain("grok-4.5");
     expect(getAiProvider("volcengine").models).toContain("doubao-seed-2-0-lite-260428");
     expect(getAiProvider("anthropic-via-openrouter").models).toContain("anthropic/claude-opus-4.8");
     expect(getAiProvider("xai").models).toContain("grok-4.3");
@@ -57,6 +61,6 @@ describe("AI provider registry", () => {
 
   it("falls back to custom OpenAI-compatible defaults for unknown provider ids", () => {
     expect(getAiProvider("not-real").id).toBe("custom-openai-compatible");
-    expect(getDefaultAiModel("not-real")).toBe("gpt-5.5");
+    expect(getDefaultAiModel("not-real")).toBe("gpt-5.6");
   });
 });

@@ -54,9 +54,11 @@ backups/
 exports/
 output/
 .superpowers/
+.impeccable/
 .worktrees/
 AGENTS.md
 CLAUDE.md
+PRODUCT.md
 
 # env files (can opt-in for committing if needed)
 .env*
