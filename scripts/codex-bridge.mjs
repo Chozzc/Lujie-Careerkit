@@ -169,6 +169,7 @@ async function generate(input) {
       networkAccessEnabled: false,
       webSearchMode: "disabled",
       workingDirectory: WORKING_DIRECTORY,
+      skipGitRepoCheck: true,
     });
     const turn = await thread.run(buildThreadInput(input, temporaryImages.paths), {
       outputSchema: input.schema,
