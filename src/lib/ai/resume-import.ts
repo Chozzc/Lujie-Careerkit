@@ -63,7 +63,7 @@ export async function parseResumeImagesWithCodex(input: {
   settings: EffectiveAiSettings;
 }): Promise<ResumeContent> {
   if (input.settings.runtimeMode !== "codex-bridge") {
-    throw new Error("当前 AI 执行模式不是 Codex 本机。");
+    throw new Error("当前 AI 执行模式不是 Codex Bridge。");
   }
   if (!input.settings.enabled) {
     throw new Error("请先在设置中启用 AI。");

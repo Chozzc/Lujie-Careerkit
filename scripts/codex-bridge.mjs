@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import { Codex } from "@openai/codex-sdk";
 
-const HOST = "127.0.0.1";
+const HOST = process.env.CODEX_BRIDGE_HOST?.trim() || "127.0.0.1";
 const PORT = Number(process.env.CODEX_BRIDGE_PORT || 4318);
 const TOKEN = process.env.CODEX_BRIDGE_TOKEN?.trim() || "";
 const CODEX_BIN = process.env.CODEX_BIN?.trim() || "codex";
@@ -25,13 +25,40 @@ const MAX_IMAGE_COUNT = 10;
 const MAX_QUEUE_DEPTH = 8;
 const WORKING_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REASONING_VALUES = new Set(["minimal", "low", "medium", "high", "xhigh", "max", "ultra"]);
+const CODEX_ENV_KEYS = new Set([
+  "ALL_PROXY",
+  "CODEX_HOME",
+  "DBUS_SESSION_BUS_ADDRESS",
+  "HOME",
+  "HTTPS_PROXY",
+  "HTTP_PROXY",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "LOGNAME",
+  "NODE_EXTRA_CA_CERTS",
+  "NO_PROXY",
+  "PATH",
+  "SHELL",
+  "SSL_CERT_DIR",
+  "SSL_CERT_FILE",
+  "TEMP",
+  "TERM",
+  "TMP",
+  "TMPDIR",
+  "USER",
+  "XDG_CACHE_HOME",
+  "XDG_CONFIG_HOME",
+  "XDG_DATA_HOME",
+]);
 
 if (TOKEN.length < 24) {
   console.error("CODEX_BRIDGE_TOKEN must contain at least 24 characters.");
   process.exit(1);
 }
 
-const codex = new Codex({ codexPathOverride: CODEX_BIN });
+const codexEnvironment = buildCodexEnvironment(process.env);
+const codex = new Codex({ codexPathOverride: CODEX_BIN, env: codexEnvironment });
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 let queueTail = Promise.resolve();
 let queueDepth = 0;
@@ -340,7 +367,7 @@ function readCodexModelCatalog() {
     try {
       child = spawn(CODEX_BIN, ["app-server", "--stdio"], {
         cwd: WORKING_DIRECTORY,
-        env: process.env,
+        env: codexEnvironment,
         stdio: ["pipe", "pipe", "pipe"],
       });
       child.stdout.setEncoding("utf8");
@@ -423,7 +450,7 @@ function normalizeCatalogModel(value) {
 function runCodex(args) {
   const result = spawnSync(CODEX_BIN, args, {
     encoding: "utf8",
-    env: process.env,
+    env: codexEnvironment,
     timeout: 10_000,
   });
   return {
@@ -521,7 +548,11 @@ function normalizeBridgeError(error) {
   if (error?.status === 400) return { status: 400, code: "invalid_request", message: "Request body is invalid." };
   if (lower.includes("abort")) return { status: 504, code: "timeout", message: "Codex request timed out." };
   if (lower.includes("login") || lower.includes("auth") || lower.includes("sign in")) {
-    return { status: 503, code: "not_authenticated", message: "Codex is not authenticated. Run `codex login` on the Mac host." };
+    return {
+      status: 503,
+      code: "not_authenticated",
+      message: "Codex is not authenticated. Complete device-code login in the Bridge environment.",
+    };
   }
   if (lower.includes("rate") || lower.includes("quota") || lower.includes("limit")) {
     return { status: 429, code: "rate_limited", message: "Codex usage is rate limited. Try again later." };
@@ -542,6 +573,12 @@ function safeDiagnostic(error) {
     .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [redacted]")
     .replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]")
     .slice(0, 500);
+}
+
+function buildCodexEnvironment(source) {
+  return Object.fromEntries(
+    Object.entries(source).filter(([key, value]) => CODEX_ENV_KEYS.has(key) && typeof value === "string"),
+  );
 }
 
 function send(response, status, body) {

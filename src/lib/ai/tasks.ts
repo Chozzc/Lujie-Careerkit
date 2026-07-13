@@ -117,7 +117,7 @@ async function defaultGenerateObject<TSchema extends z.ZodType>(input: {
 
 function runtimeDisplayName(settings: EffectiveAiSettings) {
   if (settings.runtimeMode === "codex-bridge") {
-    return `Codex 本机 · ${settings.codexModel === "default" ? "默认模型" : settings.codexModel}`;
+    return `Codex Bridge · ${settings.codexModel === "default" ? "默认模型" : settings.codexModel}`;
   }
   return `${settings.provider.label} · ${settings.model}`;
 }

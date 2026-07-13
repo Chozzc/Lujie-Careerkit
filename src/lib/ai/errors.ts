@@ -19,7 +19,7 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   if (lower.includes("codex bridge") && (lower.includes("unavailable") || lower.includes("token"))) {
     return {
       code: "codex_bridge_unavailable",
-      message: "Codex Bridge 不可用，请确认宿主机已运行 npm run codex:bridge，且容器使用相同的 Bridge Token。",
+      message: "Codex Bridge 不可用，请确认 Bridge 服务正在运行，且两个容器使用相同的 Bridge Token。",
     };
   }
 
@@ -33,14 +33,14 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   if (lower.includes("codex bridge") || lower.includes("codex_failed")) {
     return {
       code: "unknown",
-      message: "Codex 本机执行失败，请重试；若持续出现，请确认 Bridge 仍在运行并检查其日志。",
+      message: "Codex Bridge 执行失败，请重试；若持续出现，请确认 Bridge 仍在运行并检查其日志。",
     };
   }
 
   if (lower.includes("codex") && (lower.includes("not authenticated") || lower.includes("codex login"))) {
     return {
       code: "codex_not_authenticated",
-      message: "Codex 尚未登录，请在 Mac 终端运行 codex login 后重试。",
+      message: "Codex 尚未登录，请在 Bridge 环境中完成设备码登录后重试。",
     };
   }
 
