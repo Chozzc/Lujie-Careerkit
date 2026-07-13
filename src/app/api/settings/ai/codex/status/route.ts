@@ -26,7 +26,7 @@ export async function GET(request: Request) {
         activeRequests: 0,
         queuedRequests: 0,
         models: [],
-        message: error instanceof Error ? error.message : "Codex Bridge 不可用。",
+        message: error instanceof Error ? error.message : "Codex 不可用。",
       },
       { status: 503 },
     );

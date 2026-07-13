@@ -16,31 +16,34 @@ export function normalizeAiError(error: unknown): NormalizedAiError {
   const text = safeErrorText(error);
   const lower = text.toLowerCase();
 
-  if (lower.includes("codex bridge") && (lower.includes("unavailable") || lower.includes("token"))) {
+  if (
+    (lower.includes("codex bridge") || lower.includes("codex service")) &&
+    (lower.includes("unavailable") || lower.includes("token"))
+  ) {
     return {
       code: "codex_bridge_unavailable",
-      message: "Codex Bridge 不可用，请确认 Bridge 服务正在运行，且两个容器使用相同的 Bridge Token。",
+      message: "Codex 服务不可用，请确认服务正在运行后重试。",
     };
   }
 
-  if (lower.includes("codex bridge") && (lower.includes("invalid_output") || lower.includes("invalid_schema"))) {
+  if (lower.includes("codex") && (lower.includes("invalid_output") || lower.includes("invalid_schema"))) {
     return {
       code: "invalid_json",
-      message: "Codex 返回的结构化结果不符合当前任务要求，请重试；若持续出现，请检查 Bridge 日志。",
+      message: "Codex 返回的结构化结果不符合当前任务要求，请重试；若持续出现，请检查 Codex 服务日志。",
     };
   }
 
-  if (lower.includes("codex bridge") || lower.includes("codex_failed")) {
+  if (lower.includes("codex bridge") || lower.includes("codex service") || lower.includes("codex_failed")) {
     return {
       code: "unknown",
-      message: "Codex Bridge 执行失败，请重试；若持续出现，请确认 Bridge 仍在运行并检查其日志。",
+      message: "Codex 执行失败，请重试；若持续出现，请确认 Codex 服务仍在运行并检查其日志。",
     };
   }
 
   if (lower.includes("codex") && (lower.includes("not authenticated") || lower.includes("codex login"))) {
     return {
       code: "codex_not_authenticated",
-      message: "Codex 尚未登录，请在 Bridge 环境中完成设备码登录后重试。",
+      message: "Codex 尚未登录，请在 Codex 服务中完成设备码登录后重试。",
     };
   }
 

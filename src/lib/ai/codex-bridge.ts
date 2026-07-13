@@ -84,7 +84,7 @@ export async function generateCodexBridgeObject<TSchema extends z.ZodType>(input
   );
   const payload = await readBridgeResponse(response);
   if (!payload || typeof payload !== "object" || !("output" in payload)) {
-    throw new Error("Codex Bridge returned an invalid response.");
+    throw new Error("Codex returned an invalid response.");
   }
   return input.schema.parse(payload.output);
 }
@@ -92,7 +92,7 @@ export async function generateCodexBridgeObject<TSchema extends z.ZodType>(input
 async function bridgeFetch(path: string, init: RequestInit, timeoutMs: number) {
   const baseUrl = process.env.CODEX_BRIDGE_URL?.trim() || "http://127.0.0.1:4318";
   const token = process.env.CODEX_BRIDGE_TOKEN?.trim();
-  if (!token) throw new Error("Codex Bridge token is not configured.");
+  if (!token) throw new Error("Codex service token is not configured.");
 
   try {
     return await fetch(`${baseUrl.replace(/\/+$/, "")}${path}`, {
@@ -106,7 +106,7 @@ async function bridgeFetch(path: string, init: RequestInit, timeoutMs: number) {
     });
   } catch (error) {
     const cause = error instanceof Error ? error.message : String(error);
-    throw new Error(`Codex Bridge unavailable: ${cause}`);
+    throw new Error(`Codex service unavailable: ${cause}`);
   }
 }
 
@@ -116,8 +116,8 @@ async function readBridgeResponse(response: Response): Promise<unknown> {
     const parsed = bridgeErrorSchema.safeParse(payload);
     throw new Error(
       parsed.success
-        ? `Codex Bridge ${parsed.data.error.code}: ${parsed.data.error.message}`
-        : `Codex Bridge HTTP ${response.status}`,
+        ? `Codex ${parsed.data.error.code}: ${parsed.data.error.message}`
+        : `Codex HTTP ${response.status}`,
     );
   }
   return payload;
@@ -126,7 +126,7 @@ async function readBridgeResponse(response: Response): Promise<unknown> {
 export function buildCodexOutputSchema(schema: z.ZodType): Record<string, unknown> {
   const output = makeObjectPropertiesRequired(z.toJSONSchema(schema));
   if (output.type !== "object") {
-    throw new Error("Codex Bridge invalid_schema: structured output must use a top-level object schema.");
+    throw new Error("Codex invalid_schema: structured output must use a top-level object schema.");
   }
   return output;
 }

@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     if (settings.providerId !== "qwen" && kind !== "image") {
       const text = await extractLocalText(file, kind, plainText);
       if (!text) {
-        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要使用 Codex Bridge 或阿里百炼 / Qwen。" }, { status: 422 });
+        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要使用 Codex 或阿里百炼 / Qwen。" }, { status: 422 });
       }
       const result = await parseResumeTextWithAi({ fileName: file.name, text, settings });
       return ok(file.name, result.data, result.source === "ai" ? "ai-text" : "local-fallback", result.message);

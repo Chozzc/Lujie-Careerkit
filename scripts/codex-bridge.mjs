@@ -103,7 +103,7 @@ const server = createServer(async (request, response) => {
     (requestUrl.pathname === "/v1/generate" || requestUrl.pathname === "/v1/generate-vision")
   ) {
     if (queueDepth >= MAX_QUEUE_DEPTH) {
-      return send(response, 429, { error: { code: "busy", message: "Codex Bridge queue is full." } });
+      return send(response, 429, { error: { code: "busy", message: "Codex queue is full." } });
     }
 
     try {
@@ -551,7 +551,7 @@ function normalizeBridgeError(error) {
     return {
       status: 503,
       code: "not_authenticated",
-      message: "Codex is not authenticated. Complete device-code login in the Bridge environment.",
+      message: "Codex is not authenticated. Complete device-code login in the Codex service.",
     };
   }
   if (lower.includes("rate") || lower.includes("quota") || lower.includes("limit")) {

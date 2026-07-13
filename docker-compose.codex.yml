@@ -24,6 +24,7 @@ services:
     command: ["node", "scripts/docker-runtime.mjs", "bridge"]
     environment:
       CODEX_HOME: /codex
+      CODEX_BIN: /app/node_modules/.bin/codex
       CODEX_BRIDGE_HOST: 0.0.0.0
       LUJIE_RUNTIME_CONFIG_DIR: /runtime-config
     volumes:
