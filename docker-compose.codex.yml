@@ -1,0 +1,20 @@
+services:
+  lujie-careerkit:
+    build:
+      context: .
+    image: lujie-careerkit:codex
+    network_mode: host
+    command: ["npm", "run", "start", "--", "-H", "127.0.0.1"]
+    environment:
+      DATABASE_URL: file:/data/dev.db
+      LUJIE_SETTINGS_SECRET: ${LUJIE_SETTINGS_SECRET:?Set LUJIE_SETTINGS_SECRET in .env.codex}
+      CODEX_BRIDGE_URL: ${CODEX_BRIDGE_URL:-http://127.0.0.1:4318}
+      CODEX_BRIDGE_TOKEN: ${CODEX_BRIDGE_TOKEN:?Set CODEX_BRIDGE_TOKEN in .env.codex}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-qwen3.6-flash}
+    volumes:
+      - lujie-data:/data
+    restart: unless-stopped
+
+volumes:
+  lujie-data:

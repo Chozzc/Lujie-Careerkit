@@ -83,7 +83,9 @@ describe("resume AI optimization", () => {
         prompt: expect.stringContaining("不要新增原简历不存在的事实"),
       }),
     );
-    expect(mocks.runAiObjectTask.mock.calls[0]?.[0].schema.safeParse(aiResume).success).toBe(true);
+    expect(
+      mocks.runAiObjectTask.mock.calls[0]?.[0].schema.safeParse({ resume: aiResume, meta: {} }).success,
+    ).toBe(true);
   });
 
   it("keeps original bullets when the model returns fewer highlights", async () => {

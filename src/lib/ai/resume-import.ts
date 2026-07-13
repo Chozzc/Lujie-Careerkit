@@ -1,5 +1,6 @@
 import { parseAiJsonResponse, runAiObjectTask, type AiObjectExecutor, type AiTaskResult } from "./tasks";
 import type { EffectiveAiSettings } from "./settings";
+import { generateCodexBridgeObject, type CodexBridgeImage } from "./codex-bridge";
 import { coerceResumeContent, normalizeResumeContent, resumeContentFromText, resumeContentSchema } from "../resume-content";
 import type { ResumeContent } from "../types";
 
@@ -54,6 +55,33 @@ export async function parseResumeTextWithAi(
     ...result,
     data: normalizeResumeContent(result.data, input.fileName.replace(/\.[^.]+$/, "")),
   };
+}
+
+export async function parseResumeImagesWithCodex(input: {
+  fileName: string;
+  images: CodexBridgeImage[];
+  settings: EffectiveAiSettings;
+}): Promise<ResumeContent> {
+  if (input.settings.runtimeMode !== "codex-bridge") {
+    throw new Error("当前 AI 执行模式不是 Codex 本机。");
+  }
+  if (!input.settings.enabled) {
+    throw new Error("请先在设置中启用 AI。");
+  }
+  if (!input.images.length || input.images.length > 10) {
+    throw new Error("Codex 视觉导入需要 1 至 10 张图片。");
+  }
+
+  const content = await generateCodexBridgeObject({
+    schema: resumeContentSchema,
+    system:
+      "你是简历视觉识别和信息抽取助手，不是简历优化助手。按图片顺序读取全部页面，只做文字识别、结构识别和字段归类；保留原文语义、原句和顺序，不得润色、补写、压缩、重排或编造内容。忽略装饰线、页码等纯版式元素。",
+    prompt: `${buildResumeImportPrompt(input.fileName)}\n\n请读取随请求附带的 ${input.images.length} 张简历图片；多张图片按原 PDF 页码顺序排列。`,
+    model: input.settings.codexModel,
+    reasoning: input.settings.codexReasoning,
+    images: input.images,
+  });
+  return normalizeResumeContent(content, input.fileName.replace(/\.[^.]+$/, ""));
 }
 
 async function uploadQwenFile(file: File, settings: EffectiveAiSettings) {

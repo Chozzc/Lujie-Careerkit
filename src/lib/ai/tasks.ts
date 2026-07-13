@@ -2,6 +2,7 @@ import { generateText, type LanguageModel } from "ai";
 import { z } from "zod";
 
 import { createAiModel } from "./client";
+import { generateCodexBridgeObject } from "./codex-bridge";
 import { normalizeAiError } from "./errors";
 import type { EffectiveAiSettings } from "./settings";
 
@@ -21,7 +22,8 @@ export type AiObjectTaskInput<TSchema extends z.ZodType> = {
 };
 
 export type AiObjectExecutor = <TSchema extends z.ZodType>(input: {
-  model: LanguageModel;
+  model?: LanguageModel;
+  settings: EffectiveAiSettings;
   schema: TSchema;
   system: string;
   prompt: string;
@@ -45,10 +47,10 @@ export async function runAiObjectTask<TSchema extends z.ZodType>(
   }
 
   try {
-    const model = dependencies.model ?? createAiModel(input.settings);
     const executor = dependencies.generateObject ?? defaultGenerateObject;
     const result = await executor({
-      model,
+      model: dependencies.model,
+      settings: input.settings,
       schema: input.schema,
       system: input.system,
       prompt: input.prompt,
@@ -58,7 +60,7 @@ export async function runAiObjectTask<TSchema extends z.ZodType>(
     return {
       data: input.schema.parse(result.object),
       source: "ai",
-      message: `${input.taskLabel}已由 ${input.settings.provider.label} · ${input.settings.model} 完成。`,
+      message: `${input.taskLabel}已由 ${runtimeDisplayName(input.settings)} 完成。`,
     };
   } catch (error) {
     return fallbackResult(input, normalizeAiError(error).message);
@@ -83,21 +85,41 @@ export async function testAiConnection(
 }
 
 async function defaultGenerateObject<TSchema extends z.ZodType>(input: {
-  model: LanguageModel;
+  model?: LanguageModel;
+  settings: EffectiveAiSettings;
   schema: TSchema;
   system: string;
   prompt: string;
   temperature: number;
 }) {
+  if (input.settings.runtimeMode === "codex-bridge") {
+    return {
+      object: await generateCodexBridgeObject({
+        schema: input.schema,
+        system: input.system,
+        prompt: input.prompt,
+        model: input.settings.codexModel,
+        reasoning: input.settings.codexReasoning,
+      }),
+    };
+  }
+
   const schemaDescription = JSON.stringify(z.toJSONSchema(input.schema));
   const result = await generateText({
-    model: input.model,
+    model: input.model ?? createAiModel(input.settings),
     system: `${input.system}\n必须仅返回一个 JSON 对象，不要使用 Markdown 代码块。`,
     prompt: `JSON Schema：\n${schemaDescription}\n\n任务：\n${input.prompt}`,
     temperature: input.temperature,
   });
 
   return { object: input.schema.parse(parseAiJsonResponse(result.text)) };
+}
+
+function runtimeDisplayName(settings: EffectiveAiSettings) {
+  if (settings.runtimeMode === "codex-bridge") {
+    return `Codex 本机 · ${settings.codexModel === "default" ? "默认模型" : settings.codexModel}`;
+  }
+  return `${settings.provider.label} · ${settings.model}`;
 }
 
 export function parseAiJsonResponse(text: string): unknown {

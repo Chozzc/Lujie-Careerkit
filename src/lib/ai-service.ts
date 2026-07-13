@@ -25,7 +25,10 @@ const resumeOptimizationOutputSchema = z.object({
   resume: resumeContentSchema,
   meta: resumeOptimizationMetaSchema,
 });
-const resumeOptimizationTaskOutputSchema = z.union([resumeOptimizationOutputSchema, resumeContentSchema]);
+// Codex structured output requires a top-level object schema. Keep accepting a
+// legacy bare resume when reading stored/provider output, but always request the
+// stable { resume, meta } envelope from every executor.
+const resumeOptimizationTaskOutputSchema = resumeOptimizationOutputSchema;
 
 export async function tailorResumeWithAI(input: {
   resume: ResumeContent;

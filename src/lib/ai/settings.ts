@@ -11,6 +11,8 @@ import {
 import { decryptLocalSecret, encryptLocalSecret, previewSecret } from "./secrets";
 
 export type AiTestStatus = "untested" | "success" | "failed";
+export type AiRuntimeMode = "api" | "codex-bridge";
+export type CodexReasoning = "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
 
 export type StoredAiSettings = {
   aiProvider: string;
@@ -21,6 +23,9 @@ export type StoredAiSettings = {
   aiTemperature: number;
   aiLastTestedAt: Date | string | null;
   aiLastTestStatus: string;
+  aiRuntimeMode?: string;
+  codexModel?: string;
+  codexReasoning?: string;
 };
 
 export type AiSettingsPatch = {
@@ -31,6 +36,9 @@ export type AiSettingsPatch = {
   aiEnabled: boolean;
   aiTemperature: number;
   aiLastTestStatus: AiTestStatus;
+  aiRuntimeMode: AiRuntimeMode;
+  codexModel: string;
+  codexReasoning: CodexReasoning;
 };
 
 export type RedactedAiSettings = {
@@ -44,6 +52,9 @@ export type RedactedAiSettings = {
   hasApiKey: boolean;
   apiKeyPreview: string;
   requiresApiKey: boolean;
+  aiRuntimeMode: AiRuntimeMode;
+  codexModel: string;
+  codexReasoning: CodexReasoning;
 };
 
 export type EffectiveAiSettings = {
@@ -55,6 +66,9 @@ export type EffectiveAiSettings = {
   enabled: boolean;
   temperature: number;
   requiresApiKey: boolean;
+  runtimeMode: AiRuntimeMode;
+  codexModel: string;
+  codexReasoning: CodexReasoning;
 };
 
 const aiSettingsInputSchema = z.object({
@@ -65,6 +79,9 @@ const aiSettingsInputSchema = z.object({
   clearApiKey: z.boolean().optional().default(false),
   aiEnabled: z.boolean().optional().default(true),
   aiTemperature: z.coerce.number().min(0).max(2).optional().default(0.3),
+  aiRuntimeMode: z.enum(["api", "codex-bridge"]).optional().default("api"),
+  codexModel: z.string().trim().optional().default("default"),
+  codexReasoning: z.enum(["minimal", "low", "medium", "high", "xhigh", "max", "ultra"]).optional().default("medium"),
 });
 
 export type AiSettingsInput = z.input<typeof aiSettingsInputSchema>;
@@ -111,6 +128,9 @@ export function buildAiSettingsPatch(
     aiEnabled: Boolean(validated.aiEnabled),
     aiTemperature: validated.aiTemperature,
     aiLastTestStatus: "untested",
+    aiRuntimeMode: validated.aiRuntimeMode,
+    codexModel: validated.codexModel || "default",
+    codexReasoning: validated.codexReasoning,
   };
 }
 
@@ -128,6 +148,9 @@ export function redactAiSettings(settings: StoredAiSettings): RedactedAiSettings
     hasApiKey: Boolean(effective.apiKey),
     apiKeyPreview: previewSecret(effective.apiKey),
     requiresApiKey: effective.requiresApiKey,
+    aiRuntimeMode: effective.runtimeMode,
+    codexModel: effective.codexModel,
+    codexReasoning: effective.codexReasoning,
   };
 }
 
@@ -136,7 +159,10 @@ export function getEffectiveAiSettings(settings: StoredAiSettings): EffectiveAiS
   const model = settings.aiModel?.trim() || provider.defaultModel;
   const baseUrl = normalizeBaseUrl(settings.aiBaseUrl?.trim() || provider.baseUrl);
   const apiKey = decryptLocalSecret(settings.aiApiKey);
-  const requiresApiKey = providerRequiresApiKey(provider.id);
+  const runtimeMode = normalizeRuntimeMode(settings.aiRuntimeMode);
+  const requiresApiKey = runtimeMode === "api" && providerRequiresApiKey(provider.id);
+  const codexModel = settings.codexModel?.trim() || "default";
+  const codexReasoning = normalizeCodexReasoning(settings.codexReasoning);
 
   return {
     provider,
@@ -147,7 +173,20 @@ export function getEffectiveAiSettings(settings: StoredAiSettings): EffectiveAiS
     enabled: Boolean(settings.aiEnabled && (!requiresApiKey || apiKey)),
     temperature: settings.aiTemperature,
     requiresApiKey,
+    runtimeMode,
+    codexModel,
+    codexReasoning,
   };
+}
+
+export function normalizeRuntimeMode(value: string | null | undefined): AiRuntimeMode {
+  return value === "codex-bridge" ? "codex-bridge" : "api";
+}
+
+export function normalizeCodexReasoning(value: string | null | undefined): CodexReasoning {
+  return value === "minimal" || value === "low" || value === "high" || value === "xhigh" || value === "max" || value === "ultra"
+    ? value
+    : "medium";
 }
 
 export function normalizeTestStatus(value: string | null | undefined): AiTestStatus {

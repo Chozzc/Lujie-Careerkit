@@ -124,4 +124,42 @@ describe("AI settings helpers", () => {
     expect(runtime.apiKey).toBe("");
     expect(runtime.requiresApiKey).toBe(false);
   });
+
+  it("enables Codex Bridge without treating the ChatGPT login as an API key", () => {
+    const runtime = getEffectiveAiSettings({
+      aiProvider: "openai",
+      aiModel: "gpt-5.5",
+      aiBaseUrl: "https://api.openai.com/v1",
+      aiApiKey: "",
+      aiEnabled: true,
+      aiTemperature: 0.3,
+      aiLastTestedAt: null,
+      aiLastTestStatus: "untested",
+      aiRuntimeMode: "codex-bridge",
+      codexModel: "default",
+      codexReasoning: "high",
+    });
+
+    expect(runtime.runtimeMode).toBe("codex-bridge");
+    expect(runtime.enabled).toBe(true);
+    expect(runtime.requiresApiKey).toBe(false);
+    expect(runtime.codexReasoning).toBe("high");
+  });
+
+  it("preserves the higher reasoning efforts advertised by the current Codex model catalog", () => {
+    const patch = buildAiSettingsPatch({
+      aiProvider: "openai",
+      aiModel: "gpt-5.5",
+      aiBaseUrl: "https://api.openai.com/v1",
+      aiApiKey: "",
+      aiEnabled: true,
+      aiTemperature: 0.3,
+      aiRuntimeMode: "codex-bridge",
+      codexModel: "gpt-5.6-sol",
+      codexReasoning: "ultra",
+    });
+
+    expect(patch.codexModel).toBe("gpt-5.6-sol");
+    expect(patch.codexReasoning).toBe("ultra");
+  });
 });

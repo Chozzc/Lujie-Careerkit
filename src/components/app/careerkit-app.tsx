@@ -669,7 +669,7 @@ export function CareerKitApp({
         followUpReminders={followUpReminders}
         dashboard={dashboard}
         resumeVersionCount={versions.length + (hasResumeContent(resume) ? 1 : 0)}
-        provider={aiSettings?.aiProvider ?? "openai"}
+        provider={aiSettings?.aiRuntimeMode === "codex-bridge" ? "Codex 本机" : aiSettings?.aiProvider ?? "openai"}
         onNavigate={navigateTo}
       />
 

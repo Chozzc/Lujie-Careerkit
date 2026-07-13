@@ -136,6 +136,9 @@ async function ensureSettings() {
       aiEnabled: true,
       aiTemperature: 0.3,
       aiLastTestStatus: "untested",
+      aiRuntimeMode: "api",
+      codexModel: "default",
+      codexReasoning: "medium",
     },
     update: {},
   });
@@ -340,6 +343,9 @@ async function ensureSchema() {
       "aiTemperature" REAL NOT NULL DEFAULT 0.3,
       "aiLastTestedAt" DATETIME,
       "aiLastTestStatus" TEXT NOT NULL DEFAULT 'untested',
+      "aiRuntimeMode" TEXT NOT NULL DEFAULT 'api',
+      "codexModel" TEXT NOT NULL DEFAULT 'default',
+      "codexReasoning" TEXT NOT NULL DEFAULT 'medium',
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS "DeletedSeedResumeVersion" (
@@ -385,6 +391,9 @@ async function ensureSchema() {
   await ensureColumn("Settings", "aiTemperature", `ALTER TABLE "Settings" ADD COLUMN "aiTemperature" REAL NOT NULL DEFAULT 0.3`);
   await ensureColumn("Settings", "aiLastTestedAt", `ALTER TABLE "Settings" ADD COLUMN "aiLastTestedAt" DATETIME`);
   await ensureColumn("Settings", "aiLastTestStatus", `ALTER TABLE "Settings" ADD COLUMN "aiLastTestStatus" TEXT NOT NULL DEFAULT 'untested'`);
+  await ensureColumn("Settings", "aiRuntimeMode", `ALTER TABLE "Settings" ADD COLUMN "aiRuntimeMode" TEXT NOT NULL DEFAULT 'api'`);
+  await ensureColumn("Settings", "codexModel", `ALTER TABLE "Settings" ADD COLUMN "codexModel" TEXT NOT NULL DEFAULT 'default'`);
+  await ensureColumn("Settings", "codexReasoning", `ALTER TABLE "Settings" ADD COLUMN "codexReasoning" TEXT NOT NULL DEFAULT 'medium'`);
 }
 
 async function ensureColumn(tableName: string, columnName: string, statement: string) {
@@ -500,6 +509,9 @@ export async function getAppData() {
             aiTemperature: settings.aiTemperature,
             aiLastTestedAt: settings.aiLastTestedAt,
             aiLastTestStatus: settings.aiLastTestStatus,
+            aiRuntimeMode: settings.aiRuntimeMode,
+            codexModel: settings.codexModel,
+            codexReasoning: settings.codexReasoning,
           }),
           updatedAt: settings.updatedAt.toISOString(),
         }
@@ -529,7 +541,10 @@ export async function updateAiSettings(input: AiSettingsInput) {
       existing.aiBaseUrl === patch.aiBaseUrl &&
       existing.aiApiKey === patch.aiApiKey &&
       existing.aiEnabled === patch.aiEnabled &&
-      existing.aiTemperature === patch.aiTemperature,
+      existing.aiTemperature === patch.aiTemperature &&
+      existing.aiRuntimeMode === patch.aiRuntimeMode &&
+      existing.codexModel === patch.codexModel &&
+      existing.codexReasoning === patch.codexReasoning,
   );
 
   const settings = await prisma.settings.upsert({
@@ -1187,6 +1202,9 @@ function toStoredAiSettings(settings: {
   aiTemperature: number;
   aiLastTestedAt: Date | null;
   aiLastTestStatus: string;
+  aiRuntimeMode: string;
+  codexModel: string;
+  codexReasoning: string;
 }) {
   return {
     aiProvider: settings.aiProvider,
@@ -1197,5 +1215,8 @@ function toStoredAiSettings(settings: {
     aiTemperature: settings.aiTemperature,
     aiLastTestedAt: settings.aiLastTestedAt,
     aiLastTestStatus: settings.aiLastTestStatus,
+    aiRuntimeMode: settings.aiRuntimeMode,
+    codexModel: settings.codexModel,
+    codexReasoning: settings.codexReasoning,
   };
 }

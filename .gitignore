@@ -63,6 +63,7 @@ PRODUCT.md
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.codex.example
 
 # vercel
 .vercel

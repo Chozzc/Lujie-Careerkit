@@ -1,8 +1,13 @@
 import { Buffer } from "node:buffer";
 
-import { parseResumeTextWithAi, parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
+import { parseResumeImagesWithCodex, parseResumeTextWithAi, parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
 import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
-import { extractPdfText, extractWordText } from "@/lib/resume-file-parsers";
+import {
+  extractPdfText,
+  extractWordText,
+  PdfPageLimitError,
+  renderPdfPagesForVision,
+} from "@/lib/resume-file-parsers";
 import { normalizeResumeContent, resumeContentFromText, isResumeContentLike } from "@/lib/resume-content";
 import { getResumeUploadKind } from "@/lib/resume-upload";
 
@@ -57,18 +62,50 @@ export async function POST(request: Request) {
       return Response.json({ error: "图片简历需要先配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
     }
 
+    if (settings.runtimeMode === "codex-bridge") {
+      if (kind === "image") {
+        const image = await readUploadedImage(file);
+        const content = await parseResumeImagesWithCodex({ fileName: file.name, images: [image], settings });
+        return ok(file.name, content, "codex-vision");
+      }
+
+      const text = await extractLocalText(file, kind, plainText);
+      if (text) {
+        const result = await parseResumeTextWithAi({ fileName: file.name, text, settings });
+        return ok(
+          file.name,
+          result.data,
+          result.source === "ai" ? "ai-text" : "local-fallback",
+          result.message,
+        );
+      }
+
+      if (kind === "pdf") {
+        try {
+          const pages = await renderPdfPagesForVision(Buffer.from(await file.arrayBuffer()));
+          const content = await parseResumeImagesWithCodex({ fileName: file.name, images: pages, settings });
+          return ok(file.name, content, "codex-vision");
+        } catch (error) {
+          if (error instanceof PdfPageLimitError) {
+            return Response.json({ error: error.message }, { status: 422 });
+          }
+          throw error;
+        }
+      }
+
+      return Response.json(
+        { error: "未能从该 Word 文件提取到文本；请转换为 PDF 或图片后使用 Codex 视觉识别。" },
+        { status: 422 },
+      );
+    }
+
     if (settings.providerId !== "qwen" && kind !== "image") {
       const text = await extractLocalText(file, kind, plainText);
       if (!text) {
-        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
+        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要使用 Codex 本机或阿里百炼 / Qwen。" }, { status: 422 });
       }
       const result = await parseResumeTextWithAi({ fileName: file.name, text, settings });
-      return ok(
-        file.name,
-        result.data,
-        result.source === "ai" ? "ai-text" : "local-fallback",
-        result.message,
-      );
+      return ok(file.name, result.data, result.source === "ai" ? "ai-text" : "local-fallback", result.message);
     }
 
     let aiError: unknown = null;
@@ -115,6 +152,19 @@ async function extractLocalText(
   const buffer = Buffer.from(await file.arrayBuffer());
   const text = kind === "pdf" ? await extractPdfText(buffer) : await extractWordText(buffer);
   return text.replace(/\s/g, "").length >= 10 ? text : "";
+}
+
+async function readUploadedImage(file: File) {
+  const extension = file.name.trim().toLowerCase().match(/\.([^.]+)$/)?.[1];
+  const mimeType = file.type === "image/png" || extension === "png"
+    ? "image/png" as const
+    : file.type === "image/webp" || extension === "webp"
+      ? "image/webp" as const
+      : file.type === "image/jpeg" || extension === "jpg" || extension === "jpeg"
+        ? "image/jpeg" as const
+        : null;
+  if (!mimeType) throw new Error("图片格式无效，请上传 PNG、JPEG 或 WebP 文件。");
+  return { mimeType, data: Buffer.from(await file.arrayBuffer()) };
 }
 
 function formatError(error: unknown) {
