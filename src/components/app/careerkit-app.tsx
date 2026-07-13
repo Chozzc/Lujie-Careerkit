@@ -133,6 +133,7 @@ export function CareerKitApp({
   useEffect(() => {
     const handlePopState = () => {
       const nextActive = navKeyFromPathname(window.location.pathname);
+      if (!nextActive) return;
       setActive(nextActive);
       setResumeMode(window.location.pathname === "/resume/edit" ? "editor" : "library");
       setResumeEditorVersionId(readResumeVersionIdFromLocation());

@@ -11,7 +11,7 @@ export default async function WorkspaceViewPage({ params }: { params: Promise<{ 
   const pathname = `/${view}`;
   const initialView = navKeyFromPathname(pathname);
 
-  if (initialView === "dashboard" || pathnameForNavKey(initialView) !== pathname) {
+  if (!initialView || pathnameForNavKey(initialView) !== pathname) {
     notFound();
   }
 

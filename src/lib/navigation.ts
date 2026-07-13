@@ -1,7 +1,7 @@
 export type NavKey = "dashboard" | "resume" | "match" | "pipeline" | "interview" | "settings";
 
 const NAV_PATHS: Record<NavKey, string> = {
-  dashboard: "/",
+  dashboard: "/dashboard",
   resume: "/resume",
   match: "/match",
   pipeline: "/pipeline",
@@ -15,10 +15,10 @@ export function pathnameForNavKey(key: NavKey) {
   return NAV_PATHS[key];
 }
 
-export function navKeyFromPathname(pathname: string): NavKey {
+export function navKeyFromPathname(pathname: string): NavKey | null {
   const normalized = normalizePathname(pathname);
   if (normalized.startsWith("/resume/")) return "resume";
-  return PATH_NAV_KEYS.get(normalized) ?? "dashboard";
+  return PATH_NAV_KEYS.get(normalized) ?? null;
 }
 
 function normalizePathname(pathname: string) {

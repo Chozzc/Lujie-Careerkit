@@ -24,7 +24,6 @@
     },
     "topbar": {
       "notifications": "Follow-up reminders",
-      "help": "Quick help",
       "profile": "Local account"
     },
     "header": {
@@ -43,7 +42,6 @@
     },
     "menu": {
       "notifications": "Follow-up reminders",
-      "help": "Quick actions",
       "profile": "Local account",
       "close": "Close menu",
       "unknownCompany": "Unknown company",
@@ -51,9 +49,6 @@
       "followUpDate": "Follow-up date: {date}",
       "noReminders": "No due follow-ups.",
       "openPipeline": "View application tracking",
-      "openResume": "Open resume editor",
-      "openMatch": "Open JD matching",
-      "openSettings": "Check local settings",
       "followUpsDue": "Due follow-ups",
       "resumeVersions": "Resume versions",
       "mode": "Mode: local single user",

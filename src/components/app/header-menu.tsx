@@ -9,7 +9,7 @@ import { buildDashboardSummary } from "@/lib/dashboard";
 import { cn } from "@/lib/utils";
 import type { ApplicationView, JobView } from "@/components/app/types";
 
-export type HeaderMenuKey = "notifications" | "help" | "profile";
+export type HeaderMenuKey = "notifications" | "profile";
 
 export function HeaderIconButton({
   label,
@@ -91,32 +91,6 @@ export function HeaderMenuPanel({
             className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
           >
             {t("openPipeline")}
-          </button>
-        </div>
-      )}
-
-      {menu === "help" && (
-        <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => onNavigate("resume")}
-            className="w-full rounded-lg bg-surface-low px-3 py-2 text-left font-medium hover:bg-surface-mid"
-          >
-            {t("openResume")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate("match")}
-            className="w-full rounded-lg bg-surface-low px-3 py-2 text-left font-medium hover:bg-surface-mid"
-          >
-            {t("openMatch")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onNavigate("settings")}
-            className="w-full rounded-lg bg-surface-low px-3 py-2 text-left font-medium hover:bg-surface-mid"
-          >
-            {t("openSettings")}
           </button>
         </div>
       )}

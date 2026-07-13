@@ -24,7 +24,6 @@
     },
     "topbar": {
       "notifications": "跟进提醒",
-      "help": "帮助入口",
       "profile": "本地账户"
     },
     "header": {
@@ -43,7 +42,6 @@
     },
     "menu": {
       "notifications": "跟进提醒",
-      "help": "快捷入口",
       "profile": "本地账户",
       "close": "关闭菜单",
       "unknownCompany": "未知公司",
@@ -51,9 +49,6 @@
       "followUpDate": "跟进日期：{date}",
       "noReminders": "暂无到期跟进岗位。",
       "openPipeline": "查看投递跟进",
-      "openResume": "打开简历编辑器",
-      "openMatch": "进入 JD匹配优化",
-      "openSettings": "检查本地设置",
       "followUpsDue": "跟进岗位",
       "resumeVersions": "简历版本",
       "mode": "模式：本地单用户",

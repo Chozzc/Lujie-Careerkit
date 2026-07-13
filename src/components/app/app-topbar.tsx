@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import Image from "next/image";
-import { Bell, HelpCircle } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { HeaderIconButton, HeaderMenuPanel, type HeaderMenuKey } from "@/components/app/header-menu";
@@ -74,13 +74,18 @@ export function AppTopbar({
               <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-600" />
             )}
           </HeaderIconButton>
-          <HeaderIconButton
-            label={t("topbar.help")}
-            active={headerMenu === "help"}
-            onClick={() => setHeaderMenu((current) => (current === "help" ? null : "help"))}
+          <a
+            href="https://github.com/Chozzc/Lujie-Careerkit"
+            target="_blank"
+            rel="noreferrer"
+            className="grid h-8 w-8 place-items-center rounded-lg transition hover:bg-surface-low"
+            aria-label="GitHub"
+            title="GitHub"
           >
-            <HelpCircle className="h-5 w-5" />
-          </HeaderIconButton>
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 fill-current">
+              <path d="M12 .7A11.5 11.5 0 0 0 8.4 23c.6.1.8-.3.8-.6v-2.2c-3.4.7-4.1-1.4-4.1-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C14.7 4 16 4 16 4c.6 1.5.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.8 5.4-5.5 5.7.4.4.8 1.1.8 2.2v4.3c0 .4.2.7.8.6A11.5 11.5 0 0 0 12 .7Z" />
+            </svg>
+          </a>
           <button
             type="button"
             onClick={() => setHeaderMenu((current) => (current === "profile" ? null : "profile"))}

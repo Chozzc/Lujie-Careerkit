@@ -1,9 +1,5 @@
-import { CareerKitApp } from "@/components/app/careerkit-app";
-import { getAppData } from "@/lib/repository";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  const data = await getAppData();
-  return <CareerKitApp initialData={data} initialView="dashboard" />;
+export default function Home() {
+  redirect("/dashboard");
 }
