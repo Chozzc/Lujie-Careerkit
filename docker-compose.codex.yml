@@ -3,33 +3,35 @@ services:
     build:
       context: .
     image: lujie-careerkit:codex
-    command: ["npm", "run", "start", "--", "-H", "0.0.0.0"]
+    command: ["node", "scripts/docker-runtime.mjs", "app"]
     ports:
       - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: file:/data/dev.db
-      LUJIE_SETTINGS_SECRET: ${LUJIE_SETTINGS_SECRET:?Set LUJIE_SETTINGS_SECRET in .env.codex}
+      LUJIE_RUNTIME_CONFIG_DIR: /runtime-config
       CODEX_BRIDGE_URL: http://codex-bridge:4318
-      CODEX_BRIDGE_TOKEN: ${CODEX_BRIDGE_TOKEN:?Set CODEX_BRIDGE_TOKEN in .env.codex}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-qwen3.6-flash}
     volumes:
       - lujie-data:/data
+      - lujie-runtime-config:/runtime-config
     depends_on:
       - codex-bridge
     restart: unless-stopped
 
   codex-bridge:
     image: lujie-careerkit:codex
-    command: ["npm", "run", "codex:bridge:container"]
+    command: ["node", "scripts/docker-runtime.mjs", "bridge"]
     environment:
       CODEX_HOME: /codex
       CODEX_BRIDGE_HOST: 0.0.0.0
-      CODEX_BRIDGE_TOKEN: ${CODEX_BRIDGE_TOKEN:?Set CODEX_BRIDGE_TOKEN in .env.codex}
+      LUJIE_RUNTIME_CONFIG_DIR: /runtime-config
     volumes:
       - codex-home:/codex
+      - lujie-runtime-config:/runtime-config
     restart: unless-stopped
 
 volumes:
   lujie-data:
   codex-home:
+  lujie-runtime-config:

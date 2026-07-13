@@ -41,7 +41,7 @@ ENV DATABASE_URL=file:/data/dev.db
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
   && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /data
+  && mkdir -p /data /runtime-config
 
 COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=production-deps /app/node_modules ./node_modules
@@ -52,4 +52,4 @@ COPY --from=builder /app/scripts ./scripts
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start", "--", "-H", "0.0.0.0"]
+CMD ["node", "scripts/docker-runtime.mjs", "app"]

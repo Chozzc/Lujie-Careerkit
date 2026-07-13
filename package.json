@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "postinstall": "prisma generate",
-    "dev": "next dev --webpack",
+    "dev": "node scripts/dev-local.mjs",
+    "dev:codex": "node scripts/dev-codex.mjs",
     "build": "next build",
-    "codex:bridge": "node --env-file=.env.codex scripts/codex-bridge.mjs",
+    "codex:login": "codex login",
+    "codex:bridge": "node scripts/dev-codex.mjs --bridge-only",
     "codex:bridge:container": "node scripts/codex-bridge.mjs",
     "test": "vitest run",
     "start": "next start",

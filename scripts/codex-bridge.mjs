@@ -52,8 +52,8 @@ const CODEX_ENV_KEYS = new Set([
   "XDG_DATA_HOME",
 ]);
 
-if (TOKEN.length < 24) {
-  console.error("CODEX_BRIDGE_TOKEN must contain at least 24 characters.");
+if (TOKEN.length < 24 || /^(replace-with|change-me)/i.test(TOKEN)) {
+  console.error("CODEX_BRIDGE_TOKEN must be a unique random value of at least 24 characters.");
   process.exit(1);
 }
 
