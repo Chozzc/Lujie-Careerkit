@@ -34,10 +34,6 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
   const skills = content.skills ?? [];
   const customSections = content.customSections ?? [];
   const editor = content.editor ?? {};
-  const selfEvaluationText = [content.profile.summary, content.selfReview]
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .join("\n");
 
   const generatedSections: ResumeSection[] = [
     section<PersonalInfoContent>(resumeId, "personal_info", "个人信息", 0, {
@@ -86,9 +82,16 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
       })),
     }),
     section<SummaryContent>(resumeId, "self_evaluation", "自我评价", 6, {
-      text: selfEvaluationText,
+      text: content.selfReview,
     }),
   ];
+
+  if (content.profile.summary) {
+    generatedSections.splice(1, 0, section<SummaryContent>(resumeId, "summary", "个人简介", 1, {
+      text: content.profile.summary,
+    }));
+    generatedSections.forEach((item, index) => { item.sortOrder = index; });
+  }
 
   if (skills.length > 0) {
     generatedSections.push(
@@ -190,7 +193,7 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
       title: section.title,
       content: section.content.items.map(formatCustomItem).filter(Boolean).join("\n\n"),
     })).filter((item) => item.title && item.content),
-    selfReview: selfEvaluation?.text ?? customSections[0]?.content.items[0]?.description ?? "",
+    selfReview: selfEvaluation?.text ?? "",
   };
 }
 
@@ -401,6 +404,7 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
         },
       };
     }
+    case "summary":
     case "self_evaluation":
       return {
         ...saved,

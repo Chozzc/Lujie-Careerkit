@@ -150,6 +150,42 @@ describe("resume content adapter", () => {
     ]);
   });
 
+  it("keeps personal summary separate from self evaluation", () => {
+    const reopened = contentToJadeResume({
+      ...baseResume,
+      profile: { ...baseResume.profile, summary: "专注后端开发。" },
+      selfReview: "",
+    });
+    const summary = reopened.sections.find((section) => section.type === "summary")?.content as
+      | { text: string }
+      | undefined;
+    const selfEvaluation = reopened.sections.find((section) => section.type === "self_evaluation")?.content as
+      | { text: string }
+      | undefined;
+
+    expect(summary?.text).toBe("专注后端开发。");
+    expect(selfEvaluation?.text).toBe("");
+
+    const edited = contentToJadeResume(baseResume);
+    const selfEvaluationSection = edited.sections.find((section) => section.type === "self_evaluation")!;
+    edited.sections = [
+      ...edited.sections.filter((section) => section.type !== "self_evaluation"),
+      {
+        ...selfEvaluationSection,
+        id: "summary",
+        type: "summary",
+        title: "个人简介",
+        content: { text: "新增的个人简介。" },
+      },
+    ];
+
+    const reopenedEditor = contentToJadeResume(jadeResumeToContent(edited));
+    expect(reopenedEditor.sections.find((section) => section.type === "summary")?.content).toEqual({
+      text: "新增的个人简介。",
+    });
+    expect(reopenedEditor.sections.some((section) => section.type === "self_evaluation")).toBe(false);
+  });
+
   it("restores editor snapshots while applying newer resume content", () => {
     const savedContent = jadeResumeToContent(contentToJadeResume(baseResume));
     const optimizedContent: ResumeContent = {
