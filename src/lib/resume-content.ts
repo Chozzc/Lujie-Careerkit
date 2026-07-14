@@ -66,10 +66,11 @@ export const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
   selfReview: z.string(),
 });
 
-type SectionKey = "profile" | "education" | "experiences" | "internships" | "projects" | "skills" | "awards";
+type SectionKey = "profile" | "selfReview" | "education" | "experiences" | "internships" | "projects" | "skills" | "awards";
 
 const headingMatchers: Array<[SectionKey, RegExp]> = [
-  ["profile", /^(个人总结|个人优势|自我评价|职业概述|求职意向|profile|summary|objective)$/i],
+  ["profile", /^(个人总结|个人优势|职业概述|求职意向|profile|summary|objective)$/i],
+  ["selfReview", /^(自我评价|self[- ]?(?:evaluation|review))$/i],
   ["education", /^(教育背景|教育经历|教育|education)$/i],
   ["experiences", /^(工作经历|工作经验|全职经历|professional experience|work experience|experience)$/i],
   ["internships", /^(实习经历|实习经验|internship|internships)$/i],
@@ -161,7 +162,7 @@ export function resumeContentFromText(fileName: string, text: string): ResumeCon
       projects: parseProjects(sections.projects),
       skills: parseSkills(sections.skills),
       awards: parseAwards(sections.awards),
-      selfReview: profileText || normalized.slice(0, 1200),
+      selfReview: compactLines(sections.selfReview),
     },
     fallbackName,
   );
@@ -283,6 +284,7 @@ function toRecord(value: unknown): Record<string, unknown> {
 function splitSections(text: string) {
   const sections: Record<SectionKey, string[]> = {
     profile: [],
+    selfReview: [],
     education: [],
     experiences: [],
     internships: [],

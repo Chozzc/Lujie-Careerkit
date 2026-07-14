@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coerceResumeContent, normalizeResumeContent } from "./resume-content";
+import { coerceResumeContent, normalizeResumeContent, resumeContentFromText } from "./resume-content";
 import type { ResumeContent } from "./types";
 
 const emptyResume: ResumeContent = {
@@ -27,6 +27,31 @@ describe("resume content normalization", () => {
 
     expect(normalized.basics.phone).toBe("18379185091");
     expect(normalized.basics.email).toBe("858653164@qq.com");
+  });
+
+  it("keeps imported summaries separate from self evaluations", () => {
+    const normalized = resumeContentFromText("resume.txt", [
+      "张三",
+      "后端工程师",
+      "个人总结",
+      "专注后端开发。",
+      "自我评价",
+      "工程基础扎实。",
+    ].join("\n"));
+
+    expect(normalized.profile.summary).toBe("专注后端开发。");
+    expect(normalized.selfReview).toBe("工程基础扎实。");
+  });
+
+  it("leaves self evaluation empty when the imported resume does not contain one", () => {
+    const normalized = resumeContentFromText("resume.txt", [
+      "张三",
+      "后端工程师",
+      "教育经历",
+      "示例大学 | 本科 | 计算机科学 | 2022 - 2026",
+    ].join("\n"));
+
+    expect(normalized.selfReview).toBe("");
   });
 
   it("coerces model object awards into strings", () => {
