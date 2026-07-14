@@ -136,6 +136,18 @@ describe("resume content adapter", () => {
 
     jadeResume.sections = [];
     expect(contentToJadeResume(jadeResumeToContent(jadeResume)).sections).toEqual([]);
+
+    const invalidSnapshot = jadeResumeToContent(contentToJadeResume(baseResume));
+    invalidSnapshot.editor!.sections = [{} as never];
+    expect(contentToJadeResume(invalidSnapshot).sections.map((section) => section.type)).toEqual([
+      "personal_info",
+      "education",
+      "work_experience",
+      "internship_experience",
+      "projects",
+      "certifications",
+      "self_evaluation",
+    ]);
   });
 
   it("restores editor snapshots while applying newer resume content", () => {
