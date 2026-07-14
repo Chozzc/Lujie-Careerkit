@@ -263,6 +263,7 @@ function hydrateEditorSections(
   fallbackDate: Date,
 ): ResumeSection[] | null {
   if (!Array.isArray(sections)) return null;
+  if (sections.length === 0) return [];
 
   const hydrated = sections
     .filter((item) => item && typeof item.type === "string" && item.content)
@@ -277,7 +278,7 @@ function hydrateEditorSections(
       updatedAt: toDate(item.updatedAt, fallbackDate),
     }));
 
-  return hydrated.sort((a, b) => a.sortOrder - b.sortOrder);
+  return hydrated.length ? hydrated.sort((a, b) => a.sortOrder - b.sortOrder) : null;
 }
 
 function mergeEditorSections(savedSections: ResumeSection[], generatedSections: ResumeSection[]) {
