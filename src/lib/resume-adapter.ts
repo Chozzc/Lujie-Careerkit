@@ -262,7 +262,7 @@ function hydrateEditorSections(
   resumeId: string,
   fallbackDate: Date,
 ): ResumeSection[] | null {
-  if (!Array.isArray(sections) || sections.length === 0) return null;
+  if (!Array.isArray(sections)) return null;
 
   const hydrated = sections
     .filter((item) => item && typeof item.type === "string" && item.content)
@@ -277,17 +277,13 @@ function hydrateEditorSections(
       updatedAt: toDate(item.updatedAt, fallbackDate),
     }));
 
-  return hydrated.length ? hydrated.sort((a, b) => a.sortOrder - b.sortOrder) : null;
+  return hydrated.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 function mergeEditorSections(savedSections: ResumeSection[], generatedSections: ResumeSection[]) {
   const generatedByType = new Map(generatedSections.map((item) => [item.type, item]));
-  const savedTypes = new Set(savedSections.map((item) => item.type));
-  const merged = savedSections.map((saved) => mergeEditorSection(saved, generatedByType.get(saved.type)));
-  const missing = generatedSections.filter((item) => !savedTypes.has(item.type));
-
-  return [...merged, ...missing].map((item, index) => ({
-    ...item,
+  return savedSections.map((saved, index) => ({
+    ...mergeEditorSection(saved, generatedByType.get(saved.type)),
     sortOrder: index,
   }));
 }
@@ -307,9 +303,6 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
           email: next.email,
           phone: next.phone,
           location: next.location,
-          website: next.website,
-          github: next.github,
-          customLinks: next.customLinks,
         },
       };
     }
