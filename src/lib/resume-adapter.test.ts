@@ -118,6 +118,26 @@ describe("resume content adapter", () => {
     });
   });
 
+  it("keeps deleted sections and fields deleted after saving and reopening", () => {
+    const jadeResume = contentToJadeResume(baseResume);
+    const personalInfo = jadeResume.sections.find((section) => section.type === "personal_info");
+    personalInfo!.content = {
+      ...(personalInfo!.content as PersonalInfoContent),
+      website: "",
+      github: "github.com/linzeyu",
+    };
+    jadeResume.sections = jadeResume.sections.filter((section) => section.type !== "education");
+
+    const reopened = contentToJadeResume(jadeResumeToContent(jadeResume));
+    const reopenedPersonalInfo = reopened.sections.find((section) => section.type === "personal_info")?.content;
+
+    expect(reopened.sections.some((section) => section.type === "education")).toBe(false);
+    expect(reopenedPersonalInfo).toMatchObject({ website: "", github: "github.com/linzeyu" });
+
+    jadeResume.sections = [];
+    expect(contentToJadeResume(jadeResumeToContent(jadeResume)).sections).toEqual([]);
+  });
+
   it("restores editor snapshots while applying newer resume content", () => {
     const savedContent = jadeResumeToContent(contentToJadeResume(baseResume));
     const optimizedContent: ResumeContent = {
