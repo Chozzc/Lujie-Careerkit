@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coerceResumeContent, normalizeResumeContent, resumeContentFromText } from "./resume-content";
+import { coerceResumeContent, normalizeResumeContent, resumeContentFromText, resumeContentInputSchema } from "./resume-content";
 import type { ResumeContent } from "./types";
 
 const emptyResume: ResumeContent = {
@@ -106,5 +106,36 @@ describe("resume content normalization", () => {
     expect(normalized.experiences[1].logo).toBe("icon:cpu");
     expect(normalized.projects[0].logo).toBe("data:image/png;base64,logo");
     expect(normalized.projects[1].logo).toBeUndefined();
+  });
+
+  it("normalizes editor settings without dropping optimization metadata", () => {
+    const metadata = { ...emptyResume, basics: { ...emptyResume.basics, name: "原始简历" } };
+    const normalized = resumeContentInputSchema.parse({
+      ...emptyResume,
+      editor: {
+        displayName: "测试简历",
+        themeConfig: { fontFamily: "Inter;}</style><script>alert(1)</script>" },
+      },
+      _tailoringBaseResume: metadata,
+    }) as ResumeContent & { _tailoringBaseResume: ResumeContent };
+
+    expect(normalized.editor?.themeConfig?.fontFamily).toBe("Inter");
+    expect(normalized._tailoringBaseResume.basics.name).toBe("原始简历");
+  });
+
+  it("drops malformed serialized editor sections before reopening the editor", () => {
+    const normalized = normalizeResumeContent({
+      ...emptyResume,
+      editor: {
+        sections: [
+          { type: "skills", content: "not-an-object" },
+          { type: "summary", content: { text: "保留" }, sortOrder: Number.NaN },
+        ] as never,
+      },
+    });
+
+    expect(normalized.editor?.sections).toEqual([
+      expect.objectContaining({ type: "summary", sortOrder: 1, content: { text: "保留" } }),
+    ]);
   });
 });

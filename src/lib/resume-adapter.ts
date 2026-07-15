@@ -1,5 +1,6 @@
 import type { JsonValue, ResumeContent, SerializedResumeSection } from "@/lib/types";
 import { normalizeResumeContent } from "@/lib/resume-content";
+import { normalizeResumeTheme } from "@/lib/resume-theme";
 import { generateId } from "@/lib/utils";
 import type {
   CertificationsContent,
@@ -13,18 +14,6 @@ import type {
   SummaryContent,
   WorkExperienceContent,
 } from "@/types/resume";
-
-const DEFAULT_RESUME_THEME = {
-  primaryColor: "#1a1a2e",
-  accentColor: "#e94560",
-  fontFamily: "Inter",
-  fontSize: "medium",
-  logoSize: "medium" as const,
-  lineSpacing: 1.5,
-  margin: { top: 20, right: 24, bottom: 20, left: 24 },
-  sectionSpacing: 16,
-  avatarStyle: "oneInch" as const,
-};
 
 export function contentToJadeResume(rawContent: ResumeContent): Resume {
   const content = normalizeResumeContent(rawContent);
@@ -127,7 +116,7 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
     isDefault: true,
     createdAt: now,
     updatedAt: now,
-    themeConfig: mergeResumeTheme(editor.themeConfig),
+    themeConfig: normalizeResumeTheme(editor.themeConfig),
     sections,
   };
 }
@@ -194,18 +183,6 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
       content: section.content.items.map(formatCustomItem).filter(Boolean).join("\n\n"),
     })).filter((item) => item.title && item.content),
     selfReview: selfEvaluation?.text ?? "",
-  };
-}
-
-function mergeResumeTheme(patch?: NonNullable<ResumeContent["editor"]>["themeConfig"]) {
-  const theme = patch ?? {};
-  return {
-    ...DEFAULT_RESUME_THEME,
-    ...theme,
-    margin: {
-      ...DEFAULT_RESUME_THEME.margin,
-      ...(theme.margin ?? {}),
-    },
   };
 }
 

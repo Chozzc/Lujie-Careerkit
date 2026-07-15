@@ -10,6 +10,7 @@ import {
 } from "./ai/settings";
 import { getAiSettingsMaintenancePatch } from "./ai/settings-migration";
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER_ID, LEGACY_DEFAULT_AI_MODELS, getAiProvider } from "./ai/provider-registry";
+import { normalizeApplicationInterviewRound } from "./application";
 import { analyzeJobInput } from "./job-analysis";
 import { prisma } from "./db";
 import {
@@ -210,14 +211,6 @@ async function getDeletedSeedResumeVersionIds() {
   return new Set(rows.map((row) => row.id));
 }
 
-async function markDeletedSeedResumeVersion(versionId: string) {
-  if (!isBuiltInSampleResumeVersion(versionId)) return;
-  await prisma.$executeRawUnsafe(
-    `INSERT OR REPLACE INTO "DeletedSeedResumeVersion" ("id", "deletedAt") VALUES (?, CURRENT_TIMESTAMP)`,
-    versionId,
-  );
-}
-
 async function dedupeTailoredResumeVersions() {
   const versions = await prisma.resumeVersion.findMany({
     where: { jobId: { not: null } },
@@ -394,29 +387,10 @@ async function ensureColumn(tableName: string, columnName: string, statement: st
   }
 }
 
-async function getApplicationInterviewRounds(applicationIds: string[]) {
-  if (applicationIds.length === 0) return new Map<string, InterviewRound>();
-  const placeholders = applicationIds.map(() => "?").join(", ");
-  const rows = await prisma.$queryRawUnsafe<Array<{ id: string; interviewRound: string | null }>>(
-    `SELECT "id", "interviewRound" FROM "Application" WHERE "id" IN (${placeholders})`,
-    ...applicationIds,
-  );
-
-  return new Map(rows.map((row) => [row.id, normalizeInterviewRound(row.interviewRound)]));
-}
-
-async function setApplicationInterviewRound(applicationId: string, value: InterviewRound) {
-  await prisma.$executeRawUnsafe(
-    `UPDATE "Application" SET "interviewRound" = ? WHERE "id" = ?`,
-    normalizeInterviewRound(value),
-    applicationId,
-  );
-}
-
 export async function getAppData() {
   await ensureSeedData();
 
-  const [resume, versions, jobs, applications, followUps, interviews, settings] =
+  const [resume, versions, jobs, applications, interviews, settings] =
     await Promise.all([
       prisma.resume.findFirst({ orderBy: { updatedAt: "desc" } }),
       prisma.resumeVersion.findMany({ orderBy: { updatedAt: "desc" } }),
@@ -425,15 +399,12 @@ export async function getAppData() {
         orderBy: { createdAt: "desc" },
       }),
       prisma.application.findMany({ orderBy: { updatedAt: "desc" } }),
-      prisma.followUpLog.findMany({ orderBy: { createdAt: "desc" } }),
       prisma.interviewSession.findMany({
         orderBy: { createdAt: "desc" },
         include: { job: true, resumeVersion: true },
       }),
       prisma.settings.findUnique({ where: { id: "singleton" } }),
     ]);
-
-  const applicationInterviewRounds = await getApplicationInterviewRounds(applications.map((application) => application.id));
 
   return {
     resume: resume
@@ -475,15 +446,8 @@ export async function getAppData() {
       stageDate: toDateInput(application.stageDate),
       nextFollowUpAt: toDateInput(application.nextFollowUpAt),
       notes: application.notes,
-      interviewRound: normalizeInterviewRound(applicationInterviewRounds.get(application.id) ?? application.interviewRound),
+      interviewRound: normalizeApplicationInterviewRound(application.status, application.interviewRound),
       updatedAt: application.updatedAt.toISOString(),
-    })),
-    followUps: followUps.map((followUp) => ({
-      id: followUp.id,
-      applicationId: followUp.applicationId,
-      type: followUp.type,
-      content: followUp.content,
-      createdAt: followUp.createdAt.toISOString(),
     })),
     interviews: interviews.map(toInterviewSessionRecord),
     settings: settings
@@ -803,7 +767,10 @@ export async function createJobWithApplication(input: {
 }) {
   await ensureSeedData();
   const analysis = analyzeJobInput(`${input.company} - ${input.title}\n${input.jd}`);
-  const job = await prisma.job.create({
+  const applicationStatus = input.applicationStatus ?? "READY";
+  const interviewRound = normalizeApplicationInterviewRound(applicationStatus, input.interviewRound);
+  const stageDate = input.stageDate ?? input.appliedAt ?? null;
+  const created = await prisma.job.create({
     data: {
       company: input.company || analysis.company,
       title: input.title || analysis.title,
@@ -814,36 +781,32 @@ export async function createJobWithApplication(input: {
       deadline: input.deadline ? new Date(input.deadline) : null,
       tags: ["实习"],
       analysis,
+      applications: {
+        create: {
+          status: applicationStatus,
+          interviewRound,
+          appliedAt: input.appliedAt
+            ? new Date(input.appliedAt)
+            : applicationStatus === "APPLIED"
+              ? stageDate
+                ? new Date(stageDate)
+                : new Date()
+              : null,
+          stageDate: stageDate ? new Date(stageDate) : null,
+          nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
+          notes:
+            input.notes ||
+            (applicationStatus === "APPLIED"
+              ? "已加入投递跟进。"
+              : "新岗位，等待匹配优化。"),
+        },
+      },
     },
+    include: { applications: true },
   });
-
-  const applicationStatus = input.applicationStatus ?? "READY";
-  const interviewRound = applicationStatus === "INTERVIEW" ? normalizeInterviewRound(input.interviewRound) : "";
-  const stageDate = input.stageDate ?? input.appliedAt ?? null;
-  const application = await prisma.application.create({
-    data: {
-      jobId: job.id,
-      status: applicationStatus,
-      appliedAt: input.appliedAt
-        ? new Date(input.appliedAt)
-        : applicationStatus === "APPLIED"
-          ? stageDate
-            ? new Date(stageDate)
-            : new Date()
-          : null,
-      stageDate: stageDate ? new Date(stageDate) : null,
-      nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
-      notes:
-        input.notes ||
-        (applicationStatus === "APPLIED"
-          ? "已加入投递跟进。"
-          : "新岗位，等待匹配优化。"),
-    },
-  });
-
-  await setApplicationInterviewRound(application.id, interviewRound);
-
-  return { job, application: { ...application, interviewRound } };
+  const { applications: [application], ...job } = created;
+  if (!application) throw new Error("岗位创建后未生成投递记录。");
+  return { job, application };
 }
 
 export async function updateApplication(input: {
@@ -858,8 +821,13 @@ export async function updateApplication(input: {
   await ensureSchema();
   const existingApplication = await prisma.application.findUnique({
     where: { id: input.id },
-    select: { status: true, appliedAt: true },
+    select: { status: true, appliedAt: true, interviewRound: true },
   });
+  const effectiveStatus = input.status ?? existingApplication?.status;
+  const interviewRound = normalizeApplicationInterviewRound(
+    effectiveStatus,
+    input.interviewRound ?? existingApplication?.interviewRound,
+  );
   const application = await prisma.application.update({
     where: { id: input.id },
     data: {
@@ -875,6 +843,7 @@ export async function updateApplication(input: {
       nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : input.nextFollowUpAt,
       notes: input.notes,
       resumeVersionId: input.resumeVersionId,
+      interviewRound,
       appliedAt:
         input.status === "APPLIED" && !existingApplication?.appliedAt
           ? input.stageDate
@@ -883,16 +852,7 @@ export async function updateApplication(input: {
           : undefined,
     },
   });
-  const existingRound = (await getApplicationInterviewRounds([input.id])).get(input.id) ?? "";
-  const interviewRound =
-    input.status === "INTERVIEW"
-      ? normalizeInterviewRound((input.interviewRound ?? existingRound) || "FIRST")
-      : input.status
-        ? ""
-        : normalizeInterviewRound(input.interviewRound ?? existingRound);
-  await setApplicationInterviewRound(input.id, interviewRound);
-
-  return { ...application, interviewRound };
+  return application;
 }
 
 export async function updateJobWithApplication(input: {
@@ -912,7 +872,16 @@ export async function updateJobWithApplication(input: {
   interviewRound?: InterviewRound;
 }) {
   await ensureSchema();
-  const interviewRound = input.status === "INTERVIEW" ? normalizeInterviewRound(input.interviewRound) : "";
+  const existingApplication = await prisma.application.findUnique({
+    where: { id: input.applicationId },
+    select: { jobId: true, status: true, interviewRound: true },
+  });
+  if (existingApplication?.jobId !== input.jobId) throw new Error("投递记录不属于该岗位。");
+  const effectiveStatus = input.status ?? existingApplication?.status;
+  const interviewRound = normalizeApplicationInterviewRound(
+    effectiveStatus,
+    input.interviewRound ?? existingApplication?.interviewRound,
+  );
   const [job, application] = await prisma.$transaction([
     prisma.job.update({
       where: { id: input.jobId },
@@ -937,34 +906,29 @@ export async function updateJobWithApplication(input: {
         stageDate: input.stageDate ? new Date(input.stageDate) : input.stageDate,
         nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : input.nextFollowUpAt,
         notes: input.notes,
+        interviewRound,
       },
     }),
   ]);
-
-  await setApplicationInterviewRound(application.id, interviewRound);
-
-  return { job, application: { ...application, interviewRound } };
+  return { job, application };
 }
 
 export async function deleteJobWithApplications(jobId: string) {
-  await prisma.followUpLog.deleteMany({ where: { application: { jobId } } });
-  await prisma.application.deleteMany({ where: { jobId } });
-  await prisma.interviewSession.deleteMany({ where: { jobId } });
-  await prisma.resumeVersion.updateMany({ where: { jobId }, data: { jobId: null } });
+  await ensureSchema();
   return prisma.job.delete({ where: { id: jobId } });
 }
 
 export async function deleteResumeVersion(versionId: string) {
   await ensureSchema();
-  await markDeletedSeedResumeVersion(versionId);
-  await prisma.application.updateMany({
-    where: { resumeVersionId: versionId },
-    data: { resumeVersionId: null },
-  });
-  await prisma.interviewSession.updateMany({
-    where: { resumeVersionId: versionId },
-    data: { resumeVersionId: null },
-  });
+  if (isBuiltInSampleResumeVersion(versionId)) {
+    return prisma.$transaction(async (transaction) => {
+      await transaction.$executeRawUnsafe(
+        `INSERT OR REPLACE INTO "DeletedSeedResumeVersion" ("id", "deletedAt") VALUES (?, CURRENT_TIMESTAMP)`,
+        versionId,
+      );
+      return transaction.resumeVersion.delete({ where: { id: versionId } });
+    });
+  }
   return prisma.resumeVersion.delete({ where: { id: versionId } });
 }
 
@@ -978,14 +942,6 @@ export async function deleteOptimizedResumeVersions() {
     .map((version) => version.id);
   if (!versionIds.length) return { count: 0 };
 
-  await prisma.application.updateMany({
-    where: { resumeVersionId: { in: versionIds } },
-    data: { resumeVersionId: null },
-  });
-  await prisma.interviewSession.updateMany({
-    where: { resumeVersionId: { in: versionIds } },
-    data: { resumeVersionId: null },
-  });
   return prisma.resumeVersion.deleteMany({ where: { id: { in: versionIds } } });
 }
 
@@ -1172,10 +1128,6 @@ export function toDateInput(value: Date | string | null) {
   if (!value) return null;
   const date = typeof value === "string" ? new Date(value) : value;
   return date.toISOString().slice(0, 10);
-}
-
-function normalizeInterviewRound(value: unknown): InterviewRound {
-  return value === "FIRST" || value === "SECOND" || value === "THIRD" || value === "HR" ? value : "";
 }
 
 function toStoredAiSettings(settings: {

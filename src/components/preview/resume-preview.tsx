@@ -4,6 +4,7 @@ import { useId } from 'react';
 import type { Resume, ThemeConfig } from '@/types/resume';
 import { BACKGROUND_TEMPLATES } from '@/lib/constants';
 import { buildPagedResumeModeCSS, type ResumePreviewRenderMode } from '@/lib/resume-export-layout';
+import { normalizeResumeTheme } from '@/lib/resume-theme';
 import { ClassicTemplate } from './templates/classic';
 import { ModernTemplate } from './templates/modern';
 import { MinimalTemplate } from './templates/minimal';
@@ -137,18 +138,6 @@ const LOGO_SIZE_SCALE: Record<string, { container: string; icon: string }> = {
   large: { container: '36px', icon: '20px' },
 };
 
-const DEFAULT_THEME: ThemeConfig = {
-  primaryColor: '#1a1a1a',
-  accentColor: '#3b82f6',
-  fontFamily: 'Inter',
-  fontSize: 'medium',
-  logoSize: 'medium',
-  lineSpacing: 1.5,
-  margin: { top: 20, right: 20, bottom: 20, left: 20 },
-  sectionSpacing: 16,
-  avatarStyle: 'oneInch',
-};
-
 /** Returns true if a hex colour is dark (luminance < 0.4) */
 function isDark(hex: string): boolean {
   const c = hex.replace('#', '');
@@ -253,12 +242,12 @@ function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): s
 export function ResumePreview({ resume, mode = "standalone" }: ResumePreviewProps) {
   const Template = templateMap[resume.template] || ClassicTemplate;
   const scopeId = useId();
-  const theme: ThemeConfig = { ...DEFAULT_THEME, ...(resume.themeConfig || {}) };
+  const theme = normalizeResumeTheme(resume.themeConfig);
 
   // Defensive: ensure resume.sections is always an array (AI may return invalid/empty data)
   const safeResume = resume.sections
-    ? { ...resume, sections: normalizePreviewSections(resume.sections) }
-    : { ...resume, sections: [] };
+    ? { ...resume, themeConfig: theme, sections: normalizePreviewSections(resume.sections) }
+    : { ...resume, themeConfig: theme, sections: [] };
 
   return (
     <>

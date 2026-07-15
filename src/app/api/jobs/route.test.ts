@@ -46,4 +46,28 @@ describe("/api/jobs", () => {
       jd: "负责服务端接口开发",
     }));
   });
+
+  it("rejects blank required fields without calling the repository", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/jobs", {
+        method: "POST",
+        body: JSON.stringify({ company: "  ", title: "后端开发", jd: "岗位描述" }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(createJob).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid calendar dates before persistence", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/jobs", {
+        method: "POST",
+        body: JSON.stringify({ company: "美团", title: "后端开发", jd: "岗位描述", deadline: "2026-02-30" }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(createJob).not.toHaveBeenCalled();
+  });
 });

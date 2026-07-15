@@ -47,6 +47,8 @@ import {
   shouldAutoRenameResumeTitle,
 } from "@/lib/resume-naming";
 import { buildUploadedResumeDraft } from "@/lib/resume-upload";
+import { DEFAULT_RESUME_THEME } from "@/lib/resume-theme";
+import { readSmartOnePagePreference } from "@/lib/resume-preferences";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type { ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -105,17 +107,7 @@ export type ResumeSaveTarget = { kind: "main" } | { kind: "version"; id: string 
 type ViewMode = ResumeLibraryViewMode;
 type SortMode = ResumeLibrarySortMode;
 
-const DEFAULT_EDITOR_THEME: ThemeConfig = {
-  primaryColor: "#1a1a2e",
-  accentColor: "#e94560",
-  fontFamily: "Inter",
-  fontSize: "medium",
-  logoSize: "medium",
-  lineSpacing: 1.5,
-  margin: { top: 20, right: 24, bottom: 20, left: 24 },
-  sectionSpacing: 16,
-  avatarStyle: "oneInch",
-};
+const DEFAULT_EDITOR_THEME = DEFAULT_RESUME_THEME;
 
 export function ResumeWorkbench({
   resume,
@@ -803,11 +795,6 @@ function formatEditorSaveStatus(
   if (isSaving) return status || t("status.saving");
   if (isDirty) return t("status.unsaved");
   return status;
-}
-
-function readSmartOnePagePreference() {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem("lujie_resume_smart_one_page") === "true";
 }
 
 function readEditorRouteVersionId() {

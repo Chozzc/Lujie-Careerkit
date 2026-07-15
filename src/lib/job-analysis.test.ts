@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { analyzeJobInput } from "./job-analysis";
+import { analyzeJobInput, jobAnalysisInputSchema } from "./job-analysis";
 
 describe("analyzeJobInput", () => {
   it("extracts a practical campus job profile from pasted JD text", () => {
@@ -31,5 +31,12 @@ describe("analyzeJobInput", () => {
     expect(result.keywords).toEqual([]);
     expect(result.risks).toContain("缺少岗位 JD，无法判断关键词和匹配缺口。");
     expect(result).not.toHaveProperty("matchScore");
+  });
+
+  it("rejects invalid calendar dates and non-string list values", () => {
+    const valid = analyzeJobInput("美团 - 后端开发实习生\n要求 Java");
+
+    expect(jobAnalysisInputSchema.safeParse({ ...valid, deadline: "2026-02-30" }).success).toBe(false);
+    expect(jobAnalysisInputSchema.safeParse({ ...valid, risks: [42] }).success).toBe(false);
   });
 });

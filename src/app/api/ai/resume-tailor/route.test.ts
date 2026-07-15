@@ -59,6 +59,25 @@ describe("resume tailoring route", () => {
     expect(mocks.createTailoredVersionForJob).not.toHaveBeenCalled();
   });
 
+  it("rejects incomplete analysis before it can be persisted", async () => {
+    const response = await POST(jsonRequest({
+      jobId: "job-1",
+      jd: "美团 - 后端开发实习生",
+      analysis: { company: "美团", title: "后端开发实习生", requirements: [], keywords: [], suggestions: [] },
+    }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.tailorResumeWithAI).not.toHaveBeenCalled();
+    expect(mocks.saveJobAnalysis).not.toHaveBeenCalled();
+  });
+
+  it("rejects a blank JD before calling the model", async () => {
+    const response = await POST(jsonRequest({ jobId: "job-1", jd: "   " }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.tailorResumeWithAI).not.toHaveBeenCalled();
+  });
+
   it("uses local JD context and calls only the tailoring model when analysis is omitted", async () => {
     mocks.tailorResumeWithAI.mockResolvedValue({
       source: "ai",

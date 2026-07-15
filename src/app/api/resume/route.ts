@@ -1,14 +1,17 @@
 import { z } from "zod";
 
+import { parseJsonRequest } from "@/lib/api-request";
+import { resumeContentInputSchema } from "@/lib/resume-content";
 import { updateResume } from "@/lib/repository";
 
 const resumeSchema = z.object({
-  content: z.unknown(),
+  content: resumeContentInputSchema,
 });
 
 export async function POST(request: Request) {
-  const body = resumeSchema.parse(await request.json());
-  const resume = await updateResume(body.content as never);
+  const parsed = await parseJsonRequest(request, resumeSchema);
+  if (!parsed.success) return parsed.response;
+  const resume = await updateResume(parsed.data.content);
   return Response.json({
     resume: {
       id: resume.id,

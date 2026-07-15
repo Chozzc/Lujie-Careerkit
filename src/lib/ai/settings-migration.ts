@@ -1,6 +1,7 @@
 import {
   DEFAULT_AI_PROVIDER_ID,
   getAiProvider,
+  getCurrentAiModel,
   getDefaultAiModel,
   LEGACY_DEFAULT_AI_MODELS,
 } from "./provider-registry";
@@ -29,6 +30,16 @@ type AiSettingsMaintenancePatch = {
 export function getAiSettingsMaintenancePatch(
   settings: StoredAiSettingsForMaintenance,
 ): AiSettingsMaintenancePatch | null {
+  const currentModel = getCurrentAiModel(settings.aiProvider, settings.aiModel);
+  const currentLegacyModel = getCurrentAiModel(settings.aiProvider, settings.model);
+  if (currentModel !== settings.aiModel || currentLegacyModel !== settings.model) {
+    return {
+      model: currentLegacyModel,
+      aiModel: currentModel,
+      aiLastTestStatus: "untested",
+    };
+  }
+
   const legacyDefaultModels = new Set<string>(LEGACY_DEFAULT_AI_MODELS);
   const oldQwenDefaultModels = new Set(["qwen3.7-max"]);
 

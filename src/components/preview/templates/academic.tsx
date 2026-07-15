@@ -15,7 +15,7 @@ import type {
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
 import { EntryLogo } from '../entry-logo';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function AcademicTemplate({ resume }: { resume: Resume }) {

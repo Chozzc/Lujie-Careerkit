@@ -39,20 +39,11 @@ export type ResumeVersionView = {
   updatedAt: string;
 };
 
-export type FollowUpView = {
-  id: string;
-  applicationId: string;
-  type: string;
-  content: string;
-  createdAt: string;
-};
-
 export type InitialData = {
   resume: { id: string; name: string; content: ResumeContent; updatedAt: string } | null;
   versions: ResumeVersionView[];
   jobs: JobView[];
   applications: ApplicationView[];
-  followUps: FollowUpView[];
   interviews: InterviewSessionRecord[];
   settings: {
     provider: string;

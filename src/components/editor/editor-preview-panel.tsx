@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { ZoomableResumeCanvas } from '@/components/preview/zoomable-resume-canvas';
 import { calculateFitPreviewZoom } from '@/lib/resume-export-layout';
+import { readSmartOnePagePreference, writeSmartOnePagePreference } from '@/lib/resume-preferences';
 import { useResumeStore } from '@/stores/resume-store';
 import type { Resume } from '@/types/resume';
 
@@ -23,12 +24,8 @@ export function EditorPreviewPanel() {
   }, [currentResume, sections]);
 
   useEffect(() => {
-    setSmartOnePage(window.localStorage.getItem('lujie_resume_smart_one_page') === 'true');
+    setSmartOnePage(readSmartOnePagePreference());
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem('lujie_resume_smart_one_page', String(smartOnePage));
-  }, [smartOnePage]);
 
   useEffect(() => {
     if (manualZoom) return;
@@ -65,6 +62,13 @@ export function EditorPreviewPanel() {
     setZoom(nextZoom);
   }
 
+  function toggleSmartOnePage() {
+    setSmartOnePage((value) => {
+      writeSmartOnePagePreference(!value);
+      return !value;
+    });
+  }
+
   return (
     <div data-tour="preview" className="flex h-full min-w-0 flex-col border-l bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800">
       {/* Header */}
@@ -72,15 +76,15 @@ export function EditorPreviewPanel() {
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-zinc-500">{t('preview')}</span>
           <Button
-            variant={smartOnePage ? "default" : "outline"}
+            variant={smartOnePage ? 'default' : 'outline'}
             size="sm"
             className="h-7 gap-1.5 px-2 text-xs"
-            aria-label="智能一页"
-            title="智能一页"
-            onClick={() => setSmartOnePage((value) => !value)}
+            aria-label={t('smartOnePage')}
+            title={t('smartOnePage')}
+            onClick={toggleSmartOnePage}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            智能一页
+            {t('smartOnePage')}
           </Button>
         </div>
         <div className="flex items-center gap-1">
@@ -88,8 +92,8 @@ export function EditorPreviewPanel() {
             variant="ghost"
             size="sm"
             className="h-7 w-7 cursor-pointer p-0"
-            aria-label="缩小预览"
-            title="缩小预览"
+            aria-label={t('zoomOut')}
+            title={t('zoomOut')}
             onClick={() => handleZoom(-10)}
             disabled={zoom <= 30}
           >
@@ -100,8 +104,8 @@ export function EditorPreviewPanel() {
             variant="ghost"
             size="sm"
             className="h-7 w-7 cursor-pointer p-0"
-            aria-label="放大预览"
-            title="放大预览"
+            aria-label={t('zoomIn')}
+            title={t('zoomIn')}
             onClick={() => handleZoom(10)}
             disabled={zoom >= 150}
           >

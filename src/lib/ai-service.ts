@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { getEffectiveAiRuntimeSettings } from "./repository";
 import { runAiObjectTask, type AiTaskResult } from "./ai/tasks";
+import type { EffectiveAiSettings } from "./ai/settings";
 import { buildAiResumeSnapshot } from "./ai/resume-snapshot";
 import { resumeContentSchema } from "./resume-content";
 import { buildOptimizedResumeVersionName, buildTailoredResumeVersion } from "./resume-versioning";
@@ -42,8 +42,9 @@ export async function tailorResumeWithAI(input: {
     atsFriendly?: boolean;
     highlightMatchedSkills?: boolean;
   };
+  settings?: EffectiveAiSettings;
 }): Promise<ResumeAiTaskResult> {
-  const settings = await getEffectiveAiRuntimeSettings();
+  const settings = await resolveAiSettings(input.settings);
   const preferenceLines = [
     input.preferences?.emphasizeImpact
       ? "强调项目成果：优先把原有经历改写成「动作 + 方法/职责 + 可验证结果」；弱相关内容可以压缩，但不能新增项目或成果。"
@@ -112,8 +113,11 @@ export async function tailorResumeWithAI(input: {
   };
 }
 
-export async function optimizeResumeWithAI(input: { resume: ResumeContent }): Promise<ResumeAiTaskResult> {
-  const settings = await getEffectiveAiRuntimeSettings();
+export async function optimizeResumeWithAI(input: {
+  resume: ResumeContent;
+  settings?: EffectiveAiSettings;
+}): Promise<ResumeAiTaskResult> {
+  const settings = await resolveAiSettings(input.settings);
   const fallbackMeta = buildDefaultGeneralMeta(input.resume);
   const result = await runAiObjectTask({
     settings,
@@ -157,6 +161,12 @@ export async function optimizeResumeWithAI(input: { resume: ResumeContent }): Pr
     data: normalizeOptimizedResume(output.resume, input.resume),
     meta,
   };
+}
+
+async function resolveAiSettings(settings?: EffectiveAiSettings) {
+  if (settings) return settings;
+  const { getEffectiveAiRuntimeSettings } = await import("./repository");
+  return getEffectiveAiRuntimeSettings();
 }
 
 function readResumeAiOutput(

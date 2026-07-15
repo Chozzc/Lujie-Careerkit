@@ -68,4 +68,20 @@ describe("AI settings maintenance migration", () => {
       aiLastTestStatus: "untested",
     });
   });
+
+  it("repairs a configured provider model id without dropping its key", () => {
+    expect(
+      getAiSettingsMaintenancePatch({
+        aiProvider: "openrouter",
+        aiModel: "openai/gpt-5.6",
+        model: "openai/gpt-5.6",
+        aiApiKey: "encrypted-key",
+        aiEnabled: true,
+      }),
+    ).toMatchObject({
+      aiModel: "openai/gpt-5.6-sol",
+      model: "openai/gpt-5.6-sol",
+      aiLastTestStatus: "untested",
+    });
+  });
 });

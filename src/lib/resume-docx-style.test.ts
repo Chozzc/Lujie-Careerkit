@@ -36,10 +36,10 @@ describe("resume docx style mapping", () => {
       sectionSpacing: 0,
     });
 
-    expect(config.primaryColor).toBe("111827");
-    expect(config.accentColor).toBe("315F92");
+    expect(config.primaryColor).toBe("1A1A2E");
+    expect(config.accentColor).toBe("E94560");
     expect(config.font).toBe("Microsoft YaHei");
     expect(config.sizes.body).toBe(21);
-    expect(config.lineTwips).toBe(360);
+    expect(config.lineTwips).toBe(264);
   });
 });

@@ -19,8 +19,6 @@ import { QrCodesPreview } from '../qr-codes-preview';
 
 const PRIMARY = '#1c1917';
 const ACCENT = '#44403c';
-const SUBTLE = '#f5f5f4';
-
 export function JapaneseTemplate({ resume }: { resume: Resume }) {
   const personalInfo = resume.sections.find((s) => s.type === 'personal_info');
   const pi = (personalInfo?.content || {}) as PersonalInfoContent;

@@ -1,13 +1,14 @@
 import { z } from "zod";
 
+import { parseJsonRequest } from "@/lib/api-request";
 import { optimizeResumeWithAI } from "@/lib/ai-service";
-import { isResumeContentLike } from "@/lib/resume-content";
+import { resumeContentInputSchema } from "@/lib/resume-content";
 import { buildResumeDisplayName } from "@/lib/resume-naming";
 import { createResumeVersion, getTailoringBaseResume } from "@/lib/repository";
 
 const schema = z.object({
-  resumeVersionId: z.string().optional(),
-  resumeContent: z.unknown().optional(),
+  resumeVersionId: z.string().trim().min(1).max(200).optional(),
+  resumeContent: resumeContentInputSchema.optional(),
 });
 
 export function GET() {
@@ -15,10 +16,12 @@ export function GET() {
 }
 
 export async function POST(request: Request) {
-  const input = schema.parse(await request.json());
+  const parsed = await parseJsonRequest(request, schema);
+  if (!parsed.success) return parsed.response;
+  const input = parsed.data;
   const baseResume = await getTailoringBaseResume({
     resumeVersionId: input.resumeVersionId,
-    resumeContent: isResumeContentLike(input.resumeContent) ? input.resumeContent : undefined,
+    resumeContent: input.resumeContent,
   });
   const optimized = await optimizeResumeWithAI({ resume: baseResume });
   if (optimized.source !== "ai") {

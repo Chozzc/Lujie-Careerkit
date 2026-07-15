@@ -43,6 +43,7 @@ export function AppSidebar({
               const Icon = item.icon;
               return (
                 <button
+                  type="button"
                   key={item.key}
                   onClick={() => onNavigate(item.key)}
                   className={cn(

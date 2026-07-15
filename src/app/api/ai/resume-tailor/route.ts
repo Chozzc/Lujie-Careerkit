@@ -1,16 +1,17 @@
 import { z } from "zod";
 
+import { parseJsonRequest } from "@/lib/api-request";
 import { tailorResumeWithAI } from "@/lib/ai-service";
-import { analyzeJobInput } from "@/lib/job-analysis";
-import { isResumeContentLike } from "@/lib/resume-content";
+import { analyzeJobInput, jobAnalysisInputSchema } from "@/lib/job-analysis";
+import { resumeContentInputSchema } from "@/lib/resume-content";
 import { createTailoredVersionForJob, getTailoringBaseResume, saveJobAnalysis } from "@/lib/repository";
 import type { JobAnalysis, ResumeOptimizationMeta } from "@/lib/types";
 
 const schema = z.object({
-  jobId: z.string(),
-  applicationId: z.string().optional(),
-  resumeVersionId: z.string().optional(),
-  resumeContent: z.unknown().optional(),
+  jobId: z.string().trim().min(1).max(200),
+  applicationId: z.string().trim().min(1).max(200).optional(),
+  resumeVersionId: z.string().trim().min(1).max(200).optional(),
+  resumeContent: resumeContentInputSchema.optional(),
   preferences: z
     .object({
       emphasizeImpact: z.boolean().optional(),
@@ -19,8 +20,8 @@ const schema = z.object({
       highlightMatchedSkills: z.boolean().optional(),
     })
     .optional(),
-  analysis: z.unknown().optional(),
-  jd: z.string().default(""),
+  analysis: jobAnalysisInputSchema.optional(),
+  jd: z.string().trim().min(1).max(50_000),
 });
 
 export function GET() {
@@ -28,12 +29,13 @@ export function GET() {
 }
 
 export async function POST(request: Request) {
-  const input = schema.parse(await request.json());
-  const providedAnalysis = isJobAnalysisLike(input.analysis) ? input.analysis : null;
-  const analysis = providedAnalysis ?? analyzeJobInput(input.jd);
+  const parsed = await parseJsonRequest(request, schema);
+  if (!parsed.success) return parsed.response;
+  const input = parsed.data;
+  const analysis = input.analysis ?? analyzeJobInput(input.jd);
   const baseResume = await getTailoringBaseResume({
     resumeVersionId: input.resumeVersionId,
-    resumeContent: isResumeContentLike(input.resumeContent) ? input.resumeContent : undefined,
+    resumeContent: input.resumeContent,
   });
   const tailored = await tailorResumeWithAI({
     resume: baseResume,
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
     jobId: input.jobId,
     applicationId: input.applicationId,
     resumeVersionId: input.resumeVersionId,
-    resumeContent: isResumeContentLike(input.resumeContent) ? input.resumeContent : undefined,
+    resumeContent: input.resumeContent,
     tailoredContent: tailored.data,
     analysis: effectiveAnalysis,
     optimizationMeta: meta,
@@ -99,16 +101,4 @@ function cleanMetaText(value?: string | null) {
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
   return text.length > 32 ? "" : text;
-}
-
-function isJobAnalysisLike(value: unknown): value is JobAnalysis {
-  if (!value || typeof value !== "object") return false;
-  const analysis = value as Partial<JobAnalysis>;
-  return Boolean(
-    typeof analysis.company === "string" &&
-      typeof analysis.title === "string" &&
-      Array.isArray(analysis.requirements) &&
-      Array.isArray(analysis.keywords) &&
-      Array.isArray(analysis.suggestions),
-  );
 }

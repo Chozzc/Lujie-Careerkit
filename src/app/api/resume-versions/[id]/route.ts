@@ -1,21 +1,25 @@
 import { z } from "zod";
 
+import { parseJsonRequest } from "@/lib/api-request";
+import { resumeContentInputSchema } from "@/lib/resume-content";
 import { deleteResumeVersion, updateResumeVersion } from "@/lib/repository";
 
 const resumeVersionSchema = z.object({
   name: z.string().optional(),
   summary: z.string().optional(),
-  content: z.unknown(),
+  content: resumeContentInputSchema,
 });
 
 export async function PATCH(request: Request, context: RouteContext<"/api/resume-versions/[id]">) {
   const { id } = await context.params;
-  const body = resumeVersionSchema.parse(await request.json());
+  const parsed = await parseJsonRequest(request, resumeVersionSchema);
+  if (!parsed.success) return parsed.response;
+  const body = parsed.data;
   const version = await updateResumeVersion({
     versionId: id,
     name: body.name,
     summary: body.summary,
-    content: body.content as never,
+    content: body.content,
   });
 
   return Response.json({

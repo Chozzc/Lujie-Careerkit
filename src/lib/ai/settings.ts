@@ -5,7 +5,7 @@ import {
   AI_PROVIDERS,
   DEFAULT_AI_PROVIDER_ID,
   getAiProvider,
-  getDefaultAiModel,
+  getCurrentAiModel,
   providerRequiresApiKey,
 } from "./provider-registry";
 import { decryptLocalSecret, encryptLocalSecret, previewSecret } from "./secrets";
@@ -77,7 +77,7 @@ export const AI_SETTINGS_REGISTRY = {
 export function validateAiSettingsInput(input: AiSettingsInput) {
   const parsed = aiSettingsInputSchema.parse(input);
   const provider = getAiProvider(parsed.aiProvider);
-  const model = parsed.aiModel || getDefaultAiModel(provider.id);
+  const model = getCurrentAiModel(provider.id, parsed.aiModel);
   const baseUrl = parsed.aiBaseUrl || provider.baseUrl;
 
   if (!isValidUrl(baseUrl)) {
@@ -133,7 +133,7 @@ export function redactAiSettings(settings: StoredAiSettings): RedactedAiSettings
 
 export function getEffectiveAiSettings(settings: StoredAiSettings): EffectiveAiSettings {
   const provider = getAiProvider(settings.aiProvider);
-  const model = settings.aiModel?.trim() || provider.defaultModel;
+  const model = getCurrentAiModel(provider.id, settings.aiModel);
   const baseUrl = normalizeBaseUrl(settings.aiBaseUrl?.trim() || provider.baseUrl);
   const apiKey = decryptLocalSecret(settings.aiApiKey);
   const requiresApiKey = providerRequiresApiKey(provider.id);

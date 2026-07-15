@@ -1,11 +1,13 @@
 import { z } from "zod";
 
+import { parseJsonRequest } from "@/lib/api-request";
+import { resumeContentInputSchema } from "@/lib/resume-content";
 import { createResumeVersion, deleteOptimizedResumeVersions } from "@/lib/repository";
 
 const createResumeVersionSchema = z.object({
   name: z.string().optional(),
   summary: z.string().optional(),
-  content: z.unknown(),
+  content: resumeContentInputSchema,
 });
 
 function serializeVersion(version: Awaited<ReturnType<typeof createResumeVersion>>) {
@@ -21,11 +23,13 @@ function serializeVersion(version: Awaited<ReturnType<typeof createResumeVersion
 }
 
 export async function POST(request: Request) {
-  const body = createResumeVersionSchema.parse(await request.json());
+  const parsed = await parseJsonRequest(request, createResumeVersionSchema);
+  if (!parsed.success) return parsed.response;
+  const body = parsed.data;
   const version = await createResumeVersion({
     name: body.name ?? "",
     summary: body.summary,
-    content: body.content as never,
+    content: body.content,
   });
 
   return Response.json({ version: serializeVersion(version) });

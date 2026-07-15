@@ -736,7 +736,10 @@
     "invalidSectionContent": "模块内容格式异常",
     "aiPolish": "AI 优化",
     "toolbar": {
-      "preview": "预览"
+      "preview": "预览",
+      "smartOnePage": "智能一页",
+      "zoomOut": "缩小预览",
+      "zoomIn": "放大预览"
     },
     "mobile": {
       "edit": "编辑",

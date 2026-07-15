@@ -548,7 +548,7 @@ function AddApplicationForm({
           className="min-h-28 resize-y bg-surface-low text-sm leading-6"
         />
       </FormField>
-      <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white">
+      <button type="submit" className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white">
         <Plus className="h-4 w-4" />
         {t("add.submit")}
       </button>
@@ -859,7 +859,7 @@ function PipelineEditDialogContent({
               >
                 {t("edit.cancel")}
               </button>
-              <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
+              <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
                 {t("edit.save")}
               </button>
             </div>
@@ -895,7 +895,7 @@ function Panel({
       <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className="font-serif text-lg font-semibold">{title}</h2>
         {action && (
-          <button onClick={onAction} className="text-xs font-medium text-primary">
+          <button type="button" onClick={onAction} className="text-xs font-medium text-primary">
             {action}
           </button>
         )}

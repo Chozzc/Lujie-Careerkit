@@ -24,7 +24,7 @@ export function md(text: unknown): string {
       html += `<li>${lm[1]}</li>`;
     } else {
       if (inList) { html += '</ul>'; inList = false; }
-      html += (html && !html.endsWith('>') ? '<br>' : '') + line;
+      html += (html && !html.endsWith('</ul>') ? '<br>' : '') + line;
     }
   }
   if (inList) html += '</ul>';
@@ -38,7 +38,8 @@ export function degreeField(degree: string, field: string | undefined): string {
 }
 
 export function isSectionEmpty(section: ResumeSection): boolean {
-  const content = section.content as any;
+  const content = section.content as unknown;
+  if (!content || typeof content !== 'object' || Array.isArray(content)) return true;
 
   if (section.type === 'summary' || section.type === 'self_evaluation') {
     return !(content as SummaryContent).text;
@@ -51,7 +52,8 @@ export function isSectionEmpty(section: ResumeSection): boolean {
 
   // work_experience, education, projects, certifications, languages, custom
   if ('items' in content) {
-    return !content.items?.length;
+    const items = (content as { items?: unknown }).items;
+    return !Array.isArray(items) || items.length === 0;
   }
 
   return false;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import type { ResumeContent } from "./types";
+import { normalizeResumeTheme, type ResumeThemeInput } from "./resume-theme";
+import type { JsonValue, ResumeContent, SerializedResumeSection } from "./types";
 
 export const resumeContentSchema: z.ZodType<ResumeContent> = z.object({
   editor: z.unknown().optional() as z.ZodType<ResumeContent["editor"] | undefined>,
@@ -87,6 +88,10 @@ export function isResumeContentLike(value: unknown): value is ResumeContent {
   return resumeContentSchema.safeParse(value).success;
 }
 
+export const resumeContentInputSchema = z
+  .custom<ResumeContent>(isResumeContentLike, { message: "Invalid resume content." })
+  .transform((content) => normalizeResumeContent(content));
+
 export function coerceResumeContent(value: unknown, fallbackName = "未命名简历"): ResumeContent {
   const resume = toRecord(value);
   const basics = toRecord(resume.basics);
@@ -172,6 +177,7 @@ export function normalizeResumeContent(content: ResumeContent, fallbackName = "�
   const contacts = normalizeContacts(content.basics.email, content.basics.phone);
   return {
     ...content,
+    editor: normalizeEditorSettings(content.editor),
     basics: {
       name: clean(content.basics.name) || fallbackName,
       email: contacts.email,
@@ -209,6 +215,42 @@ export function normalizeResumeContent(content: ResumeContent, fallbackName = "�
       .filter((item) => item.title && item.content),
     selfReview: clean(content.selfReview),
   };
+}
+
+function normalizeEditorSettings(value: unknown): ResumeContent["editor"] {
+  const editor = toRecord(value);
+  if (!Object.keys(editor).length) return undefined;
+  const theme = toRecord(editor.themeConfig);
+  const sections = normalizeEditorSections(editor.sections);
+  return {
+    ...(typeof editor.displayName === "string" ? { displayName: editor.displayName } : {}),
+    ...(typeof editor.template === "string" ? { template: editor.template } : {}),
+    ...(Object.keys(theme).length ? { themeConfig: normalizeResumeTheme(theme as ResumeThemeInput) } : {}),
+    ...(sections ? { sections } : {}),
+  };
+}
+
+function normalizeEditorSections(value: unknown): SerializedResumeSection[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const sections = value.flatMap((item, index) => {
+    const section = toRecord(item);
+    const type = typeof section.type === "string" ? section.type.trim() : "";
+    if (!type || !isRecord(section.content)) return [];
+    return [{
+      id: typeof section.id === "string" ? section.id : "",
+      resumeId: typeof section.resumeId === "string" ? section.resumeId : "",
+      type,
+      title: typeof section.title === "string" ? section.title : type,
+      sortOrder: typeof section.sortOrder === "number" && Number.isFinite(section.sortOrder)
+        ? section.sortOrder
+        : index,
+      visible: section.visible !== false,
+      content: section.content as JsonValue,
+      createdAt: typeof section.createdAt === "string" ? section.createdAt : "",
+      updatedAt: typeof section.updatedAt === "string" ? section.updatedAt : "",
+    }];
+  });
+  return sections.length || value.length === 0 ? sections : undefined;
 }
 
 function normalizeContacts(rawEmail: string, rawPhone: string) {
@@ -278,7 +320,11 @@ function logo(value: unknown): string | undefined {
 }
 
 function toRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  return isRecord(value) ? value : {};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
 
 function splitSections(text: string) {

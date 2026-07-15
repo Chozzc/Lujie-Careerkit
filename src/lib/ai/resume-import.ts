@@ -31,7 +31,7 @@ export async function parseResumeWithQwenDoc(input: {
     const content = await extractResumeJson(fileId, input.file.name, input.settings);
     return normalizeResumeContent(content, input.file.name.replace(/\.[^.]+$/, ""));
   } finally {
-    void deleteQwenFile(fileId, input.settings);
+    await deleteQwenFile(fileId, input.settings);
   }
 }
 
@@ -123,7 +123,7 @@ function buildResumeImportPrompt(fileName: string) {
     "字段要求：",
     "- basics.name/email/phone/city/links：候选人的基础信息，没有就填空字符串或空数组。电话和邮箱必须分开，email 只能是邮箱地址，phone 只能是电话号码；不要把手机号拼到 QQ 邮箱前面。",
     "- profile.title：求职意向或目标岗位，没有就填空字符串。",
-    "- profile.summary：只有原简历明确写了个人总结/自我评价/求职概述时才填写，并保留原文。",
+    "- profile.summary：只放原简历明确标为个人总结、个人简介、个人优势、职业概述或求职概述的原文；不要放自我评价。",
     "- education：教育背景。school/degree/major/start/end/highlights 必须存在。",
     "- experiences：正式工作经历。company/role/start/end/highlights 必须存在。",
     "- internships：实习经历。company/role/start/end/highlights 必须存在。",
@@ -131,7 +131,7 @@ function buildResumeImportPrompt(fileName: string) {
     "- skills：仅放“技能/专业技能/技术栈”等明确技能栏中的短关键词数组；不要把“主要优势与技能认证”“个人优势”“作品说明”等用户自定义标题整段拆进 skills。",
     "- awards：证书、奖项、荣誉数组。",
     "- customSections：用户自定义标题模块。凡是标题不能稳定映射到 education/experiences/internships/projects/skills/awards/profile 的，都放这里，title 保留原标题，content 保留该标题下的原文。",
-    "- selfReview：自我评价或补充说明。",
+    "- selfReview：只放原简历明确标为自我评价或 Self Evaluation 的原文；不要与 profile.summary 重复。没有就填空字符串。",
     "",
     "分类规则：",
     "- 实习经历不要放进 experiences，放进 internships。",

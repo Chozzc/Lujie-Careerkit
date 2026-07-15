@@ -1,4 +1,23 @@
+import { z } from "zod";
+
+import { dateInputSchema } from "./api-request";
 import type { JobAnalysis } from "./types";
+
+const analysisTextSchema = z.string().trim().max(2_000);
+const analysisListSchema = z.array(analysisTextSchema).max(100);
+
+export const jobAnalysisInputSchema: z.ZodType<JobAnalysis> = z
+  .object({
+    company: analysisTextSchema,
+    title: analysisTextSchema,
+    deadline: dateInputSchema.nullable(),
+    requirements: analysisListSchema,
+    keywords: analysisListSchema,
+    bonusPoints: analysisListSchema,
+    risks: analysisListSchema,
+    suggestions: analysisListSchema,
+  })
+  .strict();
 
 const KNOWN_KEYWORDS = [
   "JavaScript",

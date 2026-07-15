@@ -101,17 +101,15 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     models: [
       "deepseek-ai/DeepSeek-V4-Pro",
       "deepseek-ai/DeepSeek-V4-Flash",
+      "deepseek-ai/DeepSeek-V3.2",
       "deepseek-ai/DeepSeek-V3.1-Terminus",
       "deepseek-ai/DeepSeek-R1",
-      "Qwen/Qwen3.7-Max",
-      "Qwen/Qwen3.7-Plus",
-      "Qwen/Qwen3.6-Max",
-      "Qwen/Qwen3-Coder-480B-A35B-Instruct",
-      "moonshotai/Kimi-K2.6",
-      "zai-org/GLM-5.1",
-      "zai-org/GLM-5",
+      "Qwen/Qwen3.6-35B-A3B",
+      "Qwen/Qwen3.6-27B",
+      "Pro/moonshotai/Kimi-K2.6",
+      "zai-org/GLM-5.2",
+      "Pro/zai-org/GLM-5.1",
       "MiniMaxAI/MiniMax-M2.5",
-      "MiniMaxAI/MiniMax-M2",
     ],
   },
   {
@@ -165,17 +163,12 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     label: "Mistral",
     group: "international",
     baseUrl: "https://api.mistral.ai/v1",
-    defaultModel: "mistral-medium-3.5",
+    defaultModel: "mistral-medium-3-5",
     models: [
-      "mistral-medium-3.5",
-      "mistral-small-4",
-      "mistral-3",
+      "mistral-medium-3-5",
+      "mistral-small-2603",
       "mistral-large-latest",
-      "mistral-medium-latest",
       "mistral-small-latest",
-      "magistral-medium-latest",
-      "magistral-small-latest",
-      "devstral-medium-latest",
       "codestral-latest",
     ],
   },
@@ -209,9 +202,11 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     label: "OpenRouter",
     group: "aggregator",
     baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "openai/gpt-5.6",
+    defaultModel: "openai/gpt-5.6-sol",
     models: [
-      "openai/gpt-5.6",
+      "openai/gpt-5.6-sol",
+      "openai/gpt-5.6-terra",
+      "openai/gpt-5.6-luna",
       "openai/gpt-5.5",
       "openai/gpt-5.4",
       "openai/gpt-5.4-mini",
@@ -230,8 +225,8 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "z-ai/glm-5.1",
       "z-ai/glm-5",
       "x-ai/grok-4.5",
-      "mistralai/mistral-medium-3.5",
-      "mistralai/mistral-small-4",
+      "mistralai/mistral-medium-3-5",
+      "mistralai/mistral-small-2603",
       "openai/gpt-oss-120b",
       "meta-llama/llama-4-maverick",
     ],
@@ -261,7 +256,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "claude-sonnet-4.6",
       "gemini-3.5-flash",
       "gemini-3.1-pro-preview",
-      "mistral-medium-3.5",
+      "mistral-medium-3-5",
     ],
     baseUrlEditable: true,
   },
@@ -316,12 +311,38 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
 
 const CUSTOM_PROVIDER = AI_PROVIDERS.find((provider) => provider.id === "custom-openai-compatible");
 
+const AI_MODEL_RENAMES: Record<string, Record<string, string>> = {
+  mistral: {
+    "mistral-medium-3.5": "mistral-medium-3-5",
+    "mistral-small-4": "mistral-small-2603",
+  },
+  openrouter: {
+    "openai/gpt-5.6": "openai/gpt-5.6-sol",
+    "mistralai/mistral-medium-3.5": "mistralai/mistral-medium-3-5",
+    "mistralai/mistral-small-4": "mistralai/mistral-small-2603",
+  },
+  siliconflow: {
+    "moonshotai/Kimi-K2.6": "Pro/moonshotai/Kimi-K2.6",
+    "zai-org/GLM-5.1": "Pro/zai-org/GLM-5.1",
+    "zai-org/GLM-5": "Pro/zai-org/GLM-5.1",
+    "Qwen/Qwen3.7-Max": "Qwen/Qwen3.6-35B-A3B",
+    "Qwen/Qwen3.7-Plus": "Qwen/Qwen3.6-35B-A3B",
+    "Qwen/Qwen3.6-Max": "Qwen/Qwen3.6-35B-A3B",
+  },
+};
+
 export function getAiProvider(providerId: string | null | undefined) {
   return AI_PROVIDERS.find((provider) => provider.id === providerId) ?? CUSTOM_PROVIDER ?? AI_PROVIDERS[0];
 }
 
 export function getDefaultAiModel(providerId: string | null | undefined) {
   return getAiProvider(providerId).defaultModel;
+}
+
+export function getCurrentAiModel(providerId: string | null | undefined, model: string | null | undefined) {
+  const provider = getAiProvider(providerId);
+  const value = model?.trim() || provider.defaultModel;
+  return AI_MODEL_RENAMES[provider.id]?.[value] ?? value;
 }
 
 export function requiresBaseUrl(providerId: string | null | undefined) {

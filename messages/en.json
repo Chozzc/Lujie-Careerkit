@@ -736,7 +736,10 @@
     "invalidSectionContent": "Invalid section content",
     "aiPolish": "AI Optimize",
     "toolbar": {
-      "preview": "Preview"
+      "preview": "Preview",
+      "smartOnePage": "Smart one-page",
+      "zoomOut": "Zoom out preview",
+      "zoomIn": "Zoom in preview"
     },
     "mobile": {
       "edit": "Edit",

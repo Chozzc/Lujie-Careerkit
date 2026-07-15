@@ -1,12 +1,13 @@
 import type { ApplicationStatus } from "@prisma/client";
 import { z } from "zod";
 
+import { dateInputSchema, parseJsonRequest } from "@/lib/api-request";
 import { deleteJobWithApplications, updateJobWithApplication } from "@/lib/repository";
 
 const updateJobSchema = z.object({
-  applicationId: z.string().min(1),
-  company: z.string().min(1),
-  title: z.string().min(1),
+  applicationId: z.string().trim().min(1),
+  company: z.string().trim().min(1),
+  title: z.string().trim().min(1),
   city: z.string().optional(),
   source: z.string().optional(),
   link: z.string().optional(),
@@ -15,15 +16,17 @@ const updateJobSchema = z.object({
     .enum(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "REJECTED", "ARCHIVED"])
     .optional(),
   interviewRound: z.enum(["", "FIRST", "SECOND", "THIRD", "HR"]).optional(),
-  appliedAt: z.string().nullable().optional(),
-  stageDate: z.string().nullable().optional(),
-  nextFollowUpAt: z.string().nullable().optional(),
+  appliedAt: dateInputSchema.nullable().optional(),
+  stageDate: dateInputSchema.nullable().optional(),
+  nextFollowUpAt: dateInputSchema.nullable().optional(),
   notes: z.string().optional(),
 });
 
 export async function PATCH(request: Request, context: RouteContext<"/api/jobs/[id]">) {
   const { id } = await context.params;
-  const input = updateJobSchema.parse(await request.json());
+  const parsed = await parseJsonRequest(request, updateJobSchema);
+  if (!parsed.success) return parsed.response;
+  const input = parsed.data;
   const result = await updateJobWithApplication({
     jobId: id,
     applicationId: input.applicationId,
