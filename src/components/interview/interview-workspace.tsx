@@ -445,8 +445,8 @@ export function InterviewWorkspace({
           resumeVersionId: activePreparation.resumeVersionId,
           mode: activePreparation.mode,
           context: {
-            company: activePreparation.context.company,
-            title: activePreparation.context.title,
+            company: activePreparation.content.meta.company,
+            title: activePreparation.content.meta.title,
             jd: activePreparation.context.jd,
             resumeName: activePreparation.context.resumeName,
             resumeKey: activePreparation.resumeKey,

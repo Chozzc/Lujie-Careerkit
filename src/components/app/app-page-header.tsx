@@ -276,7 +276,7 @@ function InterviewSessionsMenu({
               <div key={record.id} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-surface-low">
                 <button type="button" onClick={() => onOpenPreparation(record.id)} className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-sm font-semibold text-foreground">
-                    {record.context.resumeName} · {record.context.title}
+                    {record.context.resumeName} · {record.content.meta.title}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
                     {new Date(record.updatedAt).toLocaleDateString(locale)} · {preparationLabel}
