@@ -35,10 +35,16 @@
       "interviewSessions": "已模拟面试 · {count}",
       "interviewSessionsHint": "继续未完成练习，或查看已保存的复盘报告",
       "clearInterviewSessions": "清空全部模拟面试",
+      "interviewRecords": "已生成资料 · {count}",
+      "interviewRecordsHint": "按简历查看已生成的复习资料、模拟面试与复盘",
+      "clearInterviewRecords": "清空全部面试资料",
+      "preparationRecord": "复习资料",
+      "interviewRecord": "模拟面试",
       "completed": "已复盘",
       "inProgress": "进行中",
       "deleteOptimizedVersion": "删除优化版本",
-      "deleteInterview": "删除模拟面试"
+      "deleteInterview": "删除模拟面试",
+      "deleteInterviewPreparation": "删除复习资料"
     },
     "menu": {
       "notifications": "跟进提醒",
@@ -286,6 +292,7 @@
   "interview": {
     "steps": {
       "setup": "选择面试素材",
+      "preparation": "生成面试资料",
       "session": "模拟提问与回答",
       "report": "AI 反馈复盘"
     },
@@ -334,9 +341,75 @@
       "settingsTitle": "面试设置",
       "settingsDescription": "选择本轮面试侧重点；问题生成后保持固定，不会在作答过程中改变。",
       "hint": "AI 将结合所选简历与这段岗位描述生成本轮问题。",
-      "disabledHint": "请先选择简历并填写至少 10 个字的 JD。",
+      "needResume": "请先选择一份包含有效内容的简历。",
+      "needJd": "请先填写岗位 JD。",
       "generating": "正在生成问题",
-      "start": "生成题目并开始"
+      "start": "生成题目并开始",
+      "generatingPreparation": "正在生成资料",
+      "prepare": "生成面试准备资料"
+    },
+    "preparation": {
+      "badge": "面试准备资料",
+      "basedOn": "基于目标 JD 与 {resumeName} 生成",
+      "tocTitle": "资料目录",
+      "capabilityTitle": "岗位能力画像",
+      "capabilityDescription": "把 JD 的重点要求与简历中已有证据放在同一张图中，先看优先级，再决定准备顺序。",
+      "jdRequirement": "JD 要求",
+      "resumeEvidenceLevel": "简历证据",
+      "capabilityNote": "雷达图中的“简历证据”只表示当前简历能支持到什么程度，不代表对你真实能力的评分。",
+      "nextStep": "下一步",
+      "sections": {
+        "overview": "资料概览",
+        "capability": "能力画像",
+        "evidence": "证据与差距",
+        "knowledge": "核心知识",
+        "deepDives": "经历深挖",
+        "questions": "针对性问题",
+        "plan": "准备计划"
+      },
+      "evidenceTitle": "岗位要求与简历证据",
+      "evidenceDescription": "简历未体现不等于能力缺失；需要确认的信息会单独标出。",
+      "resumeEvidence": "简历依据",
+      "action": "准备动作",
+      "knowledgeTitle": "岗位核心知识",
+      "explanation": "知识讲解",
+      "currentEvidence": "你的现有基础",
+      "targetLevel": "面试前目标",
+      "selfCheck": "自测问题",
+      "deepDiveTitle": "简历与项目深挖",
+      "contribution": "需要讲清的个人贡献",
+      "followUps": "可能追问",
+      "factsToConfirm": "需要确认",
+      "questionsTitle": "针对性面试问题",
+      "planTitle": "准备计划",
+      "introductionTitle": "定制自我介绍",
+      "reverseQuestionsTitle": "反问建议",
+      "footerHint": "准备完成后可直接生成本轮题目；模拟阶段不会展示答案评分点。",
+      "back": "调整素材",
+      "start": "生成题目并开始",
+      "states": {
+        "direct": "直接证据",
+        "transferable": "可迁移经历",
+        "notShown": "简历未体现",
+        "gap": "当前缺口",
+        "confirm": "待确认"
+      },
+      "priorities": {
+        "must": "必须准备",
+        "should": "建议准备",
+        "optional": "有余力再准备"
+      },
+      "requirementLevels": {
+        "core": "JD 核心要求",
+        "important": "重要要求",
+        "bonus": "加分项"
+      },
+      "evidenceLevels": {
+        "strong": "证据充分",
+        "partial": "部分证据",
+        "limited": "证据有限",
+        "unknown": "尚未体现"
+      }
     },
     "session": {
       "noQuestions": "这次练习没有可用题目。",
@@ -386,6 +459,8 @@
     "status": {
       "restoring": "正在恢复面试记录...",
       "restoreFailed": "面试记录恢复失败。",
+      "restoringPreparation": "正在打开已生成的面试复习资料...",
+      "restorePreparationFailed": "面试复习资料打开失败。",
       "answerSaveFailed": "回答保存失败，请重试。",
       "localParsing": "正在使用本地解析，效果可能不佳...",
       "parsing": "正在解析简历，可能需要一些时间...",
@@ -394,6 +469,9 @@
       "questionsGenerated": "模拟面试题已生成，回答会自动保存。",
       "questionFailed": "问题生成失败，请稍后重试。",
       "generatingQuestions": "正在结合 JD 和简历生成本轮问题...",
+      "generatingPreparation": "AI 正在结合 JD 和简历生成面试准备资料...",
+      "preparationGenerated": "面试准备资料已生成。",
+      "preparationFailed": "面试准备资料生成失败，请稍后重试。",
       "savingLastAnswer": "正在保存最后一个回答...",
       "generatingReport": "AI 正在综合本轮回答生成复盘报告...",
       "reportSaved": "面试复盘报告已生成并保存。",

@@ -1,5 +1,6 @@
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
+import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
 import type { ApplicationStatus, InterviewRound, JobAnalysis, ResumeContent } from "@/lib/types";
 
 export type JobView = {
@@ -45,6 +46,7 @@ export type InitialData = {
   jobs: JobView[];
   applications: ApplicationView[];
   interviews: InterviewSessionRecord[];
+  interviewPreparations: InterviewPreparationRecord[];
   settings: {
     provider: string;
     model: string;

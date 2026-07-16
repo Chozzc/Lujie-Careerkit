@@ -56,6 +56,7 @@ output/
 .superpowers/
 .impeccable/
 .worktrees/
+/skills/
 AGENTS.md
 CLAUDE.md
 PRODUCT.md

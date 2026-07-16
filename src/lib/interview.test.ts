@@ -153,6 +153,10 @@ describe("interview domain", () => {
       },
     };
     expect(createInterviewSessionInputSchema.parse(createInput)).toEqual(createInput);
+    expect(createInterviewSessionInputSchema.parse({
+      ...createInput,
+      context: { ...createInput.context, jd: "1" },
+    }).context.jd).toBe("1");
     expect(createInterviewSessionInputSchema.parse({ ...createInput, jobId: undefined }).jobId).toBe("");
     expect(() => createInterviewSessionInputSchema.parse({ ...createInput, context: { ...createInput.context, jd: "" } })).toThrow();
 

@@ -12,6 +12,7 @@ import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
 import type { ApplicationStatus, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
+import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
 import { cn } from "@/lib/utils";
 import { ResumeWorkbench, type ResumeSaveTarget } from "@/components/resume/resume-workbench";
 import {
@@ -83,6 +84,7 @@ export function CareerKitApp({
   const [applications, setApplications] = useState(initialData.applications);
   const [versions, setVersions] = useState(initialData.versions);
   const [interviewSessions, setInterviewSessions] = useState(initialData.interviews);
+  const [interviewPreparations, setInterviewPreparations] = useState(initialData.interviewPreparations);
   const [appSettings, setAppSettings] = useState(initialData.settings);
   const [aiSettings, setAiSettings] = useState<RedactedAiSettings | null>(initialData.settings?.ai ?? null);
   const [toast, setToast] = useState("");
@@ -92,6 +94,7 @@ export function CareerKitApp({
   const [pipelineAddOpen, setPipelineAddOpen] = useState(false);
   const [matchVersionId, setMatchVersionId] = useState<string | undefined>(readMatchVersionIdFromLocation());
   const [interviewSessionId, setInterviewSessionId] = useState<string | undefined>(readInterviewSessionIdFromLocation());
+  const [interviewPreparationId, setInterviewPreparationId] = useState<string | undefined>(readInterviewPreparationIdFromLocation());
   const [resumeOptimizationVersionId, setResumeOptimizationVersionId] = useState(readResumeOptimizationVersionIdFromLocation());
   const [resumeOptimizationResult, setResumeOptimizationResult] = useState<ResumeOptimizationView | null>(null);
   const [matchResetKey, setMatchResetKey] = useState(0);
@@ -141,6 +144,7 @@ export function CareerKitApp({
       if (!optimizedVersionId) setResumeOptimizationResult(null);
       setMatchVersionId(readMatchVersionIdFromLocation());
       setInterviewSessionId(readInterviewSessionIdFromLocation());
+      setInterviewPreparationId(readInterviewPreparationIdFromLocation());
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -173,11 +177,12 @@ export function CareerKitApp({
     setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(undefined);
+    setInterviewPreparationId(undefined);
     setOptimizedMenuOpen(false);
     setInterviewMenuOpen(false);
     setPipelineAddOpen(false);
     const nextPath = pathnameForNavKey(key);
-    if (window.location.pathname !== nextPath) {
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
       window.history.pushState(null, "", nextPath);
     }
   }, []);
@@ -213,12 +218,34 @@ export function CareerKitApp({
     setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(sessionId);
+    setInterviewPreparationId(undefined);
     setInterviewMenuOpen(false);
     window.history.pushState(null, "", `/interview?session=${encodeURIComponent(sessionId)}`);
   }, []);
 
   const upsertInterviewSession = useCallback((session: InterviewSessionRecord) => {
     setInterviewSessions((current) => [session, ...current.filter((item) => item.id !== session.id)]);
+    setInterviewPreparationId(undefined);
+    setInterviewSessionId(session.id);
+  }, []);
+
+  const openInterviewPreparationFromHeader = useCallback((preparationId: string) => {
+    setActive("interview");
+    setResumeMode("library");
+    setResumeEditorVersionId(undefined);
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
+    setMatchVersionId(undefined);
+    setInterviewSessionId(undefined);
+    setInterviewPreparationId(preparationId);
+    setInterviewMenuOpen(false);
+    window.history.pushState(null, "", `/interview?preparation=${encodeURIComponent(preparationId)}`);
+  }, []);
+
+  const upsertInterviewPreparation = useCallback((record: InterviewPreparationRecord) => {
+    setInterviewPreparations((current) => [record, ...current.filter((item) => item.id !== record.id)]);
+    setInterviewSessionId(undefined);
+    setInterviewPreparationId(record.id);
   }, []);
 
   async function deleteInterviewSession(sessionId: string) {
@@ -236,18 +263,39 @@ export function CareerKitApp({
     }
   }
 
-  async function clearInterviewSessions() {
-    if (!window.confirm(`清空 ${interviewSessions.length} 条模拟面试记录？此操作不可撤销。`)) return;
+  async function deleteInterviewPreparation(preparationId: string) {
     try {
-      const response = await fetch("/api/interviews", { method: "DELETE" });
-      if (!response.ok) throw new Error("清空模拟面试失败。");
+      const response = await fetch(`/api/interviews/preparation/${preparationId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("删除面试复习资料失败。");
+      setInterviewPreparations((current) => current.filter((record) => record.id !== preparationId));
+      if (interviewPreparationId === preparationId) {
+        setInterviewPreparationId(undefined);
+        window.history.pushState(null, "", "/interview");
+      }
+      setToast("面试复习资料已删除。");
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "删除面试复习资料失败。");
+    }
+  }
+
+  async function clearInterviewRecords() {
+    const total = interviewPreparations.length + interviewSessions.length;
+    if (!window.confirm(`清空 ${total} 条面试复习资料与模拟面试记录？此操作不可撤销。`)) return;
+    try {
+      const responses = await Promise.all([
+        fetch("/api/interviews/preparation", { method: "DELETE" }),
+        fetch("/api/interviews", { method: "DELETE" }),
+      ]);
+      if (responses.some((response) => !response.ok)) throw new Error("清空面试记录失败。");
+      setInterviewPreparations([]);
       setInterviewSessions([]);
       setInterviewMenuOpen(false);
+      setInterviewPreparationId(undefined);
       setInterviewSessionId(undefined);
       window.history.pushState(null, "", "/interview");
-      setToast("已清空全部模拟面试记录。");
+      setToast("已清空面试复习资料与模拟面试记录。");
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "清空模拟面试失败。");
+      setToast(error instanceof Error ? error.message : "清空面试记录失败。");
     }
   }
 
@@ -260,6 +308,7 @@ export function CareerKitApp({
     setApplications(nextData.applications);
     setVersions(nextData.versions);
     setInterviewSessions(nextData.interviews);
+    setInterviewPreparations(nextData.interviewPreparations);
     setAppSettings(nextData.settings);
     setAiSettings(nextData.settings?.ai ?? null);
     setResumeEditorVersionId(undefined);
@@ -267,6 +316,7 @@ export function CareerKitApp({
     setResumeOptimizationResult(null);
     setMatchVersionId(undefined);
     setInterviewSessionId(undefined);
+    setInterviewPreparationId(undefined);
     setMatchResetKey((key) => key + 1);
     setToast("本地数据已清空，并恢复示例数据。");
     navigateTo("dashboard");
@@ -707,6 +757,7 @@ export function CareerKitApp({
             optimizedMenuOpen={optimizedMenuOpen}
             setOptimizedMenuOpen={setOptimizedMenuOpen}
             interviewSessions={interviewSessions}
+            interviewPreparations={interviewPreparations}
             interviewMenuOpen={interviewMenuOpen}
             setInterviewMenuOpen={setInterviewMenuOpen}
             onAddApplication={() => setPipelineAddOpen(true)}
@@ -714,8 +765,10 @@ export function CareerKitApp({
             onDeleteResumeVersion={deleteResumeVersion}
             onDeleteOptimizedResumeVersions={deleteOptimizedResumeVersions}
             onOpenInterviewSession={openInterviewSessionFromHeader}
+            onOpenInterviewPreparation={openInterviewPreparationFromHeader}
             onDeleteInterviewSession={deleteInterviewSession}
-            onClearInterviewSessions={clearInterviewSessions}
+            onDeleteInterviewPreparation={deleteInterviewPreparation}
+            onClearInterviewSessions={clearInterviewRecords}
           />
 
           {active === "dashboard" && (
@@ -794,12 +847,14 @@ export function CareerKitApp({
           )}
           {active === "interview" && (
             <InterviewWorkspace
-              key={interviewSessionId ?? "setup"}
+              key={interviewSessionId ?? interviewPreparationId ?? "setup"}
               versions={versions}
               resume={resume}
               mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
               targetSessionId={interviewSessionId}
+              targetPreparationId={interviewPreparationId}
               onSessionUpsert={upsertInterviewSession}
+              onPreparationUpsert={upsertInterviewPreparation}
               onOpenResume={openResumeEditorFromMatch}
               aiReady={isAiReady(aiSettings)}
               aiMessage={aiReadinessMessage(aiSettings)}
@@ -879,6 +934,11 @@ function readMatchVersionIdFromLocation() {
 function readInterviewSessionIdFromLocation() {
   if (typeof window === "undefined" || window.location.pathname !== "/interview") return undefined;
   return new URLSearchParams(window.location.search).get("session") ?? undefined;
+}
+
+function readInterviewPreparationIdFromLocation() {
+  if (typeof window === "undefined" || window.location.pathname !== "/interview") return undefined;
+  return new URLSearchParams(window.location.search).get("preparation") ?? undefined;
 }
 
 async function postJson(url: string, body: unknown, method = "POST") {

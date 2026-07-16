@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpenCheck,
   BriefcaseBusiness,
   CheckCircle2,
+  CircleAlert,
   ClipboardCheck,
   ListChecks,
   LoaderCircle,
@@ -16,6 +18,14 @@ import {
   UserRound,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+} from "recharts";
 
 import type { ResumePickerOption } from "@/components/resume/resume-source-picker";
 import {
@@ -37,6 +47,7 @@ import {
   type InterviewMode,
   type InterviewReport,
 } from "@/lib/interview";
+import type { InterviewPreparation, InterviewPreparationRecord } from "@/lib/interview-preparation";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
 import { inferJobIdentity } from "@/lib/job-identity";
 import { buildUploadedResumeDraft, isResumeContentLike, type UploadedResumeDraft } from "@/lib/resume-upload";
@@ -51,7 +62,7 @@ type InterviewResumeVersion = {
   updatedAt: string;
 };
 
-type InterviewScreen = "setup" | "session" | "report";
+type InterviewScreen = "setup" | "preparation" | "session" | "report";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const MODE_OPTIONS = [
@@ -73,12 +84,26 @@ const CATEGORY_KEYS: Record<string, string> = {
   hr: "categories.hr",
 };
 
+const REQUIREMENT_LEVEL_VALUE = { core: 100, important: 70, bonus: 40 } as const;
+const EVIDENCE_LEVEL_VALUE = { strong: 100, partial: 70, limited: 40, unknown: 15 } as const;
+const PREPARATION_SECTION_IDS = [
+  "prep-overview",
+  "prep-capability",
+  "prep-evidence",
+  "prep-knowledge",
+  "prep-deep-dives",
+  "prep-questions",
+  "prep-plan",
+] as const;
+
 export function InterviewWorkspace({
   versions,
   resume,
   mainResumeName,
   targetSessionId,
+  targetPreparationId,
   onSessionUpsert,
+  onPreparationUpsert,
   onOpenResume,
   aiReady,
   aiMessage,
@@ -90,7 +115,9 @@ export function InterviewWorkspace({
   resume: ResumeContent;
   mainResumeName: string;
   targetSessionId?: string;
+  targetPreparationId?: string;
   onSessionUpsert: (session: InterviewSessionRecord) => void;
+  onPreparationUpsert: (record: InterviewPreparationRecord) => void;
   onOpenResume: (versionId?: string) => void;
   aiReady: boolean;
   aiMessage: string;
@@ -102,6 +129,7 @@ export function InterviewWorkspace({
   const locale = useLocale();
   const [screen, setScreen] = useState<InterviewScreen>("setup");
   const [activeSession, setActiveSession] = useState<InterviewSessionRecord | null>(null);
+  const [activePreparation, setActivePreparation] = useState<InterviewPreparationRecord | null>(null);
   const [resumeSource, setResumeSource] = useState<"library" | "upload">("library");
   const [selectedResumeId, setSelectedResumeId] = useState("main");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
@@ -112,6 +140,7 @@ export function InterviewWorkspace({
   const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isWorking, setIsWorking] = useState(false);
+  const [setupTask, setSetupTask] = useState<"preparation" | "questions" | null>(null);
   const [message, setMessage] = useState("");
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
   const [aiSetupDialogMode, setAiSetupDialogMode] = useState<"ai" | "resumeImport">("ai");
@@ -148,7 +177,16 @@ export function InterviewWorkspace({
     resumeSource === "upload"
       ? uploadedResume?.fileName ?? t("resume.uploaded")
       : selectedResumeOption?.name ?? mainResumeName;
-  const canStart = Boolean(selectedResume && hasResumeContent(selectedResume) && jdDraft.trim().length >= 10 && !isWorking && !isUploadingResume);
+  const selectedResumeKey = resumeSource === "upload"
+    ? `upload:${uploadedResume?.fileName ?? "resume"}`
+    : selectedLibraryId ?? "main";
+  const resumeReady = Boolean(selectedResume && hasResumeContent(selectedResume));
+  const setupDisabledReason = !resumeReady
+    ? t("setup.needResume")
+    : !jdDraft.trim()
+      ? t("setup.needJd")
+      : "";
+  const canStart = !setupDisabledReason && !isWorking && !isUploadingResume;
   const activeQuestion = activeSession?.questions[activeSession.currentQuestionIndex];
   const report = activeSession?.feedback ?? null;
 
@@ -180,6 +218,25 @@ export function InterviewWorkspace({
     }
   }, [onSessionUpsert, t]);
 
+  const fetchPreparation = useCallback(async (preparationId: string) => {
+    setIsWorking(true);
+    setMessage(t("status.restoringPreparation"));
+    try {
+      const result = await requestJson<{ record: InterviewPreparationRecord }>(
+        `/api/interviews/preparation/${preparationId}`,
+      );
+      setActivePreparation(result.record);
+      onPreparationUpsert(result.record);
+      setScreen("preparation");
+      setMessage("");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t("status.restorePreparationFailed"));
+      setScreen("setup");
+    } finally {
+      setIsWorking(false);
+    }
+  }, [onPreparationUpsert, t]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const sessionId = targetSessionId ?? new URLSearchParams(window.location.search).get("session");
@@ -187,6 +244,14 @@ export function InterviewWorkspace({
     const timeout = window.setTimeout(() => void fetchSession(sessionId), 0);
     return () => window.clearTimeout(timeout);
   }, [fetchSession, targetSessionId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preparationId = targetPreparationId ?? new URLSearchParams(window.location.search).get("preparation");
+    if (!preparationId) return;
+    const timeout = window.setTimeout(() => void fetchPreparation(preparationId), 0);
+    return () => window.clearTimeout(timeout);
+  }, [fetchPreparation, targetPreparationId]);
 
   const persistProgress = useCallback(async (sessionId: string, input: { answer?: InterviewAnswer; currentQuestionIndex?: number }) => {
     const result = await requestJson<{ session: InterviewSessionRecord }>(`/api/interviews/${sessionId}`, input, "PATCH");
@@ -299,22 +364,100 @@ export function InterviewWorkspace({
       return;
     }
     const identity = inferJobIdentity(jdDraft);
-    await createSession(
-      {
-        jobId: "",
-        resumeVersionId:
-          resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
-        mode,
-        context: {
+    setSetupTask("questions");
+    try {
+      await createSession(
+        {
+          jobId: "",
+          resumeVersionId:
+            resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
+          mode,
+          context: {
+            company: identity.company,
+            title: identity.title,
+            jd: jdDraft.trim(),
+            resumeName: selectedResumeName,
+            resumeKey: selectedResumeKey,
+            resume: selectedResume,
+          },
+        },
+        t("status.generatingQuestions"),
+      );
+    } finally {
+      setSetupTask(null);
+    }
+  }
+
+  async function generatePreparation() {
+    if (!selectedResume) return;
+    if (!aiReady) {
+      setAiSetupDialogMode("ai");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+    const identity = inferJobIdentity(jdDraft);
+    setSetupTask("preparation");
+    setIsWorking(true);
+    setMessage(t("status.generatingPreparation"));
+    try {
+      const result = await requestJson<{ record: InterviewPreparationRecord; message: string }>(
+        "/api/interviews/preparation",
+        {
+          jobId: "",
           company: identity.company,
           title: identity.title,
           jd: jdDraft.trim(),
           resumeName: selectedResumeName,
+          resumeKey: selectedResumeKey,
+          resumeVersionId:
+            resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
           resume: selectedResume,
+          focus: mode,
+          locale: locale === "en" ? "en" : "zh-CN",
         },
-      },
-      t("status.generatingQuestions"),
-    );
+      );
+      setActivePreparation(result.record);
+      onPreparationUpsert(result.record);
+      setScreen("preparation");
+      setMessage("");
+      onStatus(t("status.preparationGenerated"));
+      window.history.pushState(null, "", `/interview?preparation=${encodeURIComponent(result.record.id)}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : t("status.preparationFailed"));
+    } finally {
+      setSetupTask(null);
+      setIsWorking(false);
+    }
+  }
+
+  async function startInterviewFromPreparation() {
+    if (!activePreparation) return;
+    if (!aiReady) {
+      setAiSetupDialogMode("ai");
+      setAiSetupDialogOpen(true);
+      return;
+    }
+    setSetupTask("questions");
+    try {
+      await createSession(
+        {
+          jobId: activePreparation.jobId,
+          resumeVersionId: activePreparation.resumeVersionId,
+          mode: activePreparation.mode,
+          context: {
+            company: activePreparation.context.company,
+            title: activePreparation.context.title,
+            jd: activePreparation.context.jd,
+            resumeName: activePreparation.context.resumeName,
+            resumeKey: activePreparation.resumeKey,
+            resume: activePreparation.context.resume,
+          },
+        },
+        t("status.generatingQuestions"),
+      );
+    } finally {
+      setSetupTask(null);
+    }
   }
 
   async function moveToQuestion(index: number, skipped = false) {
@@ -389,24 +532,29 @@ export function InterviewWorkspace({
   function returnToSetup() {
     setScreen("setup");
     setActiveSession(null);
+    setActivePreparation(null);
     setDraftAnswers({});
     setMessage("");
     window.history.pushState(null, "", "/interview");
   }
 
-  function openSetupFromSession(session: InterviewSessionRecord) {
-    setJdDraft(session.context.jd);
-    setMode(session.mode);
-    const storedVersion = session.resumeVersionId ? versions.find((version) => version.id === session.resumeVersionId) : null;
-    const libraryResume = storedVersion?.content ?? (session.resumeVersionId ? null : resume);
-    if (libraryResume && JSON.stringify(libraryResume) === JSON.stringify(session.context.resume)) {
+  function restoreSetupInputs(
+    context: { jd: string; resumeName: string; resume: unknown },
+    resumeVersionId: string | null,
+    nextMode: InterviewMode,
+  ) {
+    setJdDraft(context.jd);
+    setMode(nextMode);
+    const storedVersion = resumeVersionId ? versions.find((version) => version.id === resumeVersionId) : null;
+    const libraryResume = storedVersion?.content ?? (resumeVersionId ? null : resume);
+    if (libraryResume && JSON.stringify(libraryResume) === JSON.stringify(context.resume)) {
       setResumeSource("library");
       setSelectedResumeId(storedVersion?.id ?? "main");
-    } else if (isResumeContentLike(session.context.resume)) {
+    } else if (isResumeContentLike(context.resume)) {
       setUploadedResume({
-        fileName: t("resume.historySnapshot", { name: session.context.resumeName }),
-        content: session.context.resume,
-        characterCount: JSON.stringify(session.context.resume).length,
+        fileName: t("resume.historySnapshot", { name: context.resumeName }),
+        content: context.resume,
+        characterCount: JSON.stringify(context.resume).length,
       });
       setResumeSource("upload");
     } else {
@@ -414,6 +562,14 @@ export function InterviewWorkspace({
       setSelectedResumeId("main");
     }
     returnToSetup();
+  }
+
+  function openSetupFromSession(session: InterviewSessionRecord) {
+    restoreSetupInputs(session.context, session.resumeVersionId, session.mode);
+  }
+
+  function openSetupFromPreparation(preparation: InterviewPreparationRecord) {
+    restoreSetupInputs(preparation.context, preparation.resumeVersionId, preparation.mode);
   }
 
   async function practiceAgain() {
@@ -432,8 +588,8 @@ export function InterviewWorkspace({
   return (
     <div className="flex flex-col gap-5">
       <WorkflowStepper
-        labels={[t("steps.setup"), t("steps.session"), t("steps.report")]}
-        current={{ setup: 0, session: 1, report: 2 }[screen]}
+        labels={[t("steps.setup"), t("steps.preparation"), t("steps.session"), t("steps.report")]}
+        current={{ setup: 0, preparation: 1, session: 2, report: 3 }[screen]}
       />
       {screen === "setup" ? (
         <SetupScreen
@@ -453,10 +609,22 @@ export function InterviewWorkspace({
           mode={mode}
           onModeChange={setMode}
           canStart={canStart}
-          isWorking={isWorking}
+          disabledReason={setupDisabledReason}
+          setupTask={setupTask}
           message={message}
+          onPrepare={() => void generatePreparation()}
           onStart={() => void startInterview()}
           onMessage={setMessage}
+        />
+      ) : null}
+      {screen === "preparation" && activePreparation ? (
+        <PreparationScreen
+          preparation={activePreparation.content}
+          resumeName={activePreparation.context.resumeName}
+          isWorking={isWorking}
+          message={message}
+          onBack={() => openSetupFromPreparation(activePreparation)}
+          onStart={() => void startInterviewFromPreparation()}
         />
       ) : null}
       {screen === "session" && activeSession ? (
@@ -516,13 +684,14 @@ function SetupScreen(props: {
   mode: InterviewMode;
   onModeChange: (mode: InterviewMode) => void;
   canStart: boolean;
-  isWorking: boolean;
+  disabledReason: string;
+  setupTask: "preparation" | "questions" | null;
   message: string;
+  onPrepare: () => void;
   onStart: () => void;
   onMessage: (message: string) => void;
 }) {
   const t = useTranslations("interview");
-
   return (
     <ResumeJdPreparation
       resumePicker={{
@@ -564,15 +733,335 @@ function SetupScreen(props: {
       }
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-muted-foreground">{props.message || t("setup.hint")}</p>
-          <Button size="lg" disabled={!props.canStart} onClick={props.onStart} title={props.canStart ? undefined : t("setup.disabledHint")}>
-            {props.isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <Sparkles data-icon="inline-start" />}
-            {props.isWorking ? t("setup.generating") : t("setup.start")}
-          </Button>
+          <p className="text-xs leading-5 text-muted-foreground">{props.message || props.disabledReason || t("setup.hint")}</p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" size="lg" disabled={!props.canStart} onClick={props.onPrepare} title={props.disabledReason || undefined}>
+              {props.setupTask === "preparation" ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <BookOpenCheck data-icon="inline-start" />}
+              {props.setupTask === "preparation" ? t("setup.generatingPreparation") : t("setup.prepare")}
+            </Button>
+            <Button size="lg" disabled={!props.canStart} onClick={props.onStart} title={props.disabledReason || undefined}>
+              {props.setupTask === "questions" ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <Sparkles data-icon="inline-start" />}
+              {props.setupTask === "questions" ? t("setup.generating") : t("setup.start")}
+            </Button>
+          </div>
         </div>
       }
       notice={null}
     />
+  );
+}
+
+function PreparationScreen({
+  preparation,
+  resumeName,
+  isWorking,
+  message,
+  onBack,
+  onStart,
+}: {
+  preparation: InterviewPreparation;
+  resumeName: string;
+  isWorking: boolean;
+  message: string;
+  onBack: () => void;
+  onStart: () => void;
+}) {
+  const t = useTranslations("interview");
+  const [activeSection, setActiveSection] = useState<(typeof PREPARATION_SECTION_IDS)[number]>(PREPARATION_SECTION_IDS[0]);
+
+  useEffect(() => {
+    const updateActiveSection = () => {
+      const anchorOffset = 180;
+      let current: (typeof PREPARATION_SECTION_IDS)[number] = PREPARATION_SECTION_IDS[0];
+
+      for (const id of PREPARATION_SECTION_IDS) {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= anchorOffset) current = id;
+      }
+
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 24) {
+        current = PREPARATION_SECTION_IDS[PREPARATION_SECTION_IDS.length - 1];
+      }
+      setActiveSection(current);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    return () => window.removeEventListener("scroll", updateActiveSection);
+  }, []);
+
+  const stateLabels: Record<InterviewPreparation["evidenceMatrix"][number]["state"], string> = {
+    direct: t("preparation.states.direct"),
+    transferable: t("preparation.states.transferable"),
+    "not-shown": t("preparation.states.notShown"),
+    gap: t("preparation.states.gap"),
+    confirm: t("preparation.states.confirm"),
+  };
+  const priorityLabels = {
+    must: t("preparation.priorities.must"),
+    should: t("preparation.priorities.should"),
+    optional: t("preparation.priorities.optional"),
+  };
+  const requirementLabels = {
+    core: t("preparation.requirementLevels.core"),
+    important: t("preparation.requirementLevels.important"),
+    bonus: t("preparation.requirementLevels.bonus"),
+  };
+  const evidenceLabels = {
+    strong: t("preparation.evidenceLevels.strong"),
+    partial: t("preparation.evidenceLevels.partial"),
+    limited: t("preparation.evidenceLevels.limited"),
+    unknown: t("preparation.evidenceLevels.unknown"),
+  };
+  const capabilityData = preparation.capabilityProfile.dimensions.map((dimension) => ({
+    label: dimension.label,
+    requirement: REQUIREMENT_LEVEL_VALUE[dimension.requirementLevel],
+    evidence: EVIDENCE_LEVEL_VALUE[dimension.evidenceLevel],
+  }));
+  const tableOfContents = [
+    ["prep-overview", t("preparation.sections.overview")],
+    ["prep-capability", t("preparation.sections.capability")],
+    ["prep-evidence", t("preparation.sections.evidence")],
+    ["prep-knowledge", t("preparation.sections.knowledge")],
+    ["prep-deep-dives", t("preparation.sections.deepDives")],
+    ["prep-questions", t("preparation.sections.questions")],
+    ["prep-plan", t("preparation.sections.plan")],
+  ] as const;
+
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <aside className="px-2 py-3 lg:sticky lg:top-24">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">{t("preparation.tocTitle")}</p>
+        <nav className="mt-3" aria-label={t("preparation.tocTitle")}>
+          <ol className="space-y-1">
+            {tableOfContents.map(([id, label], index) => (
+              <li key={id}>
+                <a
+                  className={cn(
+                    "flex gap-3 rounded-md border-l-2 px-3 py-2 text-sm transition-colors",
+                    activeSection === id
+                      ? "border-brand bg-brand-muted font-medium text-brand"
+                      : "border-transparent text-muted-foreground hover:bg-surface-low hover:text-foreground",
+                  )}
+                  href={`#${id}`}
+                  aria-current={activeSection === id ? "location" : undefined}
+                  onClick={() => setActiveSection(id)}
+                >
+                  <span className="font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span>
+                  <span>{label}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
+
+      <main className="min-w-0 space-y-6">
+        <section id="prep-overview" className="scroll-mt-24 overflow-hidden rounded-lg border border-line bg-surface shadow-[0_18px_50px_rgba(49,48,48,0.05)]">
+          <div className="border-b border-line bg-brand-muted/55 px-5 py-6 lg:px-8">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+              <div>
+                <Badge variant="outline">{t("preparation.badge")}</Badge>
+                <h2 className="mt-3 font-serif text-2xl font-semibold lg:text-3xl">
+                  {preparation.meta.company} · {preparation.meta.title}
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">{t("preparation.basedOn", { resumeName })}</p>
+              </div>
+              <Badge variant="secondary">{preparation.meta.roleFamily}</Badge>
+            </div>
+          </div>
+          <div className="px-5 py-6 lg:px-8">
+            <PreparationSectionHeading number="01" title={t("preparation.sections.overview")} />
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">{preparation.meta.roleSummary}</p>
+            {preparation.meta.assumptions.length ? (
+              <div className="mt-5 flex items-start gap-2 rounded-lg bg-surface-low px-4 py-3 text-sm leading-6 text-muted-foreground">
+                <CircleAlert className="mt-1 size-4 shrink-0 text-brand" />
+                <span>{preparation.meta.assumptions.join(t("report.separator"))}</span>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section id="prep-capability" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="02" title={t("preparation.capabilityTitle")} description={t("preparation.capabilityDescription")} />
+          <p className="mt-4 text-sm leading-7 text-muted-foreground">{preparation.capabilityProfile.overview}</p>
+          <div className="mt-5 rounded-lg border border-line bg-background px-2 py-5 sm:px-5">
+            <div className="h-[22rem] w-full">
+              <ResponsiveContainer width="100%" height="100%" minWidth={220}>
+                <RadarChart data={capabilityData} margin={{ top: 24, right: 40, bottom: 24, left: 40 }}>
+                  <PolarGrid stroke="#D8DDE5" />
+                  <PolarAngleAxis dataKey="label" tick={{ fill: "#4B5563", fontSize: 12 }} />
+                  <RechartsTooltip contentStyle={{ borderRadius: 8, border: "1px solid #D8DDE5", fontSize: 12 }} />
+                  <Radar name={t("preparation.jdRequirement")} dataKey="requirement" stroke="#315F92" fill="#315F92" fillOpacity={0.18} strokeWidth={2} />
+                  <Radar name={t("preparation.resumeEvidenceLevel")} dataKey="evidence" stroke="#7A9B7A" fill="#9CB69C" fillOpacity={0.28} strokeWidth={2} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#315F92]" />{t("preparation.jdRequirement")}</span>
+              <span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-[#9CB69C]" />{t("preparation.resumeEvidenceLevel")}</span>
+            </div>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-xs leading-5 text-muted-foreground">{t("preparation.capabilityNote")}</p>
+          </div>
+          <div className="mt-5 divide-y divide-line rounded-lg border border-line">
+            {preparation.capabilityProfile.dimensions.map((dimension) => (
+              <div key={dimension.label} className="grid gap-3 px-4 py-4 md:grid-cols-[9rem_minmax(0,1fr)] md:px-5">
+                <div>
+                  <p className="font-semibold">{dimension.label}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Badge variant="outline">{requirementLabels[dimension.requirementLevel]}</Badge>
+                    <Badge variant="secondary">{evidenceLabels[dimension.evidenceLevel]}</Badge>
+                  </div>
+                </div>
+                <div className="text-sm leading-6 text-muted-foreground">
+                  <p>{dimension.evidenceSummary}</p>
+                  <p className="mt-1"><span className="font-medium text-foreground">{t("preparation.nextStep")}: </span>{dimension.nextStep}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="prep-evidence" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="03" title={t("preparation.evidenceTitle")} description={t("preparation.evidenceDescription")} />
+          <div className="mt-5 divide-y divide-line border-y border-line">
+            {preparation.evidenceMatrix.map((item, index) => (
+              <article key={`${item.requirement}-${index}`} className="py-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 gap-3">
+                    <span className="font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span>
+                    <p className="font-semibold">{item.requirement}</p>
+                  </div>
+                  <Badge variant={item.state === "direct" ? "default" : "secondary"}>{stateLabels[item.state]}</Badge>
+                </div>
+                <div className="mt-3 space-y-2 pl-8 text-sm leading-6 text-muted-foreground">
+                  <p>{item.assessment}</p>
+                  {item.resumeEvidence.length ? <p><span className="font-medium text-foreground">{t("preparation.resumeEvidence")}: </span>{item.resumeEvidence.join(t("report.separator"))}</p> : null}
+                  <p><span className="font-medium text-foreground">{t("preparation.action")}: </span>{item.action}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="prep-knowledge" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="04" title={t("preparation.knowledgeTitle")} />
+          <div className="mt-5 divide-y divide-line border-y border-line">
+            {preparation.knowledgeTopics.map((item, index) => (
+              <details key={`${item.topic}-${index}`} className="py-4" open={index === 0}>
+                <summary className="cursor-pointer list-none">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex gap-3"><span className="font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span><span className="font-semibold">{item.topic}</span></div>
+                    <Badge variant="secondary">{priorityLabels[item.priority]}</Badge>
+                  </div>
+                  <p className="mt-2 pl-8 text-sm leading-6 text-muted-foreground">{item.whyRelevant}</p>
+                </summary>
+                <div className="mt-4 grid gap-3 pl-8 text-sm leading-6">
+                  <ReportBlock label={t("preparation.explanation")} value={item.explanation} />
+                  <ReportBlock label={t("preparation.currentEvidence")} value={item.currentEvidence} />
+                  <ReportBlock label={t("preparation.targetLevel")} value={item.targetLevel} />
+                  <ReportBlock label={t("preparation.selfCheck")} value={item.selfCheckQuestions.join("\n")} />
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section id="prep-deep-dives" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="05" title={t("preparation.deepDiveTitle")} />
+          <div className="mt-5 divide-y divide-line border-y border-line">
+            {preparation.deepDives.map((item, index) => (
+              <details key={`${item.resumeItem}-${index}`} className="py-4" open={index === 0}>
+                <summary className="cursor-pointer list-none font-semibold"><span className="mr-3 font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span>{item.resumeItem}</summary>
+                <div className="mt-3 pl-8 text-sm leading-6 text-muted-foreground">
+                  <p>{item.whyRelevant}</p>
+                  <p className="mt-2"><span className="font-medium text-foreground">{t("preparation.contribution")}: </span>{item.personalContributionFocus}</p>
+                  <ListBlock label={t("preparation.followUps")} items={item.likelyFollowUps} />
+                  <ListBlock label={t("preparation.factsToConfirm")} items={item.factsToConfirm} />
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        <section id="prep-questions" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="06" title={t("preparation.questionsTitle")} />
+          <ol className="mt-5 divide-y divide-line border-y border-line">
+            {preparation.targetedQuestions.map((item, index) => (
+              <li key={`${item.question}-${index}`} className="py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium"><span className="mr-3 font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span>{item.question}</p>
+                  <Badge variant="secondary">{priorityLabels[item.priority]}</Badge>
+                </div>
+                <p className="mt-2 pl-8 text-xs text-muted-foreground">{item.category}</p>
+                <p className="mt-2 pl-8 text-sm leading-6 text-muted-foreground">{item.preparationDirection}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section id="prep-plan" className="scroll-mt-24 rounded-lg border border-line bg-surface p-5 lg:p-8">
+          <PreparationSectionHeading number="07" title={t("preparation.planTitle")} />
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <PlanBlock label={priorityLabels.must} items={preparation.preparationPlan.mustPrepare} />
+            <PlanBlock label={priorityLabels.should} items={preparation.preparationPlan.shouldPrepare} />
+            <PlanBlock label={priorityLabels.optional} items={preparation.preparationPlan.optional} />
+          </div>
+          <Separator className="my-6" />
+          <h3 className="text-base font-semibold">{t("preparation.introductionTitle")}</h3>
+          <p className="mt-3 whitespace-pre-line text-sm leading-7 text-muted-foreground">{preparation.selfIntroduction}</p>
+          <h3 className="mt-6 text-base font-semibold">{t("preparation.reverseQuestionsTitle")}</h3>
+          <ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+            {preparation.reverseQuestions.map((item) => <li key={item}>· {item}</li>)}
+          </ul>
+        </section>
+
+        <section className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center">
+          <p className="text-sm text-muted-foreground">{message || t("preparation.footerHint")}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={isWorking} onClick={onBack}><ArrowLeft data-icon="inline-start" />{t("preparation.back")}</Button>
+            <Button disabled={isWorking} onClick={onStart}>
+              {isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <Sparkles data-icon="inline-start" />}
+              {t("preparation.start")}
+            </Button>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function PreparationSectionHeading({ number, title, description }: { number: string; title: string; description?: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="mt-1 font-mono text-xs font-semibold text-brand">{number}</span>
+      <div>
+        <h3 className="font-serif text-xl font-semibold">{title}</h3>
+        {description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function ListBlock({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="mt-3">
+      <p className="font-medium text-foreground">{label}</p>
+      <ul className="mt-1 flex flex-col gap-1">{items.map((item) => <li key={item}>· {item}</li>)}</ul>
+    </div>
+  );
+}
+
+function PlanBlock({ label, items }: { label: string; items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="rounded-lg border border-line bg-background p-4">
+      <p className="text-sm font-semibold">{label}</p>
+      <ul className="mt-2 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">
+        {items.map((item) => <li key={item}>· {item}</li>)}
+      </ul>
+    </div>
   );
 }
 
@@ -783,7 +1272,7 @@ function ReportScreen({
 }
 
 function ReportBlock({ label, value, emphasized }: { label: string; value: string; emphasized?: boolean }) {
-  return <div className={cn("rounded-lg bg-surface-low p-4", emphasized && "bg-brand-muted")}><p className="text-xs font-semibold text-muted-foreground">{label}</p><p className="mt-1 text-foreground">{value}</p></div>;
+  return <div className={cn("rounded-lg bg-surface-low p-4", emphasized && "bg-brand-muted")}><p className="text-xs font-semibold text-muted-foreground">{label}</p><p className="mt-1 whitespace-pre-line text-foreground">{value}</p></div>;
 }
 
 function buildAnswer(questionId: string, content: string, skipped: boolean): InterviewAnswer {

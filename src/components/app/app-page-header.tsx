@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ResumeVersionView } from "@/components/app/types";
 import { resumeVersionDisplayName } from "@/components/match/match-view";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
+import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
 import type { NavKey } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function AppPageHeader({
   optimizedMenuOpen,
   setOptimizedMenuOpen,
   interviewSessions,
+  interviewPreparations,
   interviewMenuOpen,
   setInterviewMenuOpen,
   onAddApplication,
@@ -28,7 +30,9 @@ export function AppPageHeader({
   onDeleteResumeVersion,
   onDeleteOptimizedResumeVersions,
   onOpenInterviewSession,
+  onOpenInterviewPreparation,
   onDeleteInterviewSession,
+  onDeleteInterviewPreparation,
   onClearInterviewSessions,
 }: {
   active: NavKey;
@@ -41,6 +45,7 @@ export function AppPageHeader({
   optimizedMenuOpen: boolean;
   setOptimizedMenuOpen: Dispatch<SetStateAction<boolean>>;
   interviewSessions: InterviewSessionRecord[];
+  interviewPreparations: InterviewPreparationRecord[];
   interviewMenuOpen: boolean;
   setInterviewMenuOpen: Dispatch<SetStateAction<boolean>>;
   onAddApplication: () => void;
@@ -48,7 +53,9 @@ export function AppPageHeader({
   onDeleteResumeVersion: (versionId: string) => void;
   onDeleteOptimizedResumeVersions: () => void;
   onOpenInterviewSession: (sessionId: string) => void;
+  onOpenInterviewPreparation: (preparationId: string) => void;
   onDeleteInterviewSession: (sessionId: string) => void | Promise<void>;
+  onDeleteInterviewPreparation: (preparationId: string) => void | Promise<void>;
   onClearInterviewSessions: () => void | Promise<void>;
 }) {
   const locale = useLocale();
@@ -108,20 +115,26 @@ export function AppPageHeader({
             onDeleteAll={onDeleteOptimizedResumeVersions}
           />
         )}
-        {active === "interview" && interviewSessions.length > 0 && (
+        {active === "interview" && interviewSessions.length + interviewPreparations.length > 0 && (
           <InterviewSessionsMenu
             sessions={interviewSessions}
+            preparations={interviewPreparations}
             open={interviewMenuOpen}
             setOpen={setInterviewMenuOpen}
-            countLabel={t("interviewSessions", { count: interviewSessions.length })}
-            hint={t("interviewSessionsHint")}
-            clearLabel={t("clearInterviewSessions")}
+            countLabel={t("interviewRecords", { count: interviewSessions.length + interviewPreparations.length })}
+            hint={t("interviewRecordsHint")}
+            clearLabel={t("clearInterviewRecords")}
             completedLabel={t("completed")}
             inProgressLabel={t("inProgress")}
+            preparationLabel={t("preparationRecord")}
+            interviewLabel={t("interviewRecord")}
             deleteLabel={t("deleteInterview")}
+            deletePreparationLabel={t("deleteInterviewPreparation")}
             locale={locale}
             onOpen={onOpenInterviewSession}
+            onOpenPreparation={onOpenInterviewPreparation}
             onDelete={onDeleteInterviewSession}
+            onDeletePreparation={onDeleteInterviewPreparation}
             onDeleteAll={onClearInterviewSessions}
           />
         )}
@@ -207,6 +220,7 @@ function OptimizedVersionsMenu({
 
 function InterviewSessionsMenu({
   sessions,
+  preparations,
   open,
   setOpen,
   countLabel,
@@ -214,13 +228,19 @@ function InterviewSessionsMenu({
   clearLabel,
   completedLabel,
   inProgressLabel,
+  preparationLabel,
+  interviewLabel,
   deleteLabel,
+  deletePreparationLabel,
   locale,
   onOpen,
+  onOpenPreparation,
   onDelete,
+  onDeletePreparation,
   onDeleteAll,
 }: {
   sessions: InterviewSessionRecord[];
+  preparations: InterviewPreparationRecord[];
   open: boolean;
   setOpen: Dispatch<SetStateAction<boolean>>;
   countLabel: string;
@@ -228,10 +248,15 @@ function InterviewSessionsMenu({
   clearLabel: string;
   completedLabel: string;
   inProgressLabel: string;
+  preparationLabel: string;
+  interviewLabel: string;
   deleteLabel: string;
+  deletePreparationLabel: string;
   locale: string;
   onOpen: (sessionId: string) => void;
+  onOpenPreparation: (preparationId: string) => void;
   onDelete: (sessionId: string) => void | Promise<void>;
+  onDeletePreparation: (preparationId: string) => void | Promise<void>;
   onDeleteAll: () => void | Promise<void>;
 }) {
   return (
@@ -247,14 +272,35 @@ function InterviewSessionsMenu({
         <div className="absolute right-0 top-11 z-30 w-80 rounded-lg border border-line bg-surface p-2 shadow-[0_18px_60px_rgba(15,23,42,0.14)]">
           <div className="px-2 pb-2 pt-1 text-xs text-muted-foreground">{hint}</div>
           <div className="max-h-80 overflow-y-auto">
+            {preparations.map((record) => (
+              <div key={record.id} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-surface-low">
+                <button type="button" onClick={() => onOpenPreparation(record.id)} className="min-w-0 flex-1 text-left">
+                  <span className="block truncate text-sm font-semibold text-foreground">
+                    {record.context.resumeName} · {record.context.title}
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {new Date(record.updatedAt).toLocaleDateString(locale)} · {preparationLabel}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void onDeletePreparation(record.id)}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-white text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  aria-label={`${deletePreparationLabel}: ${record.context.resumeName} ${record.context.title}`}
+                  title={deletePreparationLabel}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
             {sessions.map((session) => (
               <div key={session.id} className="group flex items-center gap-2 rounded-md px-2 py-2 hover:bg-surface-low">
                 <button type="button" onClick={() => onOpen(session.id)} className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-sm font-semibold text-foreground">
-                    {session.context.company} · {session.context.title}
+                    {session.context.resumeName} · {session.context.title}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {new Date(session.updatedAt).toLocaleDateString(locale)} ·{" "}
+                    {new Date(session.updatedAt).toLocaleDateString(locale)} · {interviewLabel} ·{" "}
                     {session.status === "COMPLETED" ? completedLabel : inProgressLabel}
                   </span>
                 </button>
@@ -262,7 +308,7 @@ function InterviewSessionsMenu({
                   type="button"
                   onClick={() => void onDelete(session.id)}
                   className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-white text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`${deleteLabel}: ${session.context.company} ${session.context.title}`}
+                  aria-label={`${deleteLabel}: ${session.context.resumeName} ${session.context.title}`}
                   title={deleteLabel}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

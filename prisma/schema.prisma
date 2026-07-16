@@ -36,16 +36,17 @@ model ResumeVersion {
   updatedAt DateTime @updatedAt
 
   resumeId String
-  resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resume   Resume  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   jobId    String?
-  job      Job?   @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  job      Job?    @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  applications Application[]
-  interviews   InterviewSession[]
+  applications          Application[]
+  interviews            InterviewSession[]
+  interviewPreparations InterviewPreparation[]
 }
 
 model Job {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   company   String
   title     String
   city      String
@@ -55,27 +56,28 @@ model Job {
   deadline  DateTime?
   tags      Json
   analysis  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  versions     ResumeVersion[]
-  applications Application[]
-  interviews   InterviewSession[]
+  versions              ResumeVersion[]
+  applications          Application[]
+  interviews            InterviewSession[]
+  interviewPreparations InterviewPreparation[]
 }
 
 model Application {
-  id               String            @id @default(cuid())
-  status           ApplicationStatus @default(READY)
-  appliedAt        DateTime?
-  stageDate        DateTime?
-  nextFollowUpAt   DateTime?
-  notes            String            @default("")
-  interviewRound   String            @default("")
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id             String            @id @default(cuid())
+  status         ApplicationStatus @default(READY)
+  appliedAt      DateTime?
+  stageDate      DateTime?
+  nextFollowUpAt DateTime?
+  notes          String            @default("")
+  interviewRound String            @default("")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   jobId           String
-  job             Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
   resumeVersionId String?
   resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
 
@@ -93,20 +95,35 @@ model FollowUpLog {
 }
 
 model InterviewSession {
-  id                   String   @id @default(cuid())
-  mode                 String   @default("comprehensive")
-  status               String   @default("IN_PROGRESS")
+  id                   String    @id @default(cuid())
+  mode                 String    @default("comprehensive")
+  status               String    @default("IN_PROGRESS")
   context              Json?
   questions            Json
   answers              Json
   feedback             Json
-  currentQuestionIndex Int      @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  currentQuestionIndex Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
   completedAt          DateTime?
 
   jobId           String
-  job             Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId String?
+  resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+}
+
+model InterviewPreparation {
+  id        String   @id @default(cuid())
+  mode      String   @default("comprehensive")
+  resumeKey String
+  context   Json
+  content   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobId           String
+  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
   resumeVersionId String?
   resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
 }

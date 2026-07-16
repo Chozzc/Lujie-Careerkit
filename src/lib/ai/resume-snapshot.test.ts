@@ -14,6 +14,10 @@ describe("AI resume snapshot", () => {
         links: ["https://example.com"],
       },
       customSections: [{ title: "主要优势与技能认证", content: "AIGC 全栈创作者。" }],
+      _tailoringBaseResume: {
+        basics: { email: "base@example.com", phone: "13900000000" },
+      },
+      _optimizationMeta: { summary: "内部优化记录" },
     });
 
     expect(snapshot).toMatchObject({
@@ -22,6 +26,9 @@ describe("AI resume snapshot", () => {
     });
     expect(JSON.stringify(snapshot)).not.toContain("chen@example.com");
     expect(JSON.stringify(snapshot)).not.toContain("13800000000");
+    expect(JSON.stringify(snapshot)).not.toContain("base@example.com");
+    expect(JSON.stringify(snapshot)).not.toContain("13900000000");
+    expect(JSON.stringify(snapshot)).not.toContain("内部优化记录");
     expect(JSON.stringify(snapshot)).not.toContain("template");
   });
 

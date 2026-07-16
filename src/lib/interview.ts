@@ -36,8 +36,9 @@ export const interviewAnswerSchema = z.object({
 export const interviewContextSchema = z.object({
   company: z.string().trim().min(1),
   title: z.string().trim().min(1),
-  jd: z.string().trim().min(10),
+  jd: z.string().trim().min(1),
   resumeName: z.string().trim().min(1),
+  resumeKey: z.string().trim().min(1).optional(),
   resume: z.unknown(),
 });
 

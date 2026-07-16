@@ -4,7 +4,10 @@ import { cn } from "@/lib/utils";
 
 export function WorkflowStepper({ labels, current }: { labels: string[]; current: number }) {
   return (
-    <ol className="grid grid-cols-3 overflow-hidden rounded-lg border border-line bg-surface">
+    <ol
+      className="grid overflow-hidden rounded-lg border border-line bg-surface"
+      style={{ gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))` }}
+    >
       {labels.map((label, index) => (
         <li
           key={label}

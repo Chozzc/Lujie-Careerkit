@@ -2,6 +2,8 @@ export function buildAiResumeSnapshot(resume: unknown) {
   if (!resume || typeof resume !== "object" || Array.isArray(resume)) return resume;
   const safeResume = { ...(resume as Record<string, unknown>) };
   delete safeResume.editor;
+  delete safeResume._tailoringBaseResume;
+  delete safeResume._optimizationMeta;
   for (const key of ["experiences", "internships", "projects"]) {
     const items = safeResume[key];
     if (Array.isArray(items)) safeResume[key] = items.map(withoutLogo);

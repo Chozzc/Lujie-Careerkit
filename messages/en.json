@@ -35,10 +35,16 @@
       "interviewSessions": "Mock interviews · {count}",
       "interviewSessionsHint": "Continue unfinished practice or review saved reports",
       "clearInterviewSessions": "Clear mock interviews",
+      "interviewRecords": "Saved interview files · {count}",
+      "interviewRecordsHint": "Review saved study guides, mock interviews, and reports by resume",
+      "clearInterviewRecords": "Clear all interview files",
+      "preparationRecord": "Study guide",
+      "interviewRecord": "Mock interview",
       "completed": "Reviewed",
       "inProgress": "In progress",
       "deleteOptimizedVersion": "Delete optimized version",
-      "deleteInterview": "Delete mock interview"
+      "deleteInterview": "Delete mock interview",
+      "deleteInterviewPreparation": "Delete study guide"
     },
     "menu": {
       "notifications": "Follow-up reminders",
@@ -286,6 +292,7 @@
   "interview": {
     "steps": {
       "setup": "Select interview material",
+      "preparation": "Generate interview prep",
       "session": "Mock Q&A",
       "report": "AI review"
     },
@@ -334,9 +341,75 @@
       "settingsTitle": "Interview settings",
       "settingsDescription": "Choose the focus for this round. Questions stay fixed after generation.",
       "hint": "AI will generate this round of questions from the selected resume and JD.",
-      "disabledHint": "Select a resume and enter at least 10 JD characters first.",
+      "needResume": "Select a resume that contains usable content.",
+      "needJd": "Enter the job description first.",
       "generating": "Generating questions",
-      "start": "Generate and start"
+      "start": "Generate and start",
+      "generatingPreparation": "Generating materials",
+      "prepare": "Generate interview prep"
+    },
+    "preparation": {
+      "badge": "Interview preparation",
+      "basedOn": "Generated from the target JD and {resumeName}",
+      "tocTitle": "Guide contents",
+      "capabilityTitle": "Role capability profile",
+      "capabilityDescription": "Compare the JD priorities with evidence already present in the resume, then prepare in the right order.",
+      "jdRequirement": "JD requirement",
+      "resumeEvidenceLevel": "Resume evidence",
+      "capabilityNote": "Resume evidence shows what the current resume can support. It is not a score of your actual capability.",
+      "nextStep": "Next step",
+      "sections": {
+        "overview": "Overview",
+        "capability": "Capability profile",
+        "evidence": "Evidence and gaps",
+        "knowledge": "Core knowledge",
+        "deepDives": "Experience deep dives",
+        "questions": "Targeted questions",
+        "plan": "Preparation plan"
+      },
+      "evidenceTitle": "Role requirements and resume evidence",
+      "evidenceDescription": "Not shown on the resume does not mean the skill is absent. Items requiring confirmation are marked separately.",
+      "resumeEvidence": "Resume evidence",
+      "action": "Preparation action",
+      "knowledgeTitle": "Core role knowledge",
+      "explanation": "Explanation",
+      "currentEvidence": "Your current evidence",
+      "targetLevel": "Target before the interview",
+      "selfCheck": "Self-check questions",
+      "deepDiveTitle": "Resume and project deep dives",
+      "contribution": "Personal contribution to clarify",
+      "followUps": "Likely follow-ups",
+      "factsToConfirm": "Facts to confirm",
+      "questionsTitle": "Targeted interview questions",
+      "planTitle": "Preparation plan",
+      "introductionTitle": "Tailored self-introduction",
+      "reverseQuestionsTitle": "Questions to ask",
+      "footerHint": "You can generate the mock questions next. Evaluation points remain hidden during practice.",
+      "back": "Adjust material",
+      "start": "Generate and start",
+      "states": {
+        "direct": "Direct evidence",
+        "transferable": "Transferable experience",
+        "notShown": "Not shown",
+        "gap": "Current gap",
+        "confirm": "Needs confirmation"
+      },
+      "priorities": {
+        "must": "Must prepare",
+        "should": "Should prepare",
+        "optional": "Optional"
+      },
+      "requirementLevels": {
+        "core": "Core JD requirement",
+        "important": "Important requirement",
+        "bonus": "Nice-to-have"
+      },
+      "evidenceLevels": {
+        "strong": "Strong evidence",
+        "partial": "Partial evidence",
+        "limited": "Limited evidence",
+        "unknown": "Not shown yet"
+      }
     },
     "session": {
       "noQuestions": "No questions are available for this practice.",
@@ -386,6 +459,8 @@
     "status": {
       "restoring": "Restoring interview record...",
       "restoreFailed": "Failed to restore interview record.",
+      "restoringPreparation": "Opening the saved interview study guide...",
+      "restorePreparationFailed": "Failed to open the interview study guide.",
       "answerSaveFailed": "Failed to save answer. Try again.",
       "localParsing": "Using local parsing. Accuracy may be limited...",
       "parsing": "Parsing resume. This may take a while...",
@@ -394,6 +469,9 @@
       "questionsGenerated": "Mock interview questions generated. Answers will autosave.",
       "questionFailed": "Failed to generate questions. Try again later.",
       "generatingQuestions": "Generating questions from the JD and resume...",
+      "generatingPreparation": "Generating interview preparation from the JD and resume...",
+      "preparationGenerated": "Interview preparation generated.",
+      "preparationFailed": "Failed to generate interview preparation. Try again later.",
       "savingLastAnswer": "Saving the final answer...",
       "generatingReport": "AI is generating the review report from this round...",
       "reportSaved": "Interview review report generated and saved.",
