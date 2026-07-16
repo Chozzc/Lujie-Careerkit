@@ -122,7 +122,7 @@ function ElegantSectionContent({ section, lang }: { section: any; lang?: string 
         {(content.categories || []).map((cat: any) => (
           <div key={cat.id} className="flex text-sm">
             <span className="w-32 shrink-0 font-semibold" style={{ color: GOLD }}>{cat.name}:</span>
-            <span className="text-zinc-600">{(cat.skills || []).join(', ')}</span>
+            <span className="whitespace-pre-line text-zinc-600">{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

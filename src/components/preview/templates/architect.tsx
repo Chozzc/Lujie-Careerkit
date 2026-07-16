@@ -192,7 +192,7 @@ function ArchitectSectionContent({ section, resume }: { section: any; resume: Re
             >
               {cat.name}:
             </span>
-            <span style={{ color: BODY_TEXT }}>{(cat.skills || []).join(' / ')}</span>
+            <span className="whitespace-pre-line" style={{ color: BODY_TEXT }}>{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

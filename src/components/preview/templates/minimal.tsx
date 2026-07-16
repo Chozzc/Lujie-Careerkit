@@ -118,7 +118,7 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
     return (
       <div className="space-y-1">
         {(content.categories || []).map((cat: any) => (
-          <p key={cat.id} className="text-sm text-zinc-600">{cat.skills?.join(' / ')}</p>
+          <p key={cat.id} className="whitespace-pre-line text-sm text-zinc-600">{cat.skills?.join('\n')}</p>
         ))}
       </div>
     );

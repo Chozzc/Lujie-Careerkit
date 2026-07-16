@@ -167,7 +167,7 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
         {categories.map((cat: any) => (
           <div key={cat.id} className="flex text-sm">
             <span className="w-32 shrink-0 font-bold" style={{ color: PRIMARY, fontFamily: "'Courier New', monospace" }}>{cat.name}:</span>
-            <span style={{ color: '#57534e' }}>{cat.skills?.join(' \u2022 ')}</span>
+            <span className="whitespace-pre-line" style={{ color: '#57534e' }}>{cat.skills?.join('\n')}</span>
           </div>
         ))}
       </div>

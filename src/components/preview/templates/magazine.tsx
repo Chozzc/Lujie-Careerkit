@@ -165,7 +165,7 @@ function MagazineSectionContent({ section, resume }: { section: any; resume: Res
         {categories.map((cat: any) => (
           <div key={cat.id}>
             <p className="mb-1 text-xs font-bold uppercase tracking-wider" style={{ color: ACCENT }}>{cat.name}</p>
-            <p className="text-sm" style={{ color: SECONDARY }}>{cat.skills?.join(' / ')}</p>
+            <p className="whitespace-pre-line text-sm" style={{ color: SECONDARY }}>{cat.skills?.join('\n')}</p>
           </div>
         ))}
       </div>

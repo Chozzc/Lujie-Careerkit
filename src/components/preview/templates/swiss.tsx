@@ -145,7 +145,7 @@ function SwissSectionContent({ section, lang }: { section: any; lang?: string })
         {((content as SkillsContent).categories || []).map((cat: any) => (
           <div key={cat.id} className="grid grid-cols-[140px_1fr] gap-4 text-sm">
             <span className="font-bold" style={{ color: TEXT }}>{cat.name}</span>
-            <span style={{ color: '#3f3f46' }}>{(cat.skills || []).join(' / ')}</span>
+            <span className="whitespace-pre-line" style={{ color: '#3f3f46' }}>{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

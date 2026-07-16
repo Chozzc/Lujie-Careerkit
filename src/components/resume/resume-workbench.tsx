@@ -32,6 +32,7 @@ import {
   A4_HEIGHT_PX,
   A4_WIDTH_PX,
   calculateResumePagination,
+  collectResumePageBreakCandidates,
   getCombinedPageImageLayout,
 } from "@/lib/resume-export-layout";
 import { contentToJadeResume, jadeResumeToContent } from "@/lib/resume-adapter";
@@ -863,7 +864,12 @@ async function renderResumePagesForExport(resume: Resume, smartOnePage: boolean)
   const { ResumePreview } = await import("@/components/preview/resume-preview");
 
   const measuredHeight = Math.max(measurement.element.scrollHeight, Math.ceil(measurement.element.getBoundingClientRect().height), 1);
-  const { fitScale, pageCount, horizontalOffset } = calculateResumePagination(measuredHeight, smartOnePage);
+  const breakCandidates = collectResumePageBreakCandidates(measurement.element);
+  const { fitScale, pageSlices, horizontalOffset } = calculateResumePagination(
+    measuredHeight,
+    smartOnePage,
+    breakCandidates,
+  );
 
   const container = document.createElement("div");
   container.setAttribute("data-resume-export-pages", "true");
@@ -882,7 +888,7 @@ async function renderResumePagesForExport(resume: Resume, smartOnePage: boolean)
   const roots: Array<ReturnType<typeof createRoot>> = [];
   const pages: HTMLElement[] = [];
 
-  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+  for (const pageSlice of pageSlices) {
     const page = document.createElement("div");
     Object.assign(page.style, {
       position: "relative",
@@ -890,6 +896,19 @@ async function renderResumePagesForExport(resume: Resume, smartOnePage: boolean)
       height: `${A4_HEIGHT_PX}px`,
       overflow: "hidden",
       background: "#ffffff",
+    });
+
+    const sliceViewport = document.createElement("div");
+    Object.assign(sliceViewport.style, {
+      position: "absolute",
+      left: "0",
+      top: `${pageSlice.topInset}px`,
+      width: `${A4_WIDTH_PX}px`,
+      height: `${Math.min(
+        A4_HEIGHT_PX - pageSlice.topInset,
+        (pageSlice.sourceEnd - pageSlice.sourceStart) * fitScale,
+      )}px`,
+      overflow: "hidden",
     });
 
     const scaleWrapper = document.createElement("div");
@@ -903,9 +922,10 @@ async function renderResumePagesForExport(resume: Resume, smartOnePage: boolean)
     });
 
     const slice = document.createElement("div");
-    slice.style.marginTop = `${-(pageIndex * A4_HEIGHT_PX) / fitScale}px`;
+    slice.style.marginTop = `${-pageSlice.sourceStart}px`;
     scaleWrapper.appendChild(slice);
-    page.appendChild(scaleWrapper);
+    sliceViewport.appendChild(scaleWrapper);
+    page.appendChild(sliceViewport);
     container.appendChild(page);
 
     const root = createRoot(slice);

@@ -435,7 +435,7 @@ function CoderMainContent({ section, resume }: { section: any; resume: Resume })
         {categories.map((cat: any) => (
           <div key={cat.id}>
             <span className="text-xs font-bold" style={{ color: BLUE }}>{cat.name}: </span>
-            <span className="text-sm text-zinc-600">{(cat.skills || []).join(' | ')}</span>
+            <span className="whitespace-pre-line text-sm text-zinc-600">{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

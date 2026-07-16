@@ -145,7 +145,7 @@ function ConsultantSectionContent({ section, resume }: { section: any; resume: R
         {((content as SkillsContent).categories || []).map((cat: any) => (
           <div key={cat.id} className="flex text-sm">
             <span className="w-32 shrink-0 font-semibold" style={{ color: GRAY_700 }}>{cat.name}:</span>
-            <span className="text-gray-600">{(cat.skills || []).join(', ')}</span>
+            <span className="whitespace-pre-line text-gray-600">{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

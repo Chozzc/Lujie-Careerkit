@@ -161,7 +161,7 @@ function ScientistSectionContent({ section, resume }: { section: any; resume: Re
         {((content as SkillsContent).categories || []).map((cat: any) => (
           <div key={cat.id} className="text-sm">
             <span className="font-bold italic" style={{ color: PRIMARY }}>{cat.name}: </span>
-            <span style={{ color: BODY_TEXT }}>{(cat.skills || []).join('; ')}</span>
+            <span className="whitespace-pre-line" style={{ color: BODY_TEXT }}>{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>

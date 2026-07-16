@@ -142,7 +142,7 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
         {categories.map((cat: any) => (
           <p key={cat.id} className="text-sm text-zinc-700">
             <span className="font-bold text-black">{cat.name}: </span>
-            {cat.skills?.join(', ')}
+            <span className="whitespace-pre-line">{cat.skills?.join('\n')}</span>
           </p>
         ))}
       </div>

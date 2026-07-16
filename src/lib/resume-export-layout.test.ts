@@ -37,6 +37,22 @@ describe("resume export layout", () => {
     expect(pagination.horizontalOffset).toBe(0);
   });
 
+  it("uses safe measured boundaries and adds breathing room above continuation pages", () => {
+    const pagination = calculateResumePagination(1900, false, [1040, 1100, 1140]);
+
+    expect(pagination.pageSlices).toEqual([
+      { sourceStart: 0, sourceEnd: 1100, topInset: 0 },
+      { sourceStart: 1100, sourceEnd: 1900, topInset: 32 },
+    ]);
+  });
+
+  it("does not hide a small overflow beyond the first A4 page", () => {
+    const pagination = calculateResumePagination(A4_HEIGHT_PX + 1, false);
+
+    expect(pagination.pageCount).toBe(2);
+    expect(pagination.pageSlices.at(-1)?.sourceEnd).toBe(A4_HEIGHT_PX + 1);
+  });
+
   it("removes web-card chrome when rendering a resume inside an A4 page", () => {
     const css = buildPagedResumeModeCSS('[data-theme-scope="preview"]');
 

@@ -374,7 +374,7 @@ function MainSectionContent({ section, resume }: { section: any; resume: Resume 
         {categories.map((cat: any) => (
           <div key={cat.id} className="flex text-sm">
             <span className="w-28 shrink-0 font-medium text-zinc-700">{cat.name}:</span>
-            <span className="text-zinc-600">{cat.skills?.join(', ')}</span>
+            <span className="whitespace-pre-line text-zinc-600">{cat.skills?.join('\n')}</span>
           </div>
         ))}
       </div>

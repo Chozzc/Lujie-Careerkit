@@ -132,7 +132,7 @@ function NordicSectionContent({ section, resume }: { section: any; resume: Resum
         {((content as SkillsContent).categories || []).map((cat: any) => (
           <div key={cat.id} className="flex text-sm">
             <span className="w-28 shrink-0 font-medium" style={{ color: SLATE_500 }}>{cat.name}:</span>
-            <span className="font-light" style={{ color: SLATE_400 }}>{(cat.skills || []).join(', ')}</span>
+            <span className="whitespace-pre-line font-light" style={{ color: SLATE_400 }}>{(cat.skills || []).join('\n')}</span>
           </div>
         ))}
       </div>
