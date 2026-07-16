@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { analyzeJobInput, jobAnalysisInputSchema } from "./job-analysis";
 
 describe("analyzeJobInput", () => {
-  it("extracts a practical campus job profile from pasted JD text", () => {
+  it("extracts practical JD signals while leaving identity recognition to AI", () => {
     const result = analyzeJobInput(`
       字节跳动 - 前端开发实习生
       base：北京/上海，可转正，投递截止：2026-06-20
@@ -12,8 +12,8 @@ describe("analyzeJobInput", () => {
       加分项：有大型项目经验，熟悉 Next.js 或工程化。
     `);
 
-    expect(result.company).toBe("字节跳动");
-    expect(result.title).toBe("前端开发实习生");
+    expect(result.company).toBe("待填写公司");
+    expect(result.title).toBe("待分析岗位");
     expect(result.deadline).toBe("2026-06-20");
     expect(result.keywords).toEqual(
       expect.arrayContaining(["React", "TypeScript", "JavaScript", "Next.js"]),

@@ -286,7 +286,7 @@ function InterviewSessionsMenu({
                   type="button"
                   onClick={() => void onDeletePreparation(record.id)}
                   className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-white text-muted-foreground hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                  aria-label={`${deletePreparationLabel}: ${record.context.resumeName} ${record.context.title}`}
+                  aria-label={`${deletePreparationLabel}: ${record.context.resumeName} ${record.content.meta.title}`}
                   title={deletePreparationLabel}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

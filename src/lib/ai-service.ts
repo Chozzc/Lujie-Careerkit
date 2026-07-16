@@ -87,7 +87,7 @@ export async function tailorResumeWithAI(input: {
       "4. 保留姓名、邮箱、电话、城市、链接、学校、公司、项目名、角色名、起止时间、自定义模块标题等基础事实。",
       "5. JD 中出现但原简历没有证据的能力，只能在表达上弱化为兴趣、相关基础或不写，不能伪造掌握。",
       "6. 输出必须是可被 JSON.parse 解析的对象，不要包裹解释文字。",
-      "7. meta.company 和 meta.title 要从 JD 中识别真实公司与岗位；无法确认时留空，不要写“目标公司/目标岗位”。",
+      "7. meta.company 和 meta.title 要从完整 JD 中识别真实公司与完整岗位名称；meta.title 必须保留实习/校招属性、方向说明和括号内限定词，不要缩写。无法确认时留空，不要写“目标公司/目标岗位”。",
       "8. meta.keywords 写 3-6 个真实岗位关键词；meta.changes 只写 2-5 个用户能看懂的模块名，如自我评价、项目经历、技能特长、自定义模块；不要写 profile.summary / projects.highlights / customSections 等内部字段名，也不要写很长的实现说明；meta.summary 用一句自然中文概括优化重点。",
       "9. meta.versionName 格式建议为 JD匹配优化-姓名-公司岗位，例如 JD匹配优化-陈同学-腾讯产品经理实习生；无法识别公司时只写岗位。",
       "",
@@ -237,7 +237,7 @@ function cleanMetaLabel(value?: string | null) {
   const text = value?.trim() ?? "";
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
-  return text.length > 32 ? "" : text;
+  return text.length > 100 ? "" : text;
 }
 
 function normalizeTailoredResume(next: ResumeContent, original: ResumeContent): ResumeContent {

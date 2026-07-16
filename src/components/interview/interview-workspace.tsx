@@ -49,7 +49,6 @@ import {
 } from "@/lib/interview";
 import type { InterviewPreparation, InterviewPreparationRecord } from "@/lib/interview-preparation";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
-import { inferJobIdentity } from "@/lib/job-identity";
 import { buildUploadedResumeDraft, isResumeContentLike, type UploadedResumeDraft } from "@/lib/resume-upload";
 import type { ResumeContent } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -363,7 +362,6 @@ export function InterviewWorkspace({
       setAiSetupDialogOpen(true);
       return;
     }
-    const identity = inferJobIdentity(jdDraft);
     setSetupTask("questions");
     try {
       await createSession(
@@ -373,8 +371,8 @@ export function InterviewWorkspace({
             resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
           mode,
           context: {
-            company: identity.company,
-            title: identity.title,
+            company: locale === "en" ? "Target company" : "目标公司",
+            title: locale === "en" ? "Target role" : "目标岗位",
             jd: jdDraft.trim(),
             resumeName: selectedResumeName,
             resumeKey: selectedResumeKey,
@@ -395,7 +393,6 @@ export function InterviewWorkspace({
       setAiSetupDialogOpen(true);
       return;
     }
-    const identity = inferJobIdentity(jdDraft);
     setSetupTask("preparation");
     setIsWorking(true);
     setMessage(t("status.generatingPreparation"));
@@ -404,8 +401,6 @@ export function InterviewWorkspace({
         "/api/interviews/preparation",
         {
           jobId: "",
-          company: identity.company,
-          title: identity.title,
           jd: jdDraft.trim(),
           resumeName: selectedResumeName,
           resumeKey: selectedResumeKey,

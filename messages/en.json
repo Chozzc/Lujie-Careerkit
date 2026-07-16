@@ -264,9 +264,9 @@
     "resumePickerDescription": "Choose the base resume · {count} total",
     "form": {
       "title": "Paste target JD",
-      "description": "Paste responsibilities, requirements, and nice-to-haves. LuJie will extract priorities from the selected resume and generate a matched version.",
-      "jdLabel": "Job description / Requirements / Nice-to-haves *",
-      "jdPlaceholder": "Paste the target JD, including responsibilities, requirements, nice-to-haves, and business context...",
+      "description": "Paste the complete company name, full role title, responsibilities, requirements, and nice-to-haves. LuJie will extract priorities from the selected resume and generate a matched version.",
+      "jdLabel": "Company / Role / Description / Requirements / Nice-to-haves *",
+      "jdPlaceholder": "Paste the complete JD, including the company name, full role title, responsibilities, requirements, nice-to-haves, and business context...",
       "settingsTitle": "Optimization settings",
       "settingsDescription": "Choose the rewrite focus. All edits stay within the facts already present in the original resume."
     },
@@ -335,9 +335,9 @@
     "setup": {
       "resumePickerDescription": "Choose the resume for this round · {count} total",
       "title": "Paste target JD",
-      "description": "Paste responsibilities, requirements, and skills. LuJie will generate mock questions from the selected resume and role.",
-      "jdLabel": "Job description / Requirements / Nice-to-haves *",
-      "jdPlaceholder": "Paste the target JD, or describe role direction, responsibilities, requirements, and business context...",
+      "description": "Paste the complete company name, full role title, responsibilities, requirements, and skills. LuJie will generate an interview prep guide or mock questions from the selected resume.",
+      "jdLabel": "Company / Role / Description / Requirements / Nice-to-haves *",
+      "jdPlaceholder": "Paste the complete JD, including the company name, full role title, responsibilities, requirements, nice-to-haves, and business context...",
       "settingsTitle": "Interview settings",
       "settingsDescription": "Choose the focus for this round. Questions stay fixed after generation.",
       "hint": "AI will generate this round of questions from the selected resume and JD.",

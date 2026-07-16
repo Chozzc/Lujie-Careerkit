@@ -1195,8 +1195,6 @@ async function findStoredInterviewPreparation(id: string) {
 function toInterviewPreparationRecord(record: StoredInterviewPreparation): InterviewPreparationRecord {
   const rawContext = isRecord(record.context) ? record.context : {};
   const context = interviewPreparationInputSchema.parse({
-    company: stringValue(rawContext.company) || record.job.company,
-    title: stringValue(rawContext.title) || record.job.title,
     jd: stringValue(rawContext.jd) || record.job.jd,
     resumeName: stringValue(rawContext.resumeName) || record.resumeVersion?.name || "历史简历",
     resume: rawContext.resume ?? record.resumeVersion?.content ?? null,
@@ -1220,7 +1218,7 @@ function cleanJobLabel(value?: string | null) {
   const text = value?.trim() ?? "";
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
-  return text.length > 32 ? "" : text;
+  return text.length > 100 ? "" : text;
 }
 
 function deriveResumeVersionName(content: ResumeContent) {

@@ -7,6 +7,7 @@ import {
   type InterviewContext,
   type InterviewMode,
   type InterviewQuestion,
+  type InterviewQuestionPack,
   type InterviewReport,
 } from "./interview";
 
@@ -57,19 +58,26 @@ export type InterviewRepository = {
 
 export function createInterviewService(dependencies: {
   repository: InterviewRepository;
-  generateQuestions(input: CreateSessionInput): Promise<InterviewQuestion[]>;
+  generateQuestions(input: CreateSessionInput): Promise<InterviewQuestion[] | InterviewQuestionPack>;
   generateReport(session: InterviewSessionRecord): Promise<InterviewReport>;
 }) {
   return {
     async createSession(input: CreateSessionInput) {
       const generated = await dependencies.generateQuestions(input);
-      const questions = parseInterviewQuestionPack(input.mode, { questions: generated });
+      const pack = Array.isArray(generated)
+        ? { company: input.context.company, title: input.context.title, questions: generated }
+        : generated;
+      const questions = parseInterviewQuestionPack(input.mode, pack);
       return dependencies.repository.create({
         jobId: input.jobId,
         resumeVersionId: input.resumeVersionId,
         mode: input.mode,
         status: "IN_PROGRESS",
-        context: input.context,
+        context: {
+          ...input.context,
+          company: pack.company,
+          title: pack.title,
+        },
         questions,
         answers: {},
         feedback: null,

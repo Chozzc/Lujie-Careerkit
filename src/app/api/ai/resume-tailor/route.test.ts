@@ -94,7 +94,13 @@ describe("resume tailoring route", () => {
     expect(response.status).toBe(200);
     expect(mocks.tailorResumeWithAI).toHaveBeenCalledOnce();
     expect(mocks.tailorResumeWithAI).toHaveBeenCalledWith(
-      expect.objectContaining({ analysis: expect.objectContaining({ company: "美团", keywords: expect.arrayContaining(["Java", "Spring", "SQL"]) }) }),
+      expect.objectContaining({
+        analysis: expect.objectContaining({
+          company: "待填写公司",
+          title: "待分析岗位",
+          keywords: expect.arrayContaining(["Java", "Spring", "SQL"]),
+        }),
+      }),
     );
     expect(mocks.saveJobAnalysis).toHaveBeenCalledWith(
       "job-1",

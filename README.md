@@ -5,7 +5,7 @@
 <h1 align="center">LuJie CareerKit</h1>
 
 <p align="center">
-  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, application tracking, mock interviews, and interview review.</strong>
+  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, role-specific interview preparation, application tracking, mock interviews, and interview review.</strong>
 </p>
 
 <p align="center">
@@ -27,7 +27,7 @@
 
 ## Overview
 
-LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview practice, and AI review into one AI-powered career workspace. You can maintain different resume versions for different roles, turn a JD into sharper role-specific wording, track every application, and keep refining answers, feedback, and review notes before and after interviews.
+LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview preparation, mock practice, and AI review into one AI-powered career workspace. You can maintain different resume versions for different roles, turn a complete JD into sharper resume wording and a role-specific interview prep guide, track every application, and keep refining knowledge, answers, feedback, and review notes.
 
 ## Online Preview
 
@@ -51,14 +51,15 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 
 - **Structured resume editing**: maintain multiple resume versions, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
 - **AI resume optimization**: generate a general AI-optimized resume version from the editor, compare before and after, and keep refining it with the same templates.
-- **JD matching**: paste a target job description and let AI reorder emphasis and improve wording without inventing experience.
-- **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, priorities, notes, JD text, and linked resume versions.
+- **JD matching**: paste a complete JD with the company, full role title, requirements, and responsibilities, then let AI diagnose evidence, reorder emphasis, improve wording, and save a role-specific version without inventing experience.
+- **Role-specific interview prep**: combine a selected resume with a complete JD to generate and save a guide with an overview, capability profile, evidence gaps, core knowledge, experience deep dives, targeted questions, and a preparation plan.
+- **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
-- **Data and privacy controls**: resumes, jobs, applications, interviews, and settings are stored in a local SQLite database for long-term personal use.
+- **Data and privacy controls**: resumes, jobs, applications, interview prep guides, mock sessions, and settings are stored in a local SQLite database for long-term personal use.
 
 ## Data and Privacy
 
-- Resume content, resume versions, jobs, applications, interviews, and settings are stored in `prisma/dev.db`.
+- Resume content, resume versions, jobs, applications, interview prep guides, mock sessions, and settings are stored in `prisma/dev.db`.
 - API keys are configured from the in-app Settings page. They are encrypted before being saved to SQLite.
 - `LUJIE_SETTINGS_SECRET` is the local encryption secret for saved AI keys. Use a long random value in `.env.local`.
 
@@ -84,7 +85,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. Use `v0.1.6` when you want to pin the current published Docker release.
+Use `latest` to follow the newest `main` build. After v0.2.0 is published, use `v0.2.0` to pin that release.
 
 ### Local Development
 
@@ -138,6 +139,26 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.2.0
+
+#### Interview preparation workflow
+
+- Added saved, role-specific interview prep guides generated from a complete JD and selected resume, covering an overview, capability profile, evidence gaps, core knowledge, experience deep dives, targeted questions, and a preparation plan.
+- Added a capability radar chart, guide navigation, structured sections, per-resume history, and a direct path from a saved guide into mock interviews and AI review.
+- Company and role names are now identified by AI from the complete JD, preserving internship or campus-recruiting qualifiers, role directions, and parenthetical details instead of relying on the first-line format.
+
+#### Resume and JD workflows
+
+- Strengthened JD input guidance so users provide the company name, full role title, responsibilities, requirements, nice-to-haves, and business context together.
+- Fixed resume import and optimization integrity: work, internship, and project entries stay separate; personal summaries and self-reviews remain separate; deleted sections are not restored by later operations.
+- AI requests now remove contact details, logos, editor settings, and internal base snapshots before sending resume context to a model.
+
+#### Data and stability
+
+- Existing SQLite databases automatically receive the interview preparation table and missing fields without overwriting saved resumes, applications, interviews, or settings.
+- Fixed invalid resume snapshot fallback, optimized-version deduplication, and related workflow consistency issues.
+- Aligned the Control Center route and project repository entry.
+
 ### v0.1.9
 
 - Fixed PDF text extraction so supported PDFs can be structurally imported. With a configured non-Bailian model, extracted PDF and Word text can also be restored by AI into an editable resume; Alibaba Bailian API remains recommended for images and complex files.
@@ -150,59 +171,11 @@ AI features stay disabled until the settings are saved and the connection test s
 - Updated built-in application dates and notes. AI features default to enabled, while a working provider and API key are still required.
 - Removed the duplicate language setting in favor of the top-bar switcher.
 
-### v0.1.7
-
-- Work and project entries now support uploaded logos and common built-in icons.
-- The Theme Editor now offers small, medium, and large Logo / icon sizes for supported resume previews.
-
-### v0.1.6
-
-- Fixed Dashboard due follow-up calculation: applied roles without a manual follow-up now use seven days after applying as the suggested follow-up date.
-- Added a due label and clearer row background for overdue priority actions.
-- Updated the pinned Docker image note. The fixed version tag is `ghcr.io/chozzc/lujie-careerkit:v0.1.6`.
-
-### v0.1.5
-
-- Added Chinese and English UI, with in-app language switching.
-- Localized the main workspace shell, Dashboard, Resume Library, Settings, JD Matching, Interview Assistant, Application Tracking, and core Resume Editor controls.
-- Kept user data, resume content, JD text, and locally stored records unchanged when switching languages.
-- Fixed test/build configuration issues found during the multilingual UI update.
-
-### v0.1.4
-
-- Added Docker build support with persistent SQLite storage mounted at `/data`.
-- Added `docker-compose.yml` for one-command local startup.
-- Added a GitHub Actions workflow that publishes `ghcr.io/chozzc/lujie-careerkit:latest` and version-tagged images.
-
-### v0.1.3
-
-- Added AI resume optimization from the Resume Editor, generating a general optimized version without requiring a JD.
-- Reused the JD matching result workspace for before/after comparison, optimization summaries, and visible change highlighting.
-- Improved AI output compatibility and error messaging, including support for models that return a complete resume JSON directly.
-- Included AI-optimized resume versions in the optimized history menu for easier review, comparison, and continued editing.
-
-### v0.1.2
-
-- Split the JD matching result page into shared resume comparison, summary, and highlight components.
-- Removed duplicated preview-comparison code from the matching workspace to make similar result views easier to maintain.
-- Adjusted the app header, resume workbench, and optimized-version records to provide a stable path for AI resume optimization.
-
-### v0.1.1
-
-- Unified resume-import setup prompts and local fallback messaging across the Resume Editor, JD Matching, and Interview Assistant.
-- Improved external resume import with clearer button states, parsing progress, completion notice, and parsed-name based resume naming.
-- Fixed Aliyun Bailian / Qwen defaults after data reset, preserved AI test status after saving unchanged settings, and diversified demo job sources.
-- Fixed the setup dialog footer layout so action buttons stay inside the dialog.
-
-### v0.1.0
-
-- Initial open-source release with the resume library, structured resume editor, JD matching, application tracking, mock interviews, AI review, and local SQLite storage.
-
 ## FAQ
 
 ### 1. Do I need an API key to use it?
 
-No. Resume editing and application tracking work locally. AI features such as JD matching, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
+No. Resume editing and application tracking work locally. AI features such as JD matching, interview prep guides, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
 
 ### 2. Where is my data stored?
 

@@ -23,7 +23,6 @@ import {
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { InterviewWorkspace } from "@/components/interview/interview-workspace";
 import { SettingsView } from "@/components/settings/settings-view";
-import { inferJobIdentity } from "@/lib/job-identity";
 import { buildDashboardSummary, getDashboardDueDate } from "@/lib/dashboard";
 import { AI_ROUTE_WARMUP_PATHS, warmAiRoutes } from "@/lib/ai-route-prewarm";
 import {
@@ -517,10 +516,9 @@ export function CareerKitApp({
     if (!jd) throw new Error("请先粘贴职位描述 / 任职要求。");
     if (!isAiReady(aiSettings)) throw new Error(aiReadinessMessage(aiSettings));
 
-    const identity = inferJobIdentity(jd);
     const result = (await postJson("/api/jobs", {
-      company: identity.company,
-      title: identity.title,
+      company: "待填写公司",
+      title: "待分析岗位",
       city: "待填写",
       source: "JD匹配优化",
       deadline: null,
@@ -549,7 +547,7 @@ export function CareerKitApp({
       tailored = (await postJson("/api/ai/resume-tailor", {
         jobId: job.id,
         applicationId: application.id,
-        jd: `${identity.company} - ${identity.title}\n${jd}`,
+        jd,
         resumeVersionId: input.resumeVersionId,
         resumeContent: input.resumeContent,
         preferences: input.preferences,
@@ -588,7 +586,10 @@ export function CareerKitApp({
     setApplications((current) =>
       current.map((item) => (item.id === application.id ? { ...item, resumeVersionId: version.id } : item)),
     );
-    setToast(tailored.message ?? `${identity.title} 的优化后简历已生成。`);
+    setToast(
+      tailored.message ??
+        `${cleanOptimizationLabel(tailored.analysis.title) || "目标岗位"}的优化后简历已生成。`,
+    );
 
     return {
       job: {
@@ -988,7 +989,7 @@ function cleanOptimizationLabel(value?: string | null) {
   const text = value?.trim() ?? "";
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
-  return text.length > 32 ? "" : text;
+  return text.length > 100 ? "" : text;
 }
 
 function emptyResume(): ResumeContent {

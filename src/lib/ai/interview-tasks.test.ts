@@ -35,7 +35,7 @@ describe("interview AI tasks", () => {
       mode: "project",
       company: "美团",
       title: "后端开发实习生",
-      jd: "要求 Java、SQL 和接口设计",
+      jd: "美团｜后端开发实习生\n要求 Java、SQL 和接口设计",
       resume: { projects: [{ name: "校园二手交易平台" }] },
     });
 
@@ -43,6 +43,8 @@ describe("interview AI tasks", () => {
     expect(prompt).toContain("Java、SQL 和接口设计");
     expect(prompt).toContain("校园二手交易平台");
     expect(prompt).toContain("6 道");
+    expect(prompt).toContain("完整岗位名称");
+    expect(prompt).toContain("括号内限定词");
   });
 
   it("removes contact details and editor settings from interview prompts", () => {

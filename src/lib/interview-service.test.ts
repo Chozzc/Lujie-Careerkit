@@ -54,6 +54,35 @@ describe("interview service", () => {
     expect(created[0]?.status).toBe("IN_PROGRESS");
   });
 
+  it("uses the company and full role name identified by AI", async () => {
+    const created: InterviewSessionRecord[] = [];
+    const service = createInterviewService({
+      generateQuestions: async () => ({
+        company: "字节跳动",
+        title: "AI产品实习生（AI数据与安全）",
+        questions,
+      }),
+      generateReport: async () => report,
+      repository: createRepository(created),
+    });
+
+    const session = await service.createSession({
+      jobId: "",
+      resumeVersionId: null,
+      mode: "comprehensive",
+      context: {
+        company: "目标公司",
+        title: "目标岗位",
+        jd: "字节跳动 AI产品实习生（AI数据与安全）完整 JD",
+        resumeName: "姜禾的简历",
+        resume: { basics: { name: "姜禾" } },
+      },
+    });
+
+    expect(session.context.company).toBe("字节跳动");
+    expect(session.context.title).toBe("AI产品实习生（AI数据与安全）");
+  });
+
   it("saves one answer while preserving existing answers", async () => {
     const sessions = [baseSession()];
     sessions[0].answers["q-1"] = {

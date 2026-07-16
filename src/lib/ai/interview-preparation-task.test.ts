@@ -9,8 +9,6 @@ describe("interview preparation AI task", () => {
       jobId: "",
       resumeKey: "main",
       resumeVersionId: null,
-      company: "目标公司",
-      title: "目标岗位",
       jd: "1",
       resumeName: "主简历",
       resume: { basics: { name: "陈同学" } },
@@ -24,9 +22,7 @@ describe("interview preparation AI task", () => {
 
   it("builds a cross-industry, evidence-first prompt without private contact details", () => {
     const prompt = buildInterviewPreparationPrompt({
-      company: "美团",
-      title: "后端开发实习生",
-      jd: "负责 Java 服务端开发、接口设计、数据库优化和系统稳定性",
+      jd: "美团｜后端开发实习生\n负责 Java 服务端开发、接口设计、数据库优化和系统稳定性",
       resumeName: "后端开发简历",
       focus: "comprehensive",
       locale: "zh-CN",
@@ -44,6 +40,8 @@ describe("interview preparation AI task", () => {
     });
 
     expect(prompt).toContain("软件工程");
+    expect(prompt).toContain("完整岗位名称");
+    expect(prompt).toContain("括号内限定词");
     expect(prompt).toContain("not-shown");
     expect(prompt).toContain("capabilityProfile");
     expect(prompt).toContain("简历证据强弱");

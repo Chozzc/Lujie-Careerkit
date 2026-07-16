@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 export const interviewPreparationInputSchema = z.object({
-  company: z.string().trim().min(1).max(100),
-  title: z.string().trim().min(1).max(100),
   jd: z.string().trim().min(1).max(50_000),
   resumeName: z.string().trim().min(1).max(200),
   resume: z.unknown(),

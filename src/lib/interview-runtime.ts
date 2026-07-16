@@ -17,7 +17,7 @@ export const interviewService = createInterviewService({
       resume: input.context.resume,
     });
     if (result.source !== "ai") throw new Error(result.message);
-    return result.data.questions;
+    return result.data;
   },
   async generateReport(session) {
     const settings = await getEffectiveAiRuntimeSettings();

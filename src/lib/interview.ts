@@ -23,6 +23,8 @@ export const interviewQuestionSchema = z.object({
 });
 
 export const interviewQuestionPackSchema = z.object({
+  company: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(100),
   questions: z.array(interviewQuestionSchema),
 });
 
@@ -80,6 +82,7 @@ export const interviewReportSchema = z.object({
 });
 
 export type InterviewQuestion = z.infer<typeof interviewQuestionSchema>;
+export type InterviewQuestionPack = z.infer<typeof interviewQuestionPackSchema>;
 export type InterviewAnswer = z.infer<typeof interviewAnswerSchema>;
 export type InterviewContext = z.infer<typeof interviewContextSchema>;
 export type InterviewReport = z.infer<typeof interviewReportSchema>;
@@ -90,7 +93,7 @@ export function questionCountForMode(mode: InterviewMode) {
 }
 
 export function parseInterviewQuestionPack(mode: InterviewMode, input: unknown) {
-  const { questions } = interviewQuestionPackSchema.parse(input);
+  const { questions } = z.object({ questions: z.array(interviewQuestionSchema) }).parse(input);
   const expectedCount = questionCountForMode(mode);
   if (questions.length !== expectedCount) {
     throw new Error(`${mode === "comprehensive" ? "综合模拟" : "专项模拟"}需要生成 ${expectedCount} 道题。`);

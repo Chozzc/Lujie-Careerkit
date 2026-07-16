@@ -529,7 +529,7 @@ function cleanResultTitlePart(value?: string | null) {
   const text = value?.trim() ?? "";
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
-  return text.length > 32 ? "" : text;
+  return text.length > 100 ? "" : text;
 }
 
 function buildSyntheticJobForVersion(version: MatchResumeVersionView): MatchJobView {

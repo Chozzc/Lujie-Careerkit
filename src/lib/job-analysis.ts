@@ -56,11 +56,6 @@ export function analyzeJobInput(input: string): JobAnalysis {
     };
   }
 
-  const firstLine = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
-  const [companyCandidate, titleCandidate] = (firstLine ?? "").split(/\s*[-—|｜]\s*/);
   const deadlineMatch = text.match(/(?:截止|投递截止|ddl|DDL)[:：]?\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
   const keywords = KNOWN_KEYWORDS.filter((keyword) =>
     text.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()),
@@ -69,8 +64,8 @@ export function analyzeJobInput(input: string): JobAnalysis {
   const bonusLine = extractSection(text, ["加分项", "优先", "加分"]);
 
   return {
-    company: companyCandidate || "待填写公司",
-    title: titleCandidate || "待分析岗位",
+    company: "待填写公司",
+    title: "待分析岗位",
     deadline: deadlineMatch?.[1]?.replaceAll("/", "-") ?? null,
     requirements: splitMeaningful(requirementLine || text).slice(0, 5),
     keywords,
