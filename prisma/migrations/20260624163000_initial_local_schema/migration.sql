@@ -2,7 +2,7 @@
 CREATE TABLE "Resume" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
-    "content" JSONB NOT NULL,
+    "content" JSON NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -12,7 +12,7 @@ CREATE TABLE "ResumeVersion" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "summary" TEXT NOT NULL,
-    "content" JSONB NOT NULL,
+    "content" JSON NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
     "resumeId" TEXT NOT NULL,
@@ -31,8 +31,8 @@ CREATE TABLE "Job" (
     "jd" TEXT NOT NULL,
     "link" TEXT NOT NULL,
     "deadline" DATETIME,
-    "tags" JSONB NOT NULL,
-    "analysis" JSONB,
+    "tags" JSON NOT NULL,
+    "analysis" JSON,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL
 );
@@ -70,10 +70,10 @@ CREATE TABLE "InterviewSession" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "mode" TEXT NOT NULL DEFAULT 'comprehensive',
     "status" TEXT NOT NULL DEFAULT 'IN_PROGRESS',
-    "context" JSONB,
-    "questions" JSONB NOT NULL,
-    "answers" JSONB NOT NULL,
-    "feedback" JSONB NOT NULL,
+    "context" JSON,
+    "questions" JSON NOT NULL,
+    "answers" JSON NOT NULL,
+    "feedback" JSON NOT NULL,
     "currentQuestionIndex" INTEGER NOT NULL DEFAULT 0,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL,
