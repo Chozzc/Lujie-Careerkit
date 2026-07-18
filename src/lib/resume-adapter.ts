@@ -366,6 +366,8 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
       const previous = saved.content as SkillsContent;
       const next = generated.content as SkillsContent;
       if (!next.categories.length) return saved;
+      const nextSkills = next.categories.flatMap((category) => category.skills);
+      if (JSON.stringify(previous.categories.flatMap((category) => category.skills)) === JSON.stringify(nextSkills)) return saved;
       const [firstCategory, ...otherCategories] = previous.categories;
       return {
         ...saved,
@@ -374,7 +376,7 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
           categories: [
             {
               ...(firstCategory ?? { id: generateId("skills"), name: "核心技能" }),
-              skills: next.categories.flatMap((category) => category.skills),
+              skills: nextSkills,
             },
             ...otherCategories,
           ],
