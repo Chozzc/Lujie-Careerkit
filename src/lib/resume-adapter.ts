@@ -367,7 +367,8 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
       const next = generated.content as SkillsContent;
       if (!next.categories.length) return saved;
       const nextSkills = next.categories.flatMap((category) => category.skills);
-      if (JSON.stringify(previous.categories.flatMap((category) => category.skills)) === JSON.stringify(nextSkills)) return saved;
+      const previousSkills = new Set(previous.categories.flatMap((category) => category.skills));
+      if (previousSkills.size === new Set(nextSkills).size && nextSkills.every((skill) => previousSkills.has(skill))) return saved;
       const [firstCategory, ...otherCategories] = previous.categories;
       return {
         ...saved,
