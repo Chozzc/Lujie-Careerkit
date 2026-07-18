@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { contentToJadeResume, jadeResumeToContent } from "./resume-adapter";
 import type { ResumeContent } from "./types";
-import type { PersonalInfoContent, WorkExperienceContent } from "@/types/resume";
+import type { PersonalInfoContent, SkillsContent, WorkExperienceContent } from "@/types/resume";
 
 const baseResume: ResumeContent = {
   basics: {
@@ -214,6 +214,25 @@ describe("resume content adapter", () => {
 
     expect(content.experiences[0].logo).toBe(logo);
     expect(content.projects[0].logo).toBe(logo);
+  });
+
+  it("keeps skill category keywords isolated after saving and reopening", () => {
+    const jadeResume = contentToJadeResume({ ...baseResume, skills: ["TypeScript"] });
+    const skills = jadeResume.sections.find((section) => section.type === "skills")!;
+    skills.content = {
+      categories: [
+        { id: "frontend", name: "前端", skills: ["TypeScript", "React"] },
+        { id: "tools", name: "工具", skills: ["Git", "Docker"] },
+      ],
+    } satisfies SkillsContent;
+
+    const reopened = contentToJadeResume(jadeResumeToContent(jadeResume));
+    const reopenedSkills = reopened.sections.find((section) => section.type === "skills")?.content as SkillsContent;
+
+    expect(reopenedSkills.categories).toEqual([
+      { id: "frontend", name: "前端", skills: ["TypeScript", "React"] },
+      { id: "tools", name: "工具", skills: ["Git", "Docker"] },
+    ]);
   });
 
   it("maps imported custom titled sections into editor custom modules", () => {
