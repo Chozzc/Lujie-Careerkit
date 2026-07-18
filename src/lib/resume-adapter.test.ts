@@ -235,6 +235,27 @@ describe("resume content adapter", () => {
     ]);
   });
 
+  it("keeps skill categories isolated when the flattened skills are reordered", () => {
+    const jadeResume = contentToJadeResume({ ...baseResume, skills: ["TypeScript"] });
+    const skills = jadeResume.sections.find((section) => section.type === "skills")!;
+    skills.content = {
+      categories: [
+        { id: "frontend", name: "前端", skills: ["TypeScript", "React"] },
+        { id: "tools", name: "工具", skills: ["Git", "Docker"] },
+      ],
+    } satisfies SkillsContent;
+    const savedContent = jadeResumeToContent(jadeResume);
+    savedContent.skills = ["Git", "Docker", "TypeScript", "React"];
+
+    const reopened = contentToJadeResume(savedContent);
+    const reopenedSkills = reopened.sections.find((section) => section.type === "skills")?.content as SkillsContent;
+
+    expect(reopenedSkills.categories).toEqual([
+      { id: "frontend", name: "前端", skills: ["TypeScript", "React"] },
+      { id: "tools", name: "工具", skills: ["Git", "Docker"] },
+    ]);
+  });
+
   it("maps imported custom titled sections into editor custom modules", () => {
     const jadeResume = contentToJadeResume({
       ...baseResume,
