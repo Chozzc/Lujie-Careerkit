@@ -5,9 +5,8 @@
 <h1 align="center">LuJie CareerKit</h1>
 
 <p align="center">
-  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, role-specific interview preparation, application tracking, mock interviews, and interview review.</strong>
+  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, application tracking, mock interviews, and review.</strong>
 </p>
-
 <p align="center">
   English · <a href="README.zh-CN.md">简体中文</a>
 </p>
@@ -27,7 +26,7 @@
 
 ## Overview
 
-LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview preparation, mock practice, and AI review into one AI-powered career workspace. You can maintain different resume versions for different roles, turn a complete JD into sharper resume wording and a role-specific interview prep guide, track every application, and keep refining knowledge, answers, feedback, and review notes.
+LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview preparation, mock practice, and AI review into one AI-powered career workspace. You can maintain different resume versions for different roles, use job descriptions to generate resume wording and role-specific interview prep guides that better match role requirements, track every application, and keep refining knowledge, answers, feedback, and review notes.
 
 ## Online Preview
 
@@ -161,7 +160,6 @@ AI features stay disabled until the settings are saved and the connection test s
 
 #### Resume and JD workflows
 
-- Strengthened JD input guidance so users provide the company name, full role title, responsibilities, requirements, nice-to-haves, and business context together.
 - Fixed resume import and optimization integrity: work, internship, and project entries stay separate; personal summaries and self-reviews remain separate; deleted sections are not restored by later operations.
 - AI requests now remove contact details, logos, editor settings, and internal base snapshots before sending resume context to a model.
 
