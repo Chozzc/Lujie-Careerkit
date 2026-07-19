@@ -49,7 +49,7 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 
 ## Highlights
 
-- **Structured resume editing**: maintain multiple resume versions, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
+- **Structured resume editing**: maintain multiple resume versions, create an independent copy of any resume for experimental edits, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
 - **AI resume optimization**: generate a general AI-optimized resume version from the editor, compare before and after, and keep refining it with the same templates.
 - **JD matching**: paste a complete JD with the company, full role title, requirements, and responsibilities, then let AI diagnose evidence, reorder emphasis, improve wording, and save a role-specific version without inventing experience.
 - **Role-specific interview prep**: combine a selected resume with a complete JD to generate and save a guide with an overview, capability profile, evidence gaps, core knowledge, experience deep dives, targeted questions, and a preparation plan.
@@ -85,7 +85,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. After v0.2.0 is published, use `v0.2.0` to pin that release.
+Use `latest` to follow the newest `main` build. After v0.2.1 is published, use `v0.2.1` to pin that release.
 
 ### Local Development
 
@@ -139,6 +139,18 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.2.1
+
+#### Resume copies and version maintenance
+
+- Create an independent copy from the resume library or editor and continue editing it immediately. The original stays unchanged, and the new copy does not inherit application, job, or interview links.
+- Copies preserve all resume content, sections, templates, and themes. Repeated copies are named “Copy”, “Copy 2”, and so on to avoid ambiguity.
+- Copies created from AI-optimized resumes retain all optimized content while removing internal optimization snapshots and job links, making them ordinary, independently maintained resume versions.
+
+#### Resume stability
+
+- Fixed skill categories being merged or duplicated after saving, reopening, or reordering the flattened skill list.
+
 ### v0.2.0
 
 #### Interview preparation workflow
@@ -163,13 +175,6 @@ AI features stay disabled until the settings are saved and the connection test s
 
 - Fixed PDF text extraction so supported PDFs can be structurally imported. With a configured non-Bailian model, extracted PDF and Word text can also be restored by AI into an editable resume; Alibaba Bailian API remains recommended for images and complex files.
 - Updated some built-in provider and model candidates, and improved resume-import progress and setup guidance.
-
-### v0.1.8
-
-- The canvas now pans with either the left or middle mouse button; the wheel still zooms.
-- Simplified application tracking by removing manual priority and showing Dashboard actions by upcoming dates.
-- Updated built-in application dates and notes. AI features default to enabled, while a working provider and API key are still required.
-- Removed the duplicate language setting in favor of the top-bar switcher.
 
 ## FAQ
 

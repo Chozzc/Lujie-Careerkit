@@ -160,6 +160,33 @@ export function buildResumeEditorPath(target: ResumeLibrarySaveTarget) {
   return target.kind === "version" ? `/resume/edit?version=${encodeURIComponent(target.id)}` : "/resume/edit";
 }
 
+export function buildResumeCopy(
+  content: ResumeContent,
+  sourceTitle: string,
+  existingTitles: string[],
+  copyLabel: string,
+) {
+  const copy = structuredClone(content) as ResumeContent & {
+    _tailoringBaseResume?: unknown;
+    _optimizationMeta?: unknown;
+  };
+  delete copy._tailoringBaseResume;
+  delete copy._optimizationMeta;
+
+  const suffix = ` - ${copyLabel.trim() || "副本"}`;
+  const suffixPattern = new RegExp(`${escapeRegExp(suffix)}(?: \\d+)?$`, "i");
+  const rootTitle = (sourceTitle.trim() || resolveResumeContentTitle(copy)).replace(suffixPattern, "");
+  const baseTitle = `${rootTitle}${suffix}`;
+  const usedTitles = new Set(existingTitles.map((title) => title.trim().toLowerCase()));
+  let title = baseTitle;
+  for (let index = 2; usedTitles.has(title.toLowerCase()); index += 1) {
+    title = `${baseTitle} ${index}`;
+  }
+
+  copy.editor = { ...copy.editor, displayName: title };
+  return { content: copy, title };
+}
+
 export function getValidResumeTemplate(template?: string) {
   return TEMPLATES.includes(template as (typeof TEMPLATES)[number]) ? template! : "modern";
 }
@@ -209,4 +236,8 @@ export function hasResumeContent(content: ResumeContent) {
       content.awards.length ||
       content.selfReview.trim(),
   );
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

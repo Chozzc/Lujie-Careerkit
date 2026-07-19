@@ -124,6 +124,8 @@
       "gridView": "网格视图",
       "listView": "列表视图",
       "empty": "没有匹配的简历",
+      "copy": "创建副本",
+      "copySuffix": "副本",
       "deleteOriginal": "删除原简历",
       "deleteResume": "删除简历",
       "kind": {

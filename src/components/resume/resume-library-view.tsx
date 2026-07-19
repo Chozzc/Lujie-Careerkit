@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
-import { ArrowDownUp, LayoutGrid, List, Plus, Search, Trash2, Upload } from "lucide-react";
+import { ArrowDownUp, Copy, LayoutGrid, List, Plus, Search, Trash2, Upload } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,9 @@ export function ResumeLibraryView({
   onSortModeChange,
   onViewModeChange,
   onOpenCard,
+  onCopyCard,
   onDeleteCard,
+  copyingCardId,
 }: {
   cards: ResumeLibraryCard[];
   status: string;
@@ -44,7 +46,9 @@ export function ResumeLibraryView({
   onSortModeChange: (value: ResumeLibrarySortMode) => void;
   onViewModeChange: (value: ResumeLibraryViewMode) => void;
   onOpenCard: (card: ResumeLibraryCard) => void;
+  onCopyCard: (card: ResumeLibraryCard) => void;
   onDeleteCard: (card: ResumeLibraryCard) => void;
+  copyingCardId?: string;
 }) {
   const t = useTranslations("app.resumeLibrary");
   const optimizedCount = cards.filter((card) => card.kind === "优化后简历").length;
@@ -148,7 +152,9 @@ export function ResumeLibraryView({
               card={card}
               viewMode={viewMode}
               onOpen={() => onOpenCard(card)}
+              onCopy={() => onCopyCard(card)}
               onDelete={() => onDeleteCard(card)}
+              copyDisabled={Boolean(copyingCardId)}
             />
           ))}
         </div>
@@ -167,12 +173,16 @@ function ResumeCard({
   card,
   viewMode,
   onOpen,
+  onCopy,
   onDelete,
+  copyDisabled,
 }: {
   card: ResumeLibraryCard;
   viewMode: ResumeLibraryViewMode;
   onOpen: () => void;
+  onCopy: () => void;
   onDelete: () => void;
+  copyDisabled: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations("app.resumeLibrary");
@@ -215,6 +225,19 @@ function ResumeCard({
             <span className="rounded-full bg-surface-mid px-2 py-1 text-[0.6875rem] text-muted-foreground">
               {kindLabel}
             </span>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCopy();
+              }}
+              disabled={copyDisabled}
+              className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-primary-soft hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={t("copy")}
+              title={t("copy")}
+            >
+              <Copy className="h-4 w-4" />
+            </button>
             <button
               type="button"
               onClick={(event) => {

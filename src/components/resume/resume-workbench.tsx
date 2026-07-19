@@ -4,6 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  Copy,
   Download,
   Palette,
   PanelRightOpen,
@@ -38,6 +39,7 @@ import { contentToJadeResume, jadeResumeToContent } from "@/lib/resume-adapter";
 import { buildDocxThemeConfig, type DocxThemeConfig } from "@/lib/resume-docx-style";
 import {
   buildResumeEditorPath,
+  buildResumeCopy,
   buildResumeLibraryCards,
   type ResumeLibrarySortMode,
 } from "@/lib/resume-library";
@@ -128,6 +130,7 @@ export function ResumeWorkbench({
   onDeleteVersion,
 }: ResumeWorkbenchProps) {
   const t = useTranslations("resumeWorkbench");
+  const libraryT = useTranslations("app.resumeLibrary");
   const templateT = useTranslations("app.resumeLibrary.templates");
   const savedStatus = t("status.saved");
   const importReviewStatus = t("status.importReview");
@@ -149,6 +152,7 @@ export function ResumeWorkbench({
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isImportingResume, setIsImportingResume] = useState(false);
   const [isOptimizingResume, setIsOptimizingResume] = useState(false);
+  const [copyingResumeId, setCopyingResumeId] = useState<string>();
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
   const [optimizeAiSetupDialogOpen, setOptimizeAiSetupDialogOpen] = useState(false);
   const [showImportReviewNotice, setShowImportReviewNotice] = useState(false);
@@ -378,6 +382,41 @@ export function ResumeWorkbench({
     openEditor(blankResume, t("untitled"), { kind: "new" });
   }
 
+  async function createResumeCopy(content: ResumeContent, title: string, sourceId: string) {
+    if (copyingResumeId) return;
+    const copy = buildResumeCopy(
+      content,
+      title,
+      [buildResumeTitle(resume), ...versions.map(versionTitle)],
+      libraryT("copySuffix"),
+    );
+    setCopyingResumeId(sourceId);
+    setStatus(t("status.saving"));
+    try {
+      const result = await saveResume(copy.content, { kind: "new" }, copy.title);
+      if (result.kind === "version") {
+        openEditor(result.version.content, versionTitle(result.version), { kind: "version", id: result.version.id });
+      }
+    } catch {
+      setStatus(t("status.saveFailed"));
+    } finally {
+      setCopyingResumeId(undefined);
+    }
+  }
+
+  function handleCopyResume(card: (typeof resumeCards)[number]) {
+    return createResumeCopy(card.content, card.title, card.id);
+  }
+
+  function handleCopyCurrentResume() {
+    const state = useResumeStore.getState();
+    if (!state.currentResume) return;
+    const liveResume: Resume = { ...state.currentResume, sections: state.sections };
+    const content = jadeResumeToContent(liveResume);
+    const title = resolveResumeTitle(content, editingTitle);
+    return createResumeCopy(withResumeDisplayName(content, title), title, "editor");
+  }
+
   function showImportReviewStatus() {
     if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
     setShowImportReviewNotice(true);
@@ -543,6 +582,8 @@ export function ResumeWorkbench({
           onSortModeChange={setSortMode}
           onViewModeChange={setViewMode}
           onOpenCard={(card) => openEditor(card.content, card.title, card.target)}
+          onCopyCard={(card) => void handleCopyResume(card)}
+          copyingCardId={copyingResumeId}
           onDeleteCard={(card) => {
             if (card.id === "main") {
               onDeleteMainResume();
@@ -606,6 +647,13 @@ export function ResumeWorkbench({
               showText
               disabled={isOptimizingResume || isSaving}
               onClick={() => void handleOptimizeResume()}
+            />
+            <ToolbarButton
+              icon={Copy}
+              label={libraryT("copy")}
+              showText
+              disabled={Boolean(copyingResumeId) || isSaving}
+              onClick={() => void handleCopyCurrentResume()}
             />
             <Button
               variant="ghost"

@@ -124,6 +124,8 @@
       "gridView": "Grid view",
       "listView": "List view",
       "empty": "No matching resumes",
+      "copy": "Create copy",
+      "copySuffix": "Copy",
       "deleteOriginal": "Delete original resume",
       "deleteResume": "Delete resume",
       "kind": {

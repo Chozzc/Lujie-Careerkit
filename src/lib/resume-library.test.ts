@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ResumeContent } from "./types";
-import { buildResumeEditorPath, buildResumeLibraryCards } from "./resume-library";
+import { buildResumeCopy, buildResumeEditorPath, buildResumeLibraryCards } from "./resume-library";
 
 const baseContent: ResumeContent = {
   basics: { name: "林泽宇", email: "", phone: "", city: "", links: [] },
@@ -148,5 +148,28 @@ describe("resume library cards", () => {
     expect(buildResumeEditorPath({ kind: "version", id: "rv with spaces" })).toBe(
       "/resume/edit?version=rv%20with%20spaces",
     );
+  });
+
+  it("creates an independent, uniquely named copy without optimization metadata", () => {
+    const optimized = {
+      ...baseContent,
+      editor: { displayName: "林泽宇的简历" },
+      _tailoringBaseResume: baseContent,
+      _optimizationMeta: { title: "后端开发实习生" },
+    } as ResumeContent;
+
+    const result = buildResumeCopy(
+      optimized,
+      "林泽宇的简历 - 副本",
+      ["林泽宇的简历", "林泽宇的简历 - 副本"],
+      "副本",
+    );
+
+    expect(result.title).toBe("林泽宇的简历 - 副本 2");
+    expect(result.content.editor?.displayName).toBe(result.title);
+    expect(result.content).not.toHaveProperty("_tailoringBaseResume");
+    expect(result.content).not.toHaveProperty("_optimizationMeta");
+    expect(result.content).not.toBe(optimized);
+    expect(result.content.basics).not.toBe(optimized.basics);
   });
 });
