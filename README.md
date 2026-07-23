@@ -183,11 +183,6 @@ AI features stay disabled until the settings are saved and the connection test s
 - Fixed invalid resume snapshot fallback, optimized-version deduplication, and related workflow consistency issues.
 - Aligned the Control Center route and project repository entry.
 
-### v0.1.9
-
-- Fixed PDF text extraction so supported PDFs can be structurally imported. With a configured non-Bailian model, extracted PDF and Word text can also be restored by AI into an editable resume; Alibaba Bailian API remains recommended for images and complex files.
-- Updated some built-in provider and model candidates, and improved resume-import progress and setup guidance.
-
 ## FAQ
 
 ### 1. Do I need an API key to use it?
