@@ -646,7 +646,8 @@
     "aiSetup": {
       "title": "AI setup required",
       "later": "Later",
-      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a working model provider and has no local fallback."
+      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a working model provider and has no local fallback.",
+      "applicationMessage": "Generating cover letters and greetings requires a working AI model. Enable AI in Settings and test the connection first."
     },
     "toolbar": {
       "back": "Back to resumes",
@@ -659,6 +660,7 @@
       "redo": "Redo",
       "optimizing": "Optimizing...",
       "optimize": "AI optimize resume",
+      "applicationMessage": "Cover letter",
       "export": "Export",
       "closeTheme": "Close theme",
       "theme": "Theme",
@@ -689,6 +691,39 @@
           "subtitle": "High-resolution paged images"
         }
       }
+    },
+    "applicationMessageDialog": {
+      "title": "Cover letter and greeting",
+      "description": "Generate application copy from the current resume and job description. AI only uses facts you provide.",
+      "kinds": {
+        "coverLetter": {
+          "title": "Cover letter",
+          "description": "For recruiting posts, email, and formal applications: complete, courteous, and role-specific.",
+          "extraPlaceholder": "For example: available immediately, interested in a long-term internship, and drawn to the team's product direction. Include facts only."
+        },
+        "greeting": {
+          "title": "Greeting",
+          "description": "For direct recruiter chat: lead with availability and the strongest matching evidence.",
+          "extraPlaceholder": "For example: available immediately for six months, five days per week; graduating in June 2027."
+        }
+      },
+      "jdLabel": "Job description / JD",
+      "jdPlaceholder": "Paste the recruiting post or full job description, including responsibilities, requirements, and preferred qualifications.",
+      "extraLabel": "Additional details",
+      "extraHint": "Optional; never inferred",
+      "resultLabel": "Generated result",
+      "editableHint": "Edit before copying",
+      "jdRequired": "Paste the job description first.",
+      "generating": "Generating from your resume and the job requirements...",
+      "done": "Generated. Review all facts before use.",
+      "failed": "Generation failed. Try again later.",
+      "copied": "Copied",
+      "copyFailed": "Copy failed. Select the text and copy it manually.",
+      "close": "Close",
+      "copy": "Copy text",
+      "generate": "Generate",
+      "regenerate": "Regenerate",
+      "generatingButton": "Generating..."
     },
     "themePanel": {
       "title": "Theme editor",

@@ -646,7 +646,8 @@
     "aiSetup": {
       "title": "需要配置 AI",
       "later": "稍后再说",
-      "optimizeMessage": "AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置可用的模型服务，暂不支持本地兜底。"
+      "optimizeMessage": "AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置可用的模型服务，暂不支持本地兜底。",
+      "applicationMessage": "生成求职信和招呼语需要可用的 AI 模型服务。请先在设置页开启 AI 并测试连接。"
     },
     "toolbar": {
       "back": "返回我的简历",
@@ -659,6 +660,7 @@
       "redo": "重做",
       "optimizing": "优化中...",
       "optimize": "AI优化简历",
+      "applicationMessage": "求职信",
       "export": "导出",
       "closeTheme": "关闭主题",
       "theme": "主题",
@@ -689,6 +691,39 @@
           "subtitle": "分页高清长图"
         }
       }
+    },
+    "applicationMessageDialog": {
+      "title": "求职信与招呼语",
+      "description": "根据当前简历和职位描述生成可直接使用的申请文本。AI 只会使用你提供的真实信息。",
+      "kinds": {
+        "coverLetter": {
+          "title": "求职信",
+          "description": "适合招聘笔记私信、邮件和正式投递，完整、礼貌并突出岗位匹配。",
+          "extraPlaceholder": "例如：可立即到岗、希望长期实习；关注该团队的产品方向。只填写真实情况。"
+        },
+        "greeting": {
+          "title": "招呼语",
+          "description": "适合 Boss 直聘等即时沟通，先讲到岗条件和核心匹配点。",
+          "extraPlaceholder": "例如：可立即到岗，可连续实习 6 个月，每周 5 天，毕业时间为 2027 年 6 月。"
+        }
+      },
+      "jdLabel": "职位描述 / JD",
+      "jdPlaceholder": "粘贴招聘笔记或完整职位描述，包括岗位职责、任职要求和加分项。",
+      "extraLabel": "补充信息",
+      "extraHint": "选填，不会擅自推测",
+      "resultLabel": "生成结果",
+      "editableHint": "可以直接修改后复制",
+      "jdRequired": "请先粘贴职位描述 / JD。",
+      "generating": "正在结合简历和职位要求生成...",
+      "done": "生成完成，请核对事实后使用。",
+      "failed": "生成失败，请稍后重试。",
+      "copied": "已复制",
+      "copyFailed": "复制失败，请手动选择文本复制。",
+      "close": "关闭",
+      "copy": "复制文本",
+      "generate": "生成",
+      "regenerate": "重新生成",
+      "generatingButton": "生成中..."
     },
     "themePanel": {
       "title": "主题编辑",

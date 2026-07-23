@@ -162,7 +162,7 @@ export function CareerKitApp({
     if (active === "match") {
       void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.jobCreate, AI_ROUTE_WARMUP_PATHS.match]);
     } else if (active === "resume") {
-      void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.optimize]);
+      void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.optimize, AI_ROUTE_WARMUP_PATHS.applicationMessage]);
     } else if (active === "interview") {
       void warmAiRoutes([AI_ROUTE_WARMUP_PATHS.interview]);
     }

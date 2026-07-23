@@ -50,6 +50,7 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 
 - **Structured resume editing**: maintain multiple resume versions, create an independent copy of any resume for experimental edits, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
 - **AI resume optimization**: generate a general AI-optimized resume version from the editor, compare before and after, and keep refining it with the same templates.
+- **Cover letters and recruiter greetings**: combine the current resume, a complete JD, and user-provided availability details to generate a formal cover letter or a concise recruiter-chat opener, then edit, copy, or regenerate the result.
 - **JD matching**: paste a complete JD with the company, full role title, requirements, and responsibilities, then let AI diagnose evidence, reorder emphasis, improve wording, and save a role-specific version without inventing experience.
 - **Role-specific interview prep**: combine a selected resume with a complete JD to generate and save a guide with an overview, capability profile, evidence gaps, core knowledge, experience deep dives, targeted questions, and a preparation plan.
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, notes, JD text, and linked resume versions.
@@ -84,7 +85,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. After v0.2.1 is published, use `v0.2.1` to pin that release.
+Use `latest` to follow the newest `main` build. After v0.2.2 is published, use `v0.2.2` to pin that release.
 
 ### Local Development
 
@@ -137,6 +138,19 @@ OPENAI_MODEL="qwen3.6-flash"
 AI features stay disabled until the settings are saved and the connection test succeeds.
 
 ## Release Notes
+
+### v0.2.2
+
+#### Cover letters and recruiter greetings
+
+- Added a Cover Letter action between “Create copy” and “Export” in the resume editor. It uses the current unsaved editor content and a complete JD, so users do not need to save first.
+- Cover letters target recruiting-post messages, email, and formal applications with a courteous, complete, role-specific structure. Recruiter greetings target direct-chat platforms such as Boss Zhipin and lead with availability, internship duration, weekly attendance, and the strongest matching evidence.
+- Users can add factual availability, graduation, and motivation details, then edit, copy, or regenerate the output. Each writing mode keeps its own generated result.
+
+#### Truthfulness and privacy
+
+- Start date, internship duration, and weekly attendance are used only when the user explicitly provides them. Requirements found only in the JD are never presented as candidate capabilities.
+- AI requests continue to remove email addresses, phone numbers, personal links, logos, editor settings, and internal optimization metadata, with bounded input and schema-validated output.
 
 ### v0.2.1
 

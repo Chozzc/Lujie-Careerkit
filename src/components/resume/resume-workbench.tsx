@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Copy,
   Download,
+  Mail,
   Palette,
   PanelRightOpen,
   Redo2,
@@ -19,6 +20,7 @@ import { useTranslations } from "next-intl";
 import { EditorCanvas } from "@/components/editor/editor-canvas";
 import { EditorPreviewPanel } from "@/components/editor/editor-preview-panel";
 import { EditorSidebar } from "@/components/editor/editor-sidebar";
+import { ApplicationMessageDialog } from "@/components/resume/application-message-dialog";
 import { ResumeExportDialog, type ResumeExportFormat } from "@/components/resume/resume-export-dialog";
 import { ResumeLibraryView, type ResumeLibraryViewMode } from "@/components/resume/resume-library-view";
 import { ResumeTemplateBar } from "@/components/resume/resume-template-bar";
@@ -148,6 +150,8 @@ export function ResumeWorkbench({
   const [showThemePanel, setShowThemePanel] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportingFormat, setExportingFormat] = useState<ResumeExportFormat | null>(null);
+  const [applicationMessageDialogOpen, setApplicationMessageDialogOpen] = useState(false);
+  const [applicationMessageResume, setApplicationMessageResume] = useState<ResumeContent>(initialVersion?.content ?? resume);
   const [search, setSearch] = useState("");
   const [sortMode, setSortMode] = useState<SortMode>("recent");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -156,6 +160,7 @@ export function ResumeWorkbench({
   const [copyingResumeId, setCopyingResumeId] = useState<string>();
   const [aiSetupDialogOpen, setAiSetupDialogOpen] = useState(false);
   const [optimizeAiSetupDialogOpen, setOptimizeAiSetupDialogOpen] = useState(false);
+  const [applicationMessageAiSetupDialogOpen, setApplicationMessageAiSetupDialogOpen] = useState(false);
   const [showImportReviewNotice, setShowImportReviewNotice] = useState(false);
   const localImportFallbackRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -506,6 +511,21 @@ export function ResumeWorkbench({
     }
   }
 
+  function openApplicationMessageDialog() {
+    if (!optimizeAiReady) {
+      setApplicationMessageAiSetupDialogOpen(true);
+      return;
+    }
+
+    const state = useResumeStore.getState();
+    if (!state.currentResume) return;
+    const liveResume: Resume = { ...state.currentResume, sections: state.sections };
+    const content = jadeResumeToContent(liveResume);
+    const resolvedTitle = resolveResumeTitle(content, editingTitle);
+    setApplicationMessageResume(withResumeDisplayName(content, resolvedTitle));
+    setApplicationMessageDialogOpen(true);
+  }
+
   function handleTemplateChange(template: string) {
     setTemplate(template);
   }
@@ -563,6 +583,15 @@ export function ResumeWorkbench({
       onOpenSettings={onOpenSettings}
     />
   );
+  const applicationMessageAiSetupDialog = (
+    <AiSetupRequiredDialog
+      open={applicationMessageAiSetupDialogOpen}
+      title={t("aiSetup.title")}
+      message={t("aiSetup.applicationMessage")}
+      onOpenChange={setApplicationMessageAiSetupDialogOpen}
+      onOpenSettings={onOpenSettings}
+    />
+  );
 
   if (mode === "library") {
     return (
@@ -595,6 +624,7 @@ export function ResumeWorkbench({
         />
         {importAiSetupDialog}
         {optimizeAiSetupDialog}
+        {applicationMessageAiSetupDialog}
       </>
     );
   }
@@ -656,6 +686,13 @@ export function ResumeWorkbench({
               disabled={Boolean(copyingResumeId) || isSaving}
               onClick={() => void handleCopyCurrentResume()}
             />
+            <ToolbarButton
+              icon={Mail}
+              label={t("toolbar.applicationMessage")}
+              showText
+              disabled={isSaving}
+              onClick={openApplicationMessageDialog}
+            />
             <Button
               variant="ghost"
               size="sm"
@@ -692,8 +729,16 @@ export function ResumeWorkbench({
           onOpenChange={setExportDialogOpen}
           onExport={handleExport}
         />
+        {applicationMessageDialogOpen ? (
+          <ApplicationMessageDialog
+            open
+            resume={applicationMessageResume}
+            onOpenChange={setApplicationMessageDialogOpen}
+          />
+        ) : null}
         {importAiSetupDialog}
         {optimizeAiSetupDialog}
+        {applicationMessageAiSetupDialog}
 
         <div className="flex min-h-0 flex-1">
           <div className="hidden md:block">
