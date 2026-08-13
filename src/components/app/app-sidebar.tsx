@@ -9,11 +9,11 @@ import { navGroups } from "@/components/app/navigation";
 
 export function AppSidebar({
   active,
-  isResumeEditor,
+  hidden,
   onNavigate,
 }: {
   active: NavKey;
-  isResumeEditor: boolean;
+  hidden: boolean;
   onNavigate: (key: NavKey) => void;
 }) {
   const t = useTranslations("app");
@@ -22,7 +22,7 @@ export function AppSidebar({
     <aside
       className={cn(
         "no-print fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-line bg-surface-low px-4 py-6 lg:flex",
-        isResumeEditor && "lg:hidden",
+        hidden && "lg:hidden",
       )}
     >
       <div className="mb-8 flex flex-col items-center">

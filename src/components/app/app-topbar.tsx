@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 export function AppTopbar({
   active,
-  isResumeEditor,
+  hidden,
   headerMenu,
   setHeaderMenu,
   followUpReminders,
@@ -25,7 +25,7 @@ export function AppTopbar({
   onNavigate,
 }: {
   active: NavKey;
-  isResumeEditor: boolean;
+  hidden: boolean;
   headerMenu: HeaderMenuKey | null;
   setHeaderMenu: Dispatch<SetStateAction<HeaderMenuKey | null>>;
   followUpReminders: Array<{ application: ApplicationView; job?: JobView; dueDate: string | null }>;
@@ -40,7 +40,7 @@ export function AppTopbar({
     <header
       className={cn(
         "no-print sticky top-0 z-20 border-b border-line bg-background/85 px-4 py-3 backdrop-blur lg:ml-72 lg:px-8",
-        isResumeEditor && "hidden",
+        hidden && "hidden",
       )}
     >
       <div className="flex items-center justify-between gap-4">

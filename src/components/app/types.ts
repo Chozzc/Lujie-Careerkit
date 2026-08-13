@@ -15,6 +15,7 @@ export type JobView = {
   tags: string[];
   analysis: JobAnalysis | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 export type ApplicationView = {

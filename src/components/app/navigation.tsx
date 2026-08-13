@@ -1,6 +1,7 @@
 import {
   ClipboardList,
   FileText,
+  FolderArchive,
   LayoutDashboard,
   Mic,
   Settings,
@@ -18,6 +19,7 @@ export const navItems: NavItem[] = [
   { key: "match", labelKey: "match", icon: Target },
   { key: "interview", labelKey: "interview", icon: Mic },
   { key: "pipeline", labelKey: "pipeline", icon: ClipboardList },
+  { key: "library", labelKey: "library", icon: FolderArchive },
   { key: "settings", labelKey: "settings", icon: Settings },
 ];
 

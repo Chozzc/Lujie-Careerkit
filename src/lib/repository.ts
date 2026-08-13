@@ -462,6 +462,7 @@ export async function getAppData() {
       tags: job.tags as string[],
       analysis: job.analysis as JobAnalysis | null,
       createdAt: job.createdAt.toISOString(),
+      updatedAt: job.updatedAt.toISOString(),
     })),
     applications: applications.map((application) => ({
       id: application.id,

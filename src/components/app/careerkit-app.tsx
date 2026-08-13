@@ -56,6 +56,16 @@ import {
   attachGeneralResumeOptimizationState,
   readGeneralResumeOptimizationStages,
 } from "@/lib/resume-optimization-state";
+import { CareerLibraryView } from "@/components/library/career-library-view";
+import { CareerLibraryWorkspace } from "@/components/library/career-library-workspace";
+import {
+  careerLibraryTargetPath,
+  parseCareerLibraryTarget,
+  readCareerLibraryGroup,
+  type CareerArtifact,
+  type CareerLibraryGroup,
+  type CareerLibraryTarget,
+} from "@/lib/career-library";
 
 type ResumeMode = "library" | "editor";
 type ResumeOptimizationRequest = {
@@ -87,17 +97,23 @@ export function CareerKitApp({
   initialView = "dashboard",
   initialResumeMode = "library",
   initialResumeVersionId,
+  initialLibraryTarget = null,
+  initialLibraryGroup = "job",
 }: {
   initialData: InitialData;
   initialView?: NavKey;
   initialResumeMode?: ResumeMode;
   initialResumeVersionId?: string;
+  initialLibraryTarget?: CareerLibraryTarget | null;
+  initialLibraryGroup?: CareerLibraryGroup;
 }) {
   const t = useTranslations("app");
   const optimizationT = useTranslations("optimizationResult");
   const [active, setActive] = useState<NavKey>(initialView);
   const [resumeMode, setResumeMode] = useState<ResumeMode>(initialResumeMode);
   const [resumeEditorVersionId, setResumeEditorVersionId] = useState(initialResumeVersionId);
+  const [libraryTarget, setLibraryTarget] = useState<CareerLibraryTarget | null>(initialLibraryTarget);
+  const [libraryGroup, setLibraryGroup] = useState<CareerLibraryGroup>(initialLibraryGroup);
   const [resume, setResume] = useState<ResumeContent>(initialData.resume?.content ?? emptyResume());
   const [resumeUpdatedAt, setResumeUpdatedAt] = useState(initialData.resume?.updatedAt ?? new Date().toISOString());
   const [jobs, setJobs] = useState(initialData.jobs);
@@ -109,8 +125,6 @@ export function CareerKitApp({
   const [aiSettings, setAiSettings] = useState<RedactedAiSettings | null>(initialData.settings?.ai ?? null);
   const [toast, setToast] = useState("");
   const [headerMenu, setHeaderMenu] = useState<HeaderMenuKey | null>(null);
-  const [optimizedMenuOpen, setOptimizedMenuOpen] = useState(false);
-  const [interviewMenuOpen, setInterviewMenuOpen] = useState(false);
   const [pipelineAddOpen, setPipelineAddOpen] = useState(false);
   const [matchVersionId, setMatchVersionId] = useState<string | undefined>(readMatchVersionIdFromLocation());
   const [interviewSessionId, setInterviewSessionId] = useState<string | undefined>(readInterviewSessionIdFromLocation());
@@ -126,10 +140,6 @@ export function CareerKitApp({
   const [isPending, startTransition] = useTransition();
 
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
-  const optimizedVersions = useMemo(
-    () => versions.filter((version) => version.jobId || readStoredOptimizationBase(version.content)),
-    [versions],
-  );
   const storedResumeOptimizationResult = useMemo<ResumeOptimizationView | null>(() => {
     if (active !== "resume" || !resumeOptimizationVersionId) return null;
     const version = versions.find((item) => item.id === resumeOptimizationVersionId);
@@ -178,6 +188,8 @@ export function CareerKitApp({
       setMatchVersionId(readMatchVersionIdFromLocation());
       setInterviewSessionId(readInterviewSessionIdFromLocation());
       setInterviewPreparationId(readInterviewPreparationIdFromLocation());
+      setLibraryTarget(parseCareerLibraryTarget(window.location.pathname));
+      setLibraryGroup(readCareerLibraryGroup(new URLSearchParams(window.location.search).get("group")));
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -217,8 +229,8 @@ export function CareerKitApp({
     setMatchVersionId(undefined);
     setInterviewSessionId(undefined);
     setInterviewPreparationId(undefined);
-    setOptimizedMenuOpen(false);
-    setInterviewMenuOpen(false);
+    setLibraryTarget(null);
+    setLibraryGroup("job");
     setPipelineAddOpen(false);
     const nextPath = pathnameForNavKey(key);
     if (`${window.location.pathname}${window.location.search}` !== nextPath) {
@@ -226,25 +238,29 @@ export function CareerKitApp({
     }
   }, []);
 
-  const openOptimizedVersionFromHeader = useCallback((versionId: string) => {
-    const version = versions.find((item) => item.id === versionId);
-    const isJobOptimization = Boolean(version?.jobId);
-    setActive(isJobOptimization ? "match" : "resume");
-    setResumeMode("library");
-    setResumeEditorVersionId(undefined);
-    setResumeOptimizationVersionId(isJobOptimization ? undefined : versionId);
-    setResumeOptimizationResult(null);
-    setResumeOptimizationStage(isJobOptimization ? 1 : 2);
-    setMatchVersionId(isJobOptimization ? versionId : undefined);
-    setOptimizedMenuOpen(false);
-    window.history.pushState(
-      null,
-      "",
-      isJobOptimization
-        ? `/match?version=${encodeURIComponent(versionId)}`
-        : `/resume?optimized=${encodeURIComponent(versionId)}`,
-    );
-  }, [versions]);
+  const libraryData = useMemo(() => ({
+    versions,
+    jobs,
+    applications,
+    interviews: interviewSessions,
+    interviewPreparations,
+  }), [applications, interviewPreparations, interviewSessions, jobs, versions]);
+
+  const openLibraryTarget = useCallback((target: CareerLibraryTarget) => {
+    setLibraryTarget(target);
+    const groupQuery = libraryGroup === "type" ? "?group=type" : "";
+    window.history.pushState(null, "", `${careerLibraryTargetPath(target)}${groupQuery}`);
+  }, [libraryGroup]);
+
+  const closeLibraryTarget = useCallback(() => {
+    setLibraryTarget(null);
+    window.history.pushState(null, "", libraryGroup === "type" ? "/library?group=type" : "/library");
+  }, [libraryGroup]);
+
+  const changeLibraryGroup = useCallback((group: CareerLibraryGroup) => {
+    setLibraryGroup(group);
+    window.history.pushState(null, "", group === "type" ? "/library?group=type" : "/library");
+  }, []);
 
   const openResumeEditorFromMatch = useCallback((versionId?: string) => {
     setActive("resume");
@@ -259,38 +275,10 @@ export function CareerKitApp({
     }
   }, []);
 
-  const openInterviewSessionFromHeader = useCallback((sessionId: string) => {
-    setActive("interview");
-    setResumeMode("library");
-    setResumeEditorVersionId(undefined);
-    setResumeOptimizationVersionId(undefined);
-    setResumeOptimizationResult(null);
-    setResumeOptimizationStage(1);
-    setMatchVersionId(undefined);
-    setInterviewSessionId(sessionId);
-    setInterviewPreparationId(undefined);
-    setInterviewMenuOpen(false);
-    window.history.pushState(null, "", `/interview?session=${encodeURIComponent(sessionId)}`);
-  }, []);
-
   const upsertInterviewSession = useCallback((session: InterviewSessionRecord) => {
     setInterviewSessions((current) => [session, ...current.filter((item) => item.id !== session.id)]);
     setInterviewPreparationId(undefined);
     setInterviewSessionId(session.id);
-  }, []);
-
-  const openInterviewPreparationFromHeader = useCallback((preparationId: string) => {
-    setActive("interview");
-    setResumeMode("library");
-    setResumeEditorVersionId(undefined);
-    setResumeOptimizationVersionId(undefined);
-    setResumeOptimizationResult(null);
-    setResumeOptimizationStage(1);
-    setMatchVersionId(undefined);
-    setInterviewSessionId(undefined);
-    setInterviewPreparationId(preparationId);
-    setInterviewMenuOpen(false);
-    window.history.pushState(null, "", `/interview?preparation=${encodeURIComponent(preparationId)}`);
   }, []);
 
   const upsertInterviewPreparation = useCallback((record: InterviewPreparationRecord) => {
@@ -329,24 +317,13 @@ export function CareerKitApp({
     }
   }
 
-  async function clearInterviewRecords() {
-    const total = interviewPreparations.length + interviewSessions.length;
-    if (!window.confirm(`清空 ${total} 条面试复习资料与模拟面试记录？此操作不可撤销。`)) return;
-    try {
-      const responses = await Promise.all([
-        fetch("/api/interviews/preparation", { method: "DELETE" }),
-        fetch("/api/interviews", { method: "DELETE" }),
-      ]);
-      if (responses.some((response) => !response.ok)) throw new Error("清空面试记录失败。");
-      setInterviewPreparations([]);
-      setInterviewSessions([]);
-      setInterviewMenuOpen(false);
-      setInterviewPreparationId(undefined);
-      setInterviewSessionId(undefined);
-      window.history.pushState(null, "", "/interview");
-      setToast("已清空面试复习资料与模拟面试记录。");
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : "清空面试记录失败。");
+  function deleteCareerArtifact(artifact: CareerArtifact) {
+    if (artifact.kind === "general-resume" || artifact.kind === "tailored-resume") {
+      deleteResumeVersion(artifact.id);
+    } else if (artifact.kind === "interview-preparation") {
+      void deleteInterviewPreparation(artifact.id);
+    } else if (artifact.kind === "interview-session") {
+      void deleteInterviewSession(artifact.id);
     }
   }
 
@@ -480,38 +457,9 @@ export function CareerKitApp({
           ),
         );
         resetMatchIfDeleted(deletedIds);
-        setOptimizedMenuOpen(false);
         setToast("简历已删除。");
       } catch (error) {
         setToast(`删除失败：${formatRequestError(error)}`);
-      }
-    });
-  }
-
-  function deleteOptimizedResumeVersions() {
-    const optimizedIds = new Set(optimizedVersions.map((version) => version.id));
-    if (!optimizedIds.size) return;
-    const confirmed = window.confirm(`清空 ${optimizedIds.size} 个已优化版本？原简历会保留。`);
-    if (!confirmed) return;
-
-    startTransition(async () => {
-      try {
-        const response = await fetch("/api/resume-versions?scope=optimized", { method: "DELETE" });
-        if (!response.ok) throw new Error(await response.text());
-        const result = (await response.json()) as { deletedCount?: number };
-        setVersions((current) => current.filter((version) => !optimizedIds.has(version.id)));
-        setApplications((current) =>
-          current.map((application) =>
-            application.resumeVersionId && optimizedIds.has(application.resumeVersionId)
-              ? { ...application, resumeVersionId: null }
-              : application,
-          ),
-        );
-        resetMatchIfDeleted(optimizedIds);
-        setOptimizedMenuOpen(false);
-        setToast(`已清空 ${result.deletedCount ?? optimizedIds.size} 个优化版本。`);
-      } catch (error) {
-        setToast(`清空失败：${formatRequestError(error)}`);
       }
     });
   }
@@ -882,12 +830,23 @@ export function CareerKitApp({
     });
   }
 
+  if (active === "library" && libraryTarget) {
+    return (
+      <CareerLibraryWorkspace
+        data={libraryData}
+        target={libraryTarget}
+        onClose={closeLibraryTarget}
+        onOpenResume={openResumeEditorFromMatch}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <AppSidebar active={active} isResumeEditor={isResumeEditor} onNavigate={navigateTo} />
+      <AppSidebar active={active} hidden={isResumeEditor} onNavigate={navigateTo} />
       <AppTopbar
         active={active}
-        isResumeEditor={isResumeEditor}
+        hidden={isResumeEditor}
         headerMenu={headerMenu}
         setHeaderMenu={setHeaderMenu}
         followUpReminders={followUpReminders}
@@ -907,30 +866,15 @@ export function CareerKitApp({
                 : "mx-auto max-w-7xl px-4 py-8 lg:px-10",
           )}
         >
-          <AppPageHeader
+          {active !== "library" ? <AppPageHeader
             active={active}
             pageTitle={pageTitle}
             pageSubtitle={pageSubtitle}
             showResumeHeader={isResumeOptimizationResult}
             isPending={isPending}
             toast={toast}
-            optimizedVersions={optimizedVersions}
-            optimizedMenuOpen={optimizedMenuOpen}
-            setOptimizedMenuOpen={setOptimizedMenuOpen}
-            interviewSessions={interviewSessions}
-            interviewPreparations={interviewPreparations}
-            interviewMenuOpen={interviewMenuOpen}
-            setInterviewMenuOpen={setInterviewMenuOpen}
             onAddApplication={() => setPipelineAddOpen(true)}
-            onOpenOptimizedVersion={openOptimizedVersionFromHeader}
-            onDeleteResumeVersion={deleteResumeVersion}
-            onDeleteOptimizedResumeVersions={deleteOptimizedResumeVersions}
-            onOpenInterviewSession={openInterviewSessionFromHeader}
-            onOpenInterviewPreparation={openInterviewPreparationFromHeader}
-            onDeleteInterviewSession={deleteInterviewSession}
-            onDeleteInterviewPreparation={deleteInterviewPreparation}
-            onClearInterviewSessions={clearInterviewRecords}
-          />
+          /> : null}
 
           {active === "dashboard" && (
             <DashboardWorkspace
@@ -1086,6 +1030,16 @@ export function CareerKitApp({
               resumeImportAiReady={isResumeImportAiReady(aiSettings)}
               onOpenSettings={() => navigateTo("settings")}
               onStatus={setToast}
+            />
+          )}
+          {active === "library" && (
+            <CareerLibraryView
+              data={libraryData}
+              group={libraryGroup}
+              onGroupChange={changeLibraryGroup}
+              onOpenJob={(id) => openLibraryTarget({ type: "job", id })}
+              onOpenArtifact={(artifact) => openLibraryTarget({ type: "artifact", kind: artifact.kind, id: artifact.id })}
+              onDeleteArtifact={deleteCareerArtifact}
             />
           )}
           {active === "settings" && (
