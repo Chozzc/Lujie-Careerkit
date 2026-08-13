@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import Image from "next/image";
-import { Bell } from "lucide-react";
+import { Bell, CircleHelp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { HeaderIconButton, HeaderMenuPanel, type HeaderMenuKey } from "@/components/app/header-menu";
@@ -23,6 +23,7 @@ export function AppTopbar({
   resumeVersionCount,
   provider,
   onNavigate,
+  onStartTour,
 }: {
   active: NavKey;
   hidden: boolean;
@@ -33,6 +34,7 @@ export function AppTopbar({
   resumeVersionCount: number;
   provider: string;
   onNavigate: (key: NavKey) => void;
+  onStartTour: () => void;
 }) {
   const t = useTranslations("app");
 
@@ -50,6 +52,7 @@ export function AppTopbar({
             <span className="font-serif text-xl font-semibold text-primary">{t("brandName")}</span>
           </div>
           <select
+            data-tour-mobile-nav
             className="rounded-lg border border-line bg-surface px-3 py-2 text-sm"
             value={active}
             onChange={(event) => onNavigate(event.target.value as NavKey)}
@@ -64,6 +67,9 @@ export function AppTopbar({
         <div className="hidden h-10 w-72 lg:block" aria-hidden />
         <div className="relative flex items-center gap-2 text-primary">
           <LanguageSwitcher compact />
+          <HeaderIconButton label={t("topbar.guide")} active={false} onClick={onStartTour}>
+            <CircleHelp className="h-5 w-5" />
+          </HeaderIconButton>
           <HeaderIconButton
             label={t("topbar.notifications")}
             active={headerMenu === "notifications"}

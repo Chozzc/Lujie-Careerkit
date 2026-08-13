@@ -18,8 +18,8 @@ export const navItems: NavItem[] = [
   { key: "resume", labelKey: "resume", icon: FileText },
   { key: "match", labelKey: "match", icon: Target },
   { key: "interview", labelKey: "interview", icon: Mic },
-  { key: "pipeline", labelKey: "pipeline", icon: ClipboardList },
   { key: "library", labelKey: "library", icon: FolderArchive },
+  { key: "pipeline", labelKey: "pipeline", icon: ClipboardList },
   { key: "settings", labelKey: "settings", icon: Settings },
 ];
 

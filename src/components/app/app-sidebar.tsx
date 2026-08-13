@@ -45,6 +45,7 @@ export function AppSidebar({
                 <button
                   type="button"
                   key={item.key}
+                  data-tour-nav={item.key}
                   onClick={() => onNavigate(item.key)}
                   className={cn(
                     "flex h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-medium transition",

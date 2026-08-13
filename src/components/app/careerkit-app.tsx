@@ -42,6 +42,7 @@ import {
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
+import { FirstUseTour } from "@/components/app/first-use-tour";
 import type { HeaderMenuKey } from "@/components/app/header-menu";
 import { navItems } from "@/components/app/navigation";
 import {
@@ -66,6 +67,7 @@ import {
   type CareerLibraryGroup,
   type CareerLibraryTarget,
 } from "@/lib/career-library";
+import { hasSeenFirstUseTour, markFirstUseTourSeen } from "@/lib/first-use-tour";
 
 type ResumeMode = "library" | "editor";
 type ResumeOptimizationRequest = {
@@ -125,6 +127,7 @@ export function CareerKitApp({
   const [aiSettings, setAiSettings] = useState<RedactedAiSettings | null>(initialData.settings?.ai ?? null);
   const [toast, setToast] = useState("");
   const [headerMenu, setHeaderMenu] = useState<HeaderMenuKey | null>(null);
+  const [firstUseTourOpen, setFirstUseTourOpen] = useState(false);
   const [pipelineAddOpen, setPipelineAddOpen] = useState(false);
   const [matchVersionId, setMatchVersionId] = useState<string | undefined>(readMatchVersionIdFromLocation());
   const [interviewSessionId, setInterviewSessionId] = useState<string | undefined>(readInterviewSessionIdFromLocation());
@@ -173,6 +176,26 @@ export function CareerKitApp({
       .filter((item) => item.job && item.dueDate)
       .slice(0, 4);
   }, [applications, jobById]);
+
+  useEffect(() => {
+    try {
+      if (hasSeenFirstUseTour(window.localStorage)) return;
+      const timeout = window.setTimeout(() => setFirstUseTourOpen(true), 450);
+      return () => window.clearTimeout(timeout);
+    } catch {
+      const timeout = window.setTimeout(() => setFirstUseTourOpen(true), 450);
+      return () => window.clearTimeout(timeout);
+    }
+  }, []);
+
+  const finishFirstUseTour = useCallback((outcome: "completed" | "skipped") => {
+    try {
+      markFirstUseTourSeen(window.localStorage, outcome);
+    } catch {
+      // The guide remains usable when browser storage is unavailable.
+    }
+    setFirstUseTourOpen(false);
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -854,6 +877,10 @@ export function CareerKitApp({
         resumeVersionCount={versions.length + (hasResumeContent(resume) ? 1 : 0)}
         provider={aiSettings?.aiProvider ?? "openai"}
         onNavigate={navigateTo}
+        onStartTour={() => {
+          setHeaderMenu(null);
+          setFirstUseTourOpen(true);
+        }}
       />
 
       <main className={cn(!isResumeEditor && "lg:ml-72")}>
@@ -1058,6 +1085,14 @@ export function CareerKitApp({
         addJob={addJob}
         onOpenChange={setPipelineAddOpen}
       />
+      {firstUseTourOpen ? (
+        <FirstUseTour
+          active={active}
+          aiReady={isAiReady(aiSettings)}
+          onNavigate={navigateTo}
+          onFinish={finishFirstUseTour}
+        />
+      ) : null}
     </div>
   );
 }

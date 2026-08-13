@@ -25,6 +25,7 @@
     },
     "topbar": {
       "notifications": "Follow-up reminders",
+      "guide": "Getting started",
       "profile": "Local account"
     },
     "header": {
@@ -1071,6 +1072,49 @@
         "10": "10",
         "11": "11",
         "12": "12"
+      }
+    }
+  },
+  "firstUseTour": {
+    "progress": "Step {current} of {total}",
+    "start": "Start tour",
+    "previous": "Previous",
+    "next": "Next",
+    "finish": "Start my job-search journey",
+    "skip": "Skip tour",
+    "celebrationAnnouncement": "Your job-search journey starts now. Here’s to landing an offer you truly want!",
+    "steps": {
+      "welcome": {
+        "title": "New to LuJie?\nStart with the tutorial",
+        "description": "LuJie guides you from a base resume through job matching, interview preparation, and application tracking to receiving an offer."
+      },
+      "dashboard": {
+        "title": "The dashboard is your job-search overview",
+        "description": "Applications, upcoming actions, interviews, and offers appear here. An empty dashboard is normal at first and fills in as you use the workflow."
+      },
+      "settings": {
+        "title": "Connect an AI provider first",
+        "description": "Choose a provider in Settings, enter your API key, save it, and test the connection. Your key is encrypted on this device and is never written into the project code."
+      },
+      "resume": {
+        "title": "Prepare a base resume",
+        "description": "Import an existing resume or create one from scratch. Your original stays intact, while AI review and job matching create separate versions instead of overwriting it."
+      },
+      "match": {
+        "title": "Tailor it to a specific JD",
+        "description": "Choose a resume and paste the full job description. LuJie creates a tailored version, preserves the before-and-after content, and starts a job archive."
+      },
+      "interview": {
+        "title": "Prepare for the same role",
+        "description": "Generate a structured preparation guide, practice with mock questions, and review the AI feedback. A tailored resume links these outcomes to its job first."
+      },
+      "pipeline": {
+        "title": "Track your application progress",
+        "description": "Move roles through ready, applied, assessment, interview, and offer stages. Add dates and follow-ups so the dashboard can surface what needs attention."
+      },
+      "library": {
+        "title": "Find every outcome in the career library",
+        "description": "Browse complete job archives or view resumes, original JDs, and interview materials by type. You no longer need to search through each feature for past work."
       }
     }
   },
