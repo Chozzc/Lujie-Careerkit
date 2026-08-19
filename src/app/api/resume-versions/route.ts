@@ -17,14 +17,19 @@ const createResumeVersionSchema = z.object({
     changes: z.array(z.string().max(200)).max(20),
     versionName: z.string().max(200),
   }).optional(),
+  sourceResumeId: z.string().trim().min(1).optional(),
 }).refine(
   (input) => Boolean(input.baseResume) === Boolean(input.optimizationMeta),
   { message: "Optimization source and metadata must be provided together.", path: ["optimizationMeta"] },
+).refine(
+  (input) => !input.optimizationMeta || Boolean(input.sourceResumeId),
+  { message: "Optimized versions must identify their source resume.", path: ["sourceResumeId"] },
 );
 
 function serializeVersion(version: Awaited<ReturnType<typeof createResumeVersion>>) {
   return {
     id: version.id,
+    resumeId: version.resumeId,
     jobId: version.jobId,
     name: version.name,
     summary: version.summary,
@@ -44,6 +49,7 @@ export async function POST(request: Request) {
     content: body.content,
     baseResume: body.baseResume,
     optimizationMeta: body.optimizationMeta,
+    sourceResumeId: body.sourceResumeId,
   });
 
   return Response.json({ version: serializeVersion(version) });

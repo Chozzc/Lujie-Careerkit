@@ -24,6 +24,7 @@ export function CareerLibraryView({
   group,
   onGroupChange,
   onOpenJob,
+  onDeleteJob,
   onOpenArtifact,
   onDeleteArtifact,
 }: {
@@ -31,6 +32,7 @@ export function CareerLibraryView({
   group: CareerLibraryGroup;
   onGroupChange: (group: CareerLibraryGroup) => void;
   onOpenJob: (id: string) => void;
+  onDeleteJob: (id: string) => void;
   onOpenArtifact: (artifact: CareerArtifact) => void;
   onDeleteArtifact: (artifact: CareerArtifact) => void;
 }) {
@@ -123,6 +125,7 @@ export function CareerLibraryView({
                     updatedAt={archive.updatedAt}
                     badge={archive.status ? t(`status.${archive.status}`) : undefined}
                     onOpen={() => onOpenJob(archive.id)}
+                    onDelete={() => onDeleteJob(archive.id)}
                   />
                 ))}
               </div>
@@ -150,7 +153,7 @@ export function CareerLibraryView({
                       updatedAt={artifact.updatedAt}
                       badge={t(`kinds.${artifact.kind}`)}
                       onOpen={() => onOpenArtifact(artifact)}
-                      onDelete={artifact.kind === "job-analysis" ? undefined : () => onDeleteArtifact(artifact)}
+                      onDelete={() => onDeleteArtifact(artifact)}
                     />
                   ))}
                 </div>

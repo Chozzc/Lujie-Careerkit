@@ -113,6 +113,7 @@ export function InterviewWorkspace({
   versions,
   resume,
   mainResumeName,
+  mainResumeVersionId,
   targetSessionId,
   targetPreparationId,
   onSessionUpsert,
@@ -127,6 +128,7 @@ export function InterviewWorkspace({
   versions: InterviewResumeVersion[];
   resume: ResumeContent;
   mainResumeName: string;
+  mainResumeVersionId?: string;
   targetSessionId?: string;
   targetPreparationId?: string;
   onSessionUpsert: (session: InterviewSessionRecord) => void;
@@ -190,9 +192,6 @@ export function InterviewWorkspace({
     resumeSource === "upload"
       ? uploadedResume?.fileName ?? t("resume.uploaded")
       : selectedResumeOption?.name ?? mainResumeName;
-  const selectedResumeKey = resumeSource === "upload"
-    ? `upload:${uploadedResume?.fileName ?? "resume"}`
-    : selectedLibraryId ?? "main";
   const resumeReady = Boolean(selectedResume && hasResumeContent(selectedResume));
   const setupDisabledReason = !resumeReady
     ? t("setup.needResume")
@@ -381,15 +380,15 @@ export function InterviewWorkspace({
       await createSession(
         {
           jobId: "",
-          resumeVersionId:
-            resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
+          resumeVersionId: resumeSource === "library"
+            ? selectedResumeId === "main" ? mainResumeVersionId ?? null : selectedResumeId
+            : null,
           mode,
           context: {
             company: locale === "en" ? "Target company" : "目标公司",
             title: locale === "en" ? "Target role" : "目标岗位",
             jd: jdDraft.trim(),
             resumeName: selectedResumeName,
-            resumeKey: selectedResumeKey,
             resume: selectedResume,
           },
         },
@@ -417,9 +416,9 @@ export function InterviewWorkspace({
           jobId: "",
           jd: jdDraft.trim(),
           resumeName: selectedResumeName,
-          resumeKey: selectedResumeKey,
-          resumeVersionId:
-            resumeSource === "library" && selectedResumeId !== "main" ? selectedResumeId : null,
+          resumeVersionId: resumeSource === "library"
+            ? selectedResumeId === "main" ? mainResumeVersionId ?? null : selectedResumeId
+            : null,
           resume: selectedResume,
           focus: mode,
           locale: locale === "en" ? "en" : "zh-CN",
@@ -450,7 +449,7 @@ export function InterviewWorkspace({
     try {
       await createSession(
         {
-          jobId: activePreparation.jobId,
+          jobId: activePreparation.jobId ?? "",
           resumeVersionId: activePreparation.resumeVersionId,
           mode: activePreparation.mode,
           context: {
@@ -458,7 +457,6 @@ export function InterviewWorkspace({
             title: activePreparation.content.meta.title,
             jd: activePreparation.context.jd,
             resumeName: activePreparation.context.resumeName,
-            resumeKey: activePreparation.resumeKey,
             resume: activePreparation.context.resume,
           },
         },

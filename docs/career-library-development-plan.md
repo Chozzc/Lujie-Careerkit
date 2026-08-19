@@ -1,7 +1,7 @@
 # 求职资料库开发计划与存储说明
 
-> 状态：待实施  
-> 日期：2026-08-13  
+> 状态：已实施
+> 日期：2026-08-13
 > 前置规范：[求职资料库设计规范](./career-library-design-spec.md)
 
 ## 1. 先回答：资料现在到底存在哪里
@@ -23,16 +23,15 @@ DATABASE_URL="file:./dev.db"
 
 | 资料 | SQLite 表 | 普通列 | JSON 结构列 |
 | --- | --- | --- | --- |
-| 主简历 | `Resume` | 名称、时间 | `content` |
-| 通用优化简历 | `ResumeVersion` | 名称、摘要、时间，`jobId = null` | `content`，内部可含原简历、诊断、优化元数据和审阅状态 |
+| 简历档案 | `Resume` | 独立简历的名称、时间 | 无；实际内容由关联的 `ResumeVersion` 保存 |
+| 基础/通用优化简历 | `ResumeVersion` | 名称、摘要、时间、`resumeId`，通用版本 `jobId = null` | `content`，优化版本内部可含原简历、诊断、优化元数据和审阅状态 |
 | JD 定制简历 | `ResumeVersion` | 名称、摘要、时间、`jobId` | `content`，内部可含原简历和优化元数据 |
-| JD 与岗位分析 | `Job` | 公司、岗位、JD、链接、时间 | `tags`、`analysis` |
+| JD 与岗位分析 | `Job` | 公司、岗位、JD、链接、时间 | `analysis` |
 | 面试准备资料 | `InterviewPreparation` | `jobId`、简历关联、模式、时间 | `context`、`content` |
 | 模拟面试与复盘 | `InterviewSession` | 状态、当前题号、岗位和简历关联、时间 | `context`、`questions`、`answers`、`feedback` |
 | 投递状态 | `Application` | 状态、日期、备注及关联 | 无主要成果 JSON |
-| 跟进日志 | `FollowUpLog` | 类型、正文、时间及关联 | 无 |
 
-“保存在同一记录中”的具体含义，例如一次模拟面试：数据库中有一条 `InterviewSession` 记录；问题、回答和复盘不是三个文件，而是这条记录的 `questions`、`answers`、`feedback` 三个 JSON 列。面试准备则是另一条 `InterviewPreparation` 记录，它的完整准备资料位于 `content` JSON 列。
+“保存在同一记录中”的具体含义，例如一次模拟面试：数据库中有一条 `InterviewSession` 记录；问题、回答和复盘不是三个文件，而是这条记录的 `questions`、`answers`、`feedback` 三个 JSON 列。面试准备则是另一条 `InterviewPreparation` 记录，它的完整准备资料位于 `content` JSON 列。两者通过真实 `jobId` 关联岗位；删除岗位时 `jobId` 会置空，但资料正文继续保留。
 
 通用简历优化也不是单独的 Markdown 或 PDF 文件。它是一条 `ResumeVersion`：优化后的完整简历在 `content` 中；用于还原过程的原简历、诊断、用户选择、优化草稿和采纳状态，可能位于同一个 `content` 对象的内部字段中。
 
@@ -310,4 +309,3 @@ npm run build
 - 不自动压缩或重写用户的 SQLite 数据库。
 
 后续只有在“求职信等独立文档正式支持保存”时，再评估是否需要一个通用生成文档模型；在此之前，现有表已经覆盖首版资料库。
-

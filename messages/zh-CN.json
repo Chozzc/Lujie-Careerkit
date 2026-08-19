@@ -265,7 +265,8 @@
       "generalComplete": "AI优化简历完成",
       "jdComplete": "JD匹配优化完成",
       "jdPrefix": "JD匹配优化",
-      "back": "返回修改 JD"
+      "back": "返回修改 JD",
+      "track": "加入投递跟进"
     },
     "resumePickerDescription": "选择一份作为优化基准 · 共 {count} 份",
     "form": {
@@ -1182,6 +1183,70 @@
     "improvements": "改进方向",
     "nextActions": "下一步行动",
     "questionNumber": "问题 {number}"
+  },
+  "agent": {
+    "title": "录阶 Agent",
+    "panelLabel": "录阶 Agent 对话面板",
+    "open": "打开录阶 Agent",
+    "close": "关闭录阶 Agent",
+    "petHint": "拖动我 · 点击聊天",
+    "newConversation": "新对话",
+    "deleteConversation": "删除对话",
+    "loading": "正在读取对话…",
+    "thinking": "正在思考…",
+    "inputPlaceholder": "说说你想处理的求职事项…",
+    "send": "发送",
+    "stop": "停止生成",
+    "approvalHint": "更改投递数据前会先让你确认",
+    "setup": {
+      "title": "先配置 AI 服务",
+      "description": "Agent 会沿用录阶现有的 Provider 与模型设置，不需要额外的 Agent Key。",
+      "action": "前往设置"
+    },
+    "welcome": {
+      "title": "我能帮你处理录阶里的求职信息",
+      "description": "当前已支持查看已存简历与岗位，以及根据你的描述新建或更新投递跟进卡片。",
+      "prompt1": "帮我看看现在有哪些投递在跟进",
+      "prompt2": "我今天投了一个岗位，帮我记录",
+      "prompt3": "我现在有哪些简历版本？"
+    },
+    "tools": {
+      "searchingPipeline": "正在核对岗位与投递记录",
+      "readingResume": "正在读取脱敏后的简历概览"
+    },
+    "approval": {
+      "title": "确认这次投递卡片变更",
+      "preparing": "正在整理可确认的变更",
+      "operation": "操作",
+      "create": "新建卡片",
+      "update": "更新卡片",
+      "target": "岗位",
+      "status": "阶段",
+      "stageDate": "阶段日期",
+      "followUpDate": "跟进日期",
+      "note": "新增备注",
+      "cancel": "取消",
+      "confirm": "确认执行",
+      "executing": "已确认，正在写入…",
+      "cancelled": "已取消这次变更",
+      "deniedReason": "用户取消了这次变更。",
+      "created": "已新建投递卡片：",
+      "updated": "已更新投递卡片："
+    },
+    "status": {
+      "applied": "已投递",
+      "assessment": "笔试 / 测评",
+      "interview": "面试中",
+      "offer": "Offer",
+      "rejected": "已拒绝",
+      "archived": "已归档"
+    },
+    "errors": {
+      "load": "对话读取失败。",
+      "create": "对话创建失败。",
+      "delete": "对话删除失败。",
+      "request": "Agent 暂时无法完成这次请求，请检查 AI 设置后重试。"
+    }
   },
   "themeEditor": {
     "avatar": {

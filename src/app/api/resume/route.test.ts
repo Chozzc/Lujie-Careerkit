@@ -35,10 +35,14 @@ describe("/api/resume", () => {
   });
 
   it("normalizes untrusted editor theme settings before persistence", async () => {
-    update.mockImplementation(async (content) => ({
-      id: "resume-1",
+    update.mockImplementation(async (_versionId, content) => ({
+      id: "version-1",
+      resumeId: "resume-1",
       name: "主简历",
+      summary: "",
+      jobId: null,
       content,
+      resume: { id: "resume-1", name: "主简历", createdAt: new Date("2026-07-15T00:00:00.000Z"), updatedAt: new Date("2026-07-15T00:00:00.000Z") },
       createdAt: new Date("2026-07-15T00:00:00.000Z"),
       updatedAt: new Date("2026-07-15T00:00:00.000Z"),
     }));
@@ -46,6 +50,7 @@ describe("/api/resume", () => {
     const response = await POST(new Request("http://localhost/api/resume", {
       method: "POST",
       body: JSON.stringify({
+        versionId: "version-1",
         content: {
           ...resumeContent,
           editor: { themeConfig: { fontFamily: "Inter;}</style><script>alert(1)</script>" } },
@@ -54,8 +59,8 @@ describe("/api/resume", () => {
     }));
 
     expect(response.status).toBe(200);
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(update).toHaveBeenCalledWith("version-1", expect.objectContaining({
       editor: expect.objectContaining({ themeConfig: expect.objectContaining({ fontFamily: "Inter" }) }),
-    }));
+    }), undefined);
   });
 });

@@ -40,7 +40,6 @@ export const interviewContextSchema = z.object({
   title: z.string().trim().min(1),
   jd: z.string().trim().min(1),
   resumeName: z.string().trim().min(1),
-  resumeKey: z.string().trim().min(1).optional(),
   resume: z.unknown(),
 });
 
@@ -123,13 +122,13 @@ function assertModeCategoryCoverage(mode: InterviewMode, questions: InterviewQue
 }
 
 export function createInterviewRetryInput(session: {
-  jobId: string;
+  jobId: string | null;
   resumeVersionId: string | null;
   mode: InterviewMode;
   context: InterviewContext;
 }) {
   return {
-    jobId: session.jobId,
+    jobId: session.jobId ?? "",
     resumeVersionId: session.resumeVersionId,
     mode: session.mode,
     context: { ...session.context },

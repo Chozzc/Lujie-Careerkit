@@ -43,6 +43,7 @@ import { AppPageHeader } from "@/components/app/app-page-header";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
 import { FirstUseTour } from "@/components/app/first-use-tour";
+import { AgentAssistant } from "@/components/agent/agent-assistant";
 import type { HeaderMenuKey } from "@/components/app/header-menu";
 import { navItems } from "@/components/app/navigation";
 import {
@@ -118,6 +119,8 @@ export function CareerKitApp({
   const [libraryGroup, setLibraryGroup] = useState<CareerLibraryGroup>(initialLibraryGroup);
   const [resume, setResume] = useState<ResumeContent>(initialData.resume?.content ?? emptyResume());
   const [resumeUpdatedAt, setResumeUpdatedAt] = useState(initialData.resume?.updatedAt ?? new Date().toISOString());
+  const [mainResumeVersionId, setMainResumeVersionId] = useState(initialData.resume?.id ?? "");
+  const [mainResumeRootId, setMainResumeRootId] = useState(initialData.resume?.resumeId ?? "");
   const [jobs, setJobs] = useState(initialData.jobs);
   const [applications, setApplications] = useState(initialData.applications);
   const [versions, setVersions] = useState(initialData.versions);
@@ -341,7 +344,9 @@ export function CareerKitApp({
   }
 
   function deleteCareerArtifact(artifact: CareerArtifact) {
-    if (artifact.kind === "general-resume" || artifact.kind === "tailored-resume") {
+    if (artifact.kind === "job-analysis") {
+      deleteJobArchive(artifact.id);
+    } else if (artifact.kind === "general-resume" || artifact.kind === "tailored-resume") {
       deleteResumeVersion(artifact.id);
     } else if (artifact.kind === "interview-preparation") {
       void deleteInterviewPreparation(artifact.id);
@@ -350,11 +355,33 @@ export function CareerKitApp({
     }
   }
 
+  function deleteJobArchive(jobId: string) {
+    const job = jobs.find((item) => item.id === jobId);
+    if (!window.confirm(`删除「${job?.company ?? "该公司"} · ${job?.title ?? "该岗位"}」岗位档案？对应投递记录会一并删除；简历成果和面试资料会保留，但不再关联该岗位。此操作无法撤销。`)) return;
+    startTransition(async () => {
+      try {
+        const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(await response.text());
+        setJobs((current) => current.filter((item) => item.id !== jobId));
+        setApplications((current) => current.filter((application) => application.jobId !== jobId));
+        setVersions((current) => current.map((version) => version.jobId === jobId ? { ...version, jobId: null } : version));
+        setInterviewSessions((current) => current.map((session) => session.jobId === jobId ? { ...session, jobId: null } : session));
+        setInterviewPreparations((current) => current.map((preparation) => preparation.jobId === jobId ? { ...preparation, jobId: null } : preparation));
+        setToast("岗位档案已删除，关联成果仍保留。");
+        navigateTo("library");
+      } catch (error) {
+        setToast(`删除失败：${formatRequestError(error)}`);
+      }
+    });
+  }
+
   async function resetLocalDataToSample() {
     const result = (await postJson("/api/settings/reset-data", {})) as { data: InitialData };
     const nextData = result.data;
     setResume(nextData.resume?.content ?? emptyResume());
     setResumeUpdatedAt(nextData.resume?.updatedAt ?? new Date().toISOString());
+    setMainResumeVersionId(nextData.resume?.id ?? "");
+    setMainResumeRootId(nextData.resume?.resumeId ?? "");
     setJobs(nextData.jobs);
     setApplications(nextData.applications);
     setVersions(nextData.versions);
@@ -436,26 +463,52 @@ export function CareerKitApp({
       return { kind: "version" as const, version: result.version };
     }
 
+    if (!mainResumeVersionId) throw new Error("找不到正在编辑的基础简历。");
     setResume(nextContent);
-    const result = (await postJson("/api/resume", { content: nextContent })) as {
-      resume: { updatedAt?: string };
+    const result = (await postJson("/api/resume", { versionId: mainResumeVersionId, content: nextContent, name })) as {
+      resume: { id: string; resumeId: string; updatedAt?: string };
     };
+    setMainResumeVersionId(result.resume.id);
+    setMainResumeRootId(result.resume.resumeId);
     setResumeUpdatedAt(result.resume.updatedAt ?? new Date().toISOString());
     setToast("原简历已保存到本地 SQLite。");
     return { kind: "main" as const };
   }
 
   function deleteMainResume() {
-    const confirmed = window.confirm("删除这份原简历？删除后它会从简历库隐藏，你仍可新建其他简历。");
+    const confirmed = window.confirm("删除这份基础简历及由它生成的所有优化版本？投递记录和面试资料会保留，但不再关联这份简历。此操作会真正删除数据，且无法撤销。");
     if (!confirmed) return;
     const blank = emptyResume();
     startTransition(async () => {
       try {
-        const result = (await postJson("/api/resume", { content: blank })) as {
-          resume: { updatedAt?: string };
-        };
-        setResume(blank);
-        setResumeUpdatedAt(result.resume.updatedAt ?? new Date().toISOString());
+        if (!mainResumeVersionId) return;
+        const response = await fetch(`/api/resume-versions/${mainResumeVersionId}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(await response.text());
+        const result = (await response.json()) as { deletedIds: string[] };
+        const deletedIds = new Set(result.deletedIds);
+        const remaining = versions.filter((version) => !deletedIds.has(version.id));
+        const nextBase = remaining.find((version) => !version.jobId && !readStoredOptimizationBase(version.content));
+        setVersions(nextBase ? remaining.filter((version) => version.id !== nextBase.id) : remaining);
+        setResume(nextBase?.content ?? blank);
+        setResumeUpdatedAt(nextBase?.updatedAt ?? new Date().toISOString());
+        setMainResumeVersionId(nextBase?.id ?? "");
+        setMainResumeRootId(nextBase?.resumeId ?? "");
+        setApplications((current) => current.map((application) =>
+          application.resumeVersionId && deletedIds.has(application.resumeVersionId)
+            ? { ...application, resumeVersionId: null }
+            : application,
+        ));
+        setInterviewSessions((current) => current.map((session) =>
+          session.resumeVersionId && deletedIds.has(session.resumeVersionId)
+            ? { ...session, resumeVersionId: null }
+            : session,
+        ));
+        setInterviewPreparations((current) => current.map((preparation) =>
+          preparation.resumeVersionId && deletedIds.has(preparation.resumeVersionId)
+            ? { ...preparation, resumeVersionId: null }
+            : preparation,
+        ));
+        resetMatchIfDeleted(deletedIds);
         setToast("原简历已删除。");
       } catch (error) {
         setToast(`删除失败：${formatRequestError(error)}`);
@@ -473,12 +526,27 @@ export function CareerKitApp({
       try {
         const response = await fetch(`/api/resume-versions/${versionId}`, { method: "DELETE" });
         if (!response.ok) throw new Error(await response.text());
-        setVersions((current) => current.filter((item) => item.id !== versionId));
+        const result = (await response.json()) as { deletedIds: string[] };
+        const serverDeletedIds = new Set(result.deletedIds);
+        result.deletedIds.forEach((id) => deletedIds.add(id));
+        setVersions((current) => current.filter((item) => !serverDeletedIds.has(item.id)));
         setApplications((current) =>
           current.map((application) =>
-            application.resumeVersionId === versionId ? { ...application, resumeVersionId: null } : application,
+            application.resumeVersionId && serverDeletedIds.has(application.resumeVersionId)
+              ? { ...application, resumeVersionId: null }
+              : application,
           ),
         );
+        setInterviewSessions((current) => current.map((session) =>
+          session.resumeVersionId && serverDeletedIds.has(session.resumeVersionId)
+            ? { ...session, resumeVersionId: null }
+            : session,
+        ));
+        setInterviewPreparations((current) => current.map((preparation) =>
+          preparation.resumeVersionId && serverDeletedIds.has(preparation.resumeVersionId)
+            ? { ...preparation, resumeVersionId: null }
+            : preparation,
+        ));
         resetMatchIfDeleted(deletedIds);
         setToast("简历已删除。");
       } catch (error) {
@@ -502,14 +570,9 @@ export function CareerKitApp({
       setToast("公司和岗位名称都要填写。");
       return;
     }
-    if (applicationStatus === "READY" && !jd) {
-      setToast("JD匹配优化需要先填写目标 JD。");
-      return;
-    }
-
     startTransition(async () => {
       try {
-        const result = (await postJson("/api/jobs", {
+        const jobResult = (await postJson("/api/jobs", {
           company,
           title,
           city: String(formData.get("city") ?? "").trim() || "待填写",
@@ -517,16 +580,22 @@ export function CareerKitApp({
           deadline: String(formData.get("deadline") ?? "") || null,
           link: String(formData.get("link") ?? ""),
           jd: jd || notes || `${company} ${title}，暂未补充完整 JD。`,
-          applicationStatus,
+        })) as { job: JobView };
+        const job = normalizeJob(jobResult.job);
+        const applicationResult = (await postJson("/api/applications", {
+          jobId: job.id,
+          status: applicationStatus,
           interviewRound,
           stageDate: String(formData.get("stageDate") ?? "") || null,
           nextFollowUpAt: String(formData.get("nextFollowUpAt") ?? "") || null,
           notes,
-        })) as { job: JobView; application: ApplicationView };
-        const job = normalizeJob(result.job);
-        setJobs((current) => [job, ...current]);
-        setApplications((current) => [normalizeApplication(result.application), ...current]);
-        setToast(applicationStatus === "APPLIED" ? "投递岗位已加入跟进。" : "岗位已加入匹配优化。");
+        })) as { application: ApplicationView };
+        setJobs((current) => [job, ...current.filter((item) => item.id !== job.id)]);
+        setApplications((current) => [
+          normalizeApplication(applicationResult.application),
+          ...current.filter((item) => item.id !== applicationResult.application.id),
+        ]);
+        setToast("投递岗位已加入跟进。");
         form.reset();
       } catch (error) {
         setToast(`岗位保存失败：${formatRequestError(error)}`);
@@ -547,17 +616,10 @@ export function CareerKitApp({
       deadline: null,
       link: "",
       jd,
-      applicationStatus: "READY",
-      appliedAt: null,
-      stageDate: null,
-      nextFollowUpAt: null,
-      notes: "来自 JD匹配优化流程。",
-    })) as { job: JobView; application: ApplicationView };
+    })) as { job: JobView };
     const job = normalizeJob(result.job);
-    const application = normalizeApplication(result.application);
 
-    setJobs((current) => [job, ...current]);
-    setApplications((current) => [application, ...current]);
+    setJobs((current) => [job, ...current.filter((item) => item.id !== job.id)]);
 
     let tailored: {
       analysis: JobAnalysis;
@@ -569,7 +631,6 @@ export function CareerKitApp({
     try {
       tailored = (await postJson("/api/ai/resume-tailor", {
         jobId: job.id,
-        applicationId: application.id,
         jd,
         resumeVersionId: input.resumeVersionId,
         resumeContent: input.resumeContent,
@@ -582,13 +643,6 @@ export function CareerKitApp({
         message?: string;
       };
     } catch (error) {
-      setJobs((current) => current.filter((item) => item.id !== job.id));
-      setApplications((current) => current.filter((item) => item.id !== application.id));
-      try {
-        await postJson(`/api/jobs/${job.id}`, {}, "DELETE");
-      } catch {
-        // Ignore cleanup failures so the original AI error stays visible.
-      }
       throw error;
     }
     const version = normalizeVersion(tailored.version);
@@ -606,9 +660,6 @@ export function CareerKitApp({
       ),
     );
     setVersions((current) => [version, ...current]);
-    setApplications((current) =>
-      current.map((item) => (item.id === application.id ? { ...item, resumeVersionId: version.id } : item)),
-    );
     setToast(
       tailored.message ??
         `${cleanOptimizationLabel(tailored.analysis.title) || "目标岗位"}的优化后简历已生成。`,
@@ -621,12 +672,28 @@ export function CareerKitApp({
         title: cleanOptimizationLabel(tailored.analysis.title) || job.title,
         analysis: tailored.analysis,
       },
-      application: { ...application, resumeVersionId: version.id },
       analysis: tailored.analysis,
       version,
       optimization: tailored.optimization,
       message: tailored.message,
     };
+  }
+
+  async function trackMatchedJob(jobId: string, resumeVersionId: string) {
+    if (applications.some((application) => application.jobId === jobId)) return;
+    try {
+      const result = (await postJson("/api/applications", {
+        jobId,
+        resumeVersionId,
+        status: "APPLIED",
+        appliedAt: new Date().toISOString().slice(0, 10),
+        notes: "从 JD 匹配加入投递跟进。",
+      })) as { application: ApplicationView };
+      setApplications((current) => [normalizeApplication(result.application), ...current]);
+      setToast("已加入投递岗位跟进。");
+    } catch (error) {
+      setToast(`加入投递跟进失败：${formatRequestError(error)}`);
+    }
   }
 
   async function runResumeOptimization(input: ResumeOptimizationRequest): Promise<ResumeOptimizationResponse> {
@@ -699,12 +766,19 @@ export function CareerKitApp({
       if (saved.kind !== "version") throw new Error("通用优化版本保存失败。");
       version = normalizeVersion(saved.version);
     } else {
+      const sourceResumeId = result.sourceVersionId
+        ? result.sourceVersionId === mainResumeVersionId
+          ? mainResumeRootId
+          : versions.find((item) => item.id === result.sourceVersionId)?.resumeId
+        : mainResumeRootId;
+      if (!sourceResumeId) throw new Error("找不到通用优化的来源简历。");
       version = normalizeVersion(((await postJson("/api/resume-versions", {
           name: optimization.versionName || `AI优化-${buildResumeDisplayName(result.before, "未命名简历")}`,
           summary: optimization.summary,
           content: persistedContent,
           baseResume: result.before,
           optimizationMeta: optimization,
+          sourceResumeId,
         })) as { version: ResumeVersionView }).version);
     }
 
@@ -730,14 +804,16 @@ export function CareerKitApp({
       setResumeOptimizationStage(2);
       return;
     }
-    if (result.sourceVersionId) {
+    if (result.sourceVersionId === mainResumeVersionId) {
+      setResume(result.before);
+    } else if (result.sourceVersionId) {
       setVersions((current) => current.map((version) =>
         version.id === result.sourceVersionId ? { ...version, content: result.before } : version,
       ));
     } else {
       setResume(result.before);
     }
-    openResumeEditorFromMatch(result.sourceVersionId);
+    openResumeEditorFromMatch(result.sourceVersionId === mainResumeVersionId ? undefined : result.sourceVersionId);
   }
 
   async function rerunResumeOptimization(input: ResumeDiagnosisSelection) {
@@ -818,17 +894,16 @@ export function CareerKitApp({
     });
   }
 
-  function deletePipelineEntry(jobId: string) {
+  function deletePipelineEntry(applicationId: string) {
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
+        const response = await fetch(`/api/applications/${applicationId}`, { method: "DELETE" });
         if (!response.ok) {
           const message = (await response.text()) || response.statusText || `HTTP ${response.status}`;
           throw new Error(message);
         }
-        setApplications((current) => current.filter((application) => application.jobId !== jobId));
-        setJobs((current) => current.filter((job) => job.id !== jobId));
-        setToast("投递岗位已删除。");
+        setApplications((current) => current.filter((application) => application.id !== applicationId));
+        setToast("已从投递跟进移除，岗位档案和资料仍保留。");
       } catch (error) {
         setToast(`删除失败：${formatRequestError(error)}`);
       }
@@ -853,14 +928,39 @@ export function CareerKitApp({
     });
   }
 
+  const handleAgentApplicationChanged = useCallback((result: {
+    job: JobView;
+    application: ApplicationView;
+  }) => {
+    const job = normalizeJob(result.job);
+    const application = normalizeApplication(result.application);
+    setJobs((current) => current.some((item) => item.id === job.id)
+      ? current.map((item) => item.id === job.id ? job : item)
+      : [job, ...current]);
+    setApplications((current) => current.some((item) => item.id === application.id)
+      ? current.map((item) => item.id === application.id ? application : item)
+      : [application, ...current]);
+  }, []);
+
+  const agentAssistant = (
+    <AgentAssistant
+      aiReady={isAiReady(aiSettings)}
+      onOpenSettings={() => navigateTo("settings")}
+      onApplicationChanged={handleAgentApplicationChanged}
+    />
+  );
+
   if (active === "library" && libraryTarget) {
     return (
-      <CareerLibraryWorkspace
-        data={libraryData}
-        target={libraryTarget}
-        onClose={closeLibraryTarget}
-        onOpenResume={openResumeEditorFromMatch}
-      />
+      <>
+        <CareerLibraryWorkspace
+          data={libraryData}
+          target={libraryTarget}
+          onClose={closeLibraryTarget}
+          onOpenResume={openResumeEditorFromMatch}
+        />
+        {agentAssistant}
+      </>
     );
   }
 
@@ -998,8 +1098,9 @@ export function CareerKitApp({
             ) : (
               <ResumeWorkbench
                 key={resumeEditorVersionId ?? "main-resume"}
-                resume={resume}
-                resumeUpdatedAt={resumeUpdatedAt}
+                 resume={resume}
+                 resumeUpdatedAt={resumeUpdatedAt}
+                 mainResumeVersionId={mainResumeVersionId}
                 setResume={setResume}
                 saveResume={saveResume}
                 versions={versions}
@@ -1020,12 +1121,14 @@ export function CareerKitApp({
           {active === "match" && (
             <MatchView
               key={`${matchResetKey}:${matchVersionId ?? "input"}`}
-              resume={resume}
-              versions={versions}
+               resume={resume}
+               versions={versions}
+               mainResumeVersionId={mainResumeVersionId}
               jobs={jobs}
-              applications={applications}
+              trackedJobIds={applications.map((application) => application.jobId)}
               targetVersionId={matchVersionId}
               runMatchOptimization={runMatchOptimization}
+              onTrackJob={trackMatchedJob}
               onOpenResume={openResumeEditorFromMatch}
               aiSettings={aiSettings}
               onOpenSettings={() => navigateTo("settings")}
@@ -1046,7 +1149,8 @@ export function CareerKitApp({
               key={interviewSessionId ?? interviewPreparationId ?? "setup"}
               versions={versions}
               resume={resume}
-              mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
+               mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
+               mainResumeVersionId={mainResumeVersionId}
               targetSessionId={interviewSessionId}
               targetPreparationId={interviewPreparationId}
               onSessionUpsert={upsertInterviewSession}
@@ -1065,6 +1169,7 @@ export function CareerKitApp({
               group={libraryGroup}
               onGroupChange={changeLibraryGroup}
               onOpenJob={(id) => openLibraryTarget({ type: "job", id })}
+              onDeleteJob={deleteJobArchive}
               onOpenArtifact={(artifact) => openLibraryTarget({ type: "artifact", kind: artifact.kind, id: artifact.id })}
               onDeleteArtifact={deleteCareerArtifact}
             />
@@ -1085,6 +1190,7 @@ export function CareerKitApp({
         addJob={addJob}
         onOpenChange={setPipelineAddOpen}
       />
+      {agentAssistant}
       {firstUseTourOpen ? (
         <FirstUseTour
           active={active}
@@ -1108,7 +1214,6 @@ function normalizeJob(job: JobView): JobView {
   return {
     ...job,
     deadline: job.deadline ? String(job.deadline).slice(0, 10) : null,
-    tags: Array.isArray(job.tags) ? job.tags : [],
   };
 }
 

@@ -84,6 +84,7 @@ type ResumeSaveResult =
 type ResumeWorkbenchProps = {
   resume: ResumeContent;
   resumeUpdatedAt?: string;
+  mainResumeVersionId?: string;
   setResume: Dispatch<SetStateAction<ResumeContent>>;
   saveResume: (content?: ResumeContent, target?: ResumeSaveTarget, name?: string) => Promise<ResumeSaveResult>;
   versions?: ResumeVersionCard[];
@@ -130,6 +131,7 @@ const DEFAULT_EDITOR_THEME = DEFAULT_RESUME_THEME;
 export function ResumeWorkbench({
   resume,
   resumeUpdatedAt,
+  mainResumeVersionId,
   setResume,
   saveResume,
   versions = [],
@@ -529,7 +531,7 @@ export function ResumeWorkbench({
       onResumeOptimized({
         before: diagnosisResume,
         after: result.draft,
-        sourceVersionId: editingTarget.kind === "version" ? editingTarget.id : undefined,
+        sourceVersionId: editingTarget.kind === "version" ? editingTarget.id : mainResumeVersionId,
           diagnosis: input.diagnosis,
           selectedIssueIds: input.selectedIssueIds,
           selectedIssues: input.diagnosis.issues.filter((issue) => input.selectedIssueIds.includes(issue.id)),

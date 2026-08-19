@@ -7,7 +7,6 @@ describe("interview preparation AI task", () => {
   it("accepts any non-empty JD and keeps resume ownership metadata", () => {
     const input = {
       jobId: "",
-      resumeKey: "main",
       resumeVersionId: null,
       jd: "1",
       resumeName: "主简历",

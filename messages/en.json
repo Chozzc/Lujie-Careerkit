@@ -265,7 +265,8 @@
       "generalComplete": "AI resume optimization complete",
       "jdComplete": "JD matching complete",
       "jdPrefix": "JD matching",
-      "back": "Back to JD"
+      "back": "Back to JD",
+      "track": "Add to application tracking"
     },
     "resumePickerDescription": "Choose the base resume · {count} total",
     "form": {
@@ -1182,6 +1183,70 @@
     "improvements": "Improvements",
     "nextActions": "Next actions",
     "questionNumber": "Question {number}"
+  },
+  "agent": {
+    "title": "LuJie Agent",
+    "panelLabel": "LuJie Agent conversation panel",
+    "open": "Open LuJie Agent",
+    "close": "Close LuJie Agent",
+    "petHint": "Drag me · Click to chat",
+    "newConversation": "New conversation",
+    "deleteConversation": "Delete conversation",
+    "loading": "Loading conversation…",
+    "thinking": "Thinking…",
+    "inputPlaceholder": "Describe what you want to handle in your job search…",
+    "send": "Send",
+    "stop": "Stop generating",
+    "approvalHint": "You will review every application-data change before it runs",
+    "setup": {
+      "title": "Configure an AI service first",
+      "description": "The Agent uses LuJie's existing provider and model settings. It does not require a separate Agent key.",
+      "action": "Open settings"
+    },
+    "welcome": {
+      "title": "I can help with the career information saved in LuJie",
+      "description": "This version can review saved resumes and roles, and create or update application-tracking cards from your description.",
+      "prompt1": "Which applications am I currently tracking?",
+      "prompt2": "I applied to a role today. Help me record it.",
+      "prompt3": "Which resume versions do I have?"
+    },
+    "tools": {
+      "searchingPipeline": "Checking saved roles and application records",
+      "readingResume": "Reading a privacy-safe resume overview"
+    },
+    "approval": {
+      "title": "Confirm this application-card change",
+      "preparing": "Preparing a reviewable change",
+      "operation": "Action",
+      "create": "Create card",
+      "update": "Update card",
+      "target": "Role",
+      "status": "Stage",
+      "stageDate": "Stage date",
+      "followUpDate": "Follow-up date",
+      "note": "New note",
+      "cancel": "Cancel",
+      "confirm": "Confirm and run",
+      "executing": "Approved. Writing the change…",
+      "cancelled": "This change was cancelled",
+      "deniedReason": "The user cancelled this change.",
+      "created": "Application card created:",
+      "updated": "Application card updated:"
+    },
+    "status": {
+      "applied": "Applied",
+      "assessment": "Assessment",
+      "interview": "Interview",
+      "offer": "Offer",
+      "rejected": "Rejected",
+      "archived": "Archived"
+    },
+    "errors": {
+      "load": "Could not load the conversation.",
+      "create": "Could not create the conversation.",
+      "delete": "Could not delete the conversation.",
+      "request": "The Agent could not complete this request. Check your AI settings and try again."
+    }
   },
   "themeEditor": {
     "avatar": {

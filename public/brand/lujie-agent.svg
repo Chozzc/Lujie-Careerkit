@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" role="img" aria-labelledby="title description">
+  <title id="title">录阶 Agent 纸团子</title>
+  <desc id="description">一只胖胖的白色文件团子，带有折角和两只短手。</desc>
+  <path d="M25 28C25 17 34 10 45 10h31l20 20v48c0 15-12 24-29 24H48c-17 0-28-9-28-24V39c0-4 2-8 5-11Z" fill="#fff" stroke="#191919" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M76 10v16c0 7 5 11 12 11h8" fill="#f4f1ef" stroke="#191919" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M19 53c-8 1-11 8-8 14 2 4 6 5 10 4M97 54c9 0 13 7 10 14-2 4-6 6-10 4" fill="none" stroke="#191919" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="48" cy="53" r="3.2" fill="#191919"/>
+  <circle cx="72" cy="53" r="3.2" fill="#191919"/>
+  <path d="M55 64c3 3 7 3 10 0" fill="none" stroke="#191919" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M43 78h34" stroke="#f59e0b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M48 87h24" stroke="#13a06f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M38 101c3-5 9-6 14-2M68 99c5-3 11-2 14 2" fill="none" stroke="#191919" stroke-width="4" stroke-linecap="round"/>
+</svg>

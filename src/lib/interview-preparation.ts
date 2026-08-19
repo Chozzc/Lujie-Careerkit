@@ -10,7 +10,6 @@ export const interviewPreparationInputSchema = z.object({
 
 export const createInterviewPreparationInputSchema = interviewPreparationInputSchema.extend({
   jobId: z.string().trim().optional().default(""),
-  resumeKey: z.string().trim().min(1),
   resumeVersionId: z.string().trim().min(1).nullable(),
 });
 
@@ -91,9 +90,8 @@ export type CreateInterviewPreparationInput = z.infer<typeof createInterviewPrep
 
 export type InterviewPreparationRecord = {
   id: string;
-  jobId: string;
+  jobId: string | null;
   resumeVersionId: string | null;
-  resumeKey: string;
   mode: InterviewPreparationInput["focus"];
   context: InterviewPreparationInput;
   content: InterviewPreparation;

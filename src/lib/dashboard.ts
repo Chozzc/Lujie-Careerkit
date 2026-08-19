@@ -1,7 +1,7 @@
 import { getApplicationActionDate, getApplicationDueDate, isActivePipelineStatus } from "./pipeline";
 import type { ApplicationStatus } from "./types";
 
-const ACTION_STATUSES = new Set<ApplicationStatus>(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW"]);
+const ACTION_STATUSES = new Set<ApplicationStatus>(["APPLIED", "ASSESSMENT", "INTERVIEW"]);
 const SUBMITTED_STATUSES = new Set<ApplicationStatus>([
   "APPLIED",
   "ASSESSMENT",
@@ -56,8 +56,7 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
       if (!ACTION_STATUSES.has(application.status)) return [];
       const job = jobById.get(application.jobId);
       if (!job) return [];
-      if (application.status === "READY" && hasPlaceholderIdentity(job)) return [];
-      const schedule = resolveActionSchedule(application, job);
+      const schedule = resolveActionSchedule(application);
       return [{
         applicationId: application.id,
         jobId: job.id,
@@ -96,10 +95,9 @@ export function getDashboardDueDate(application: DashboardApplication, today = n
   return getApplicationDueDate(application, today);
 }
 
-function resolveActionSchedule(application: DashboardApplication, job: DashboardJob) {
+function resolveActionSchedule(application: DashboardApplication) {
   const activeSchedule = resolveActiveSchedule(application);
   if (activeSchedule) return activeSchedule;
-  if (application.status === "READY" && job.deadline) return { date: job.deadline, key: "deadline" as const };
   return { date: application.updatedAt.slice(0, 10), key: "updatedAt" as const };
 }
 
@@ -119,16 +117,7 @@ function resolveActiveSchedule(application: DashboardApplication) {
   return { date, key: "suggestedFollowUp" as const };
 }
 
-function hasPlaceholderIdentity(job: DashboardJob) {
-  return isPlaceholderLabel(job.company) || isPlaceholderLabel(job.title);
-}
-
-function isPlaceholderLabel(value: string) {
-  return /待|未知|未识别|目标公司|目标岗位/.test(value.trim());
-}
-
 function actionTarget(status: ApplicationStatus): DashboardTarget {
-  if (status === "READY") return "match";
   if (status === "INTERVIEW") return "interview";
   return "pipeline";
 }

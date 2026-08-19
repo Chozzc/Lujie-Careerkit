@@ -32,7 +32,7 @@ const actionRowMeta = [
   { badge: "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200", hover: "hover:bg-blue-50" },
 ] as const;
 
-const stageMeta: Record<Exclude<ApplicationStatus, "READY">, { bar: string }> = {
+const stageMeta: Record<ApplicationStatus, { bar: string }> = {
   APPLIED: { bar: "bg-primary" },
   ASSESSMENT: { bar: "bg-amber-500" },
   INTERVIEW: { bar: "bg-blue-600" },
@@ -59,7 +59,7 @@ export function DashboardWorkspace({ summary, onNavigate, onAddApplication }: Da
           <div className="divide-y divide-line">
             {summary.actions.map((action, index) => {
               const rowMeta = actionRowMeta[index] ?? actionRowMeta[2];
-              const actionKey = action.status === "READY" || action.status === "ASSESSMENT" || action.status === "INTERVIEW"
+              const actionKey = action.status === "ASSESSMENT" || action.status === "INTERVIEW"
                 ? action.status
                 : "DEFAULT";
               return (

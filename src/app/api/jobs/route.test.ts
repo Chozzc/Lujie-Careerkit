@@ -1,32 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createJobWithApplication } from "@/lib/repository";
+import { createJob } from "@/lib/repository";
 
 import { GET, POST } from "./route";
 
 vi.mock("@/lib/repository", () => ({
-  createJobWithApplication: vi.fn(),
+  createJob: vi.fn(),
 }));
 
-const createJob = vi.mocked(createJobWithApplication);
+const create = vi.mocked(createJob);
 
 describe("/api/jobs", () => {
   beforeEach(() => {
-    createJob.mockReset();
+    create.mockReset();
   });
 
   it("prewarms the route without creating a job", async () => {
     const response = await GET();
 
     expect(response.status).toBe(204);
-    expect(createJob).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 
-  it("creates a job with an application", async () => {
-    createJob.mockResolvedValue({
-      job: { id: "job-1" },
-      application: { id: "app-1" },
-    } as never);
+  it("creates a job without implying an application", async () => {
+    create.mockResolvedValue({ id: "job-1" } as never);
 
     const response = await POST(
       new Request("http://localhost/api/jobs", {
@@ -40,7 +37,7 @@ describe("/api/jobs", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(createJob).toHaveBeenCalledWith(expect.objectContaining({
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({
       company: "美团",
       title: "后端开发实习生",
       jd: "负责服务端接口开发",
@@ -56,7 +53,7 @@ describe("/api/jobs", () => {
     );
 
     expect(response.status).toBe(400);
-    expect(createJob).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 
   it("rejects invalid calendar dates before persistence", async () => {
@@ -68,6 +65,6 @@ describe("/api/jobs", () => {
     );
 
     expect(response.status).toBe(400);
-    expect(createJob).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
   });
 });

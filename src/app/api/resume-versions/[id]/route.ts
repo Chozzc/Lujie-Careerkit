@@ -25,6 +25,7 @@ export async function PATCH(request: Request, context: RouteContext<"/api/resume
   return Response.json({
     version: {
       id: version.id,
+      resumeId: version.resumeId,
       jobId: version.jobId,
       name: version.name,
       summary: version.summary,
@@ -37,6 +38,6 @@ export async function PATCH(request: Request, context: RouteContext<"/api/resume
 
 export async function DELETE(_request: Request, context: RouteContext<"/api/resume-versions/[id]">) {
   const { id } = await context.params;
-  await deleteResumeVersion(id);
-  return Response.json({ ok: true });
+  const result = await deleteResumeVersion(id);
+  return Response.json({ ok: true, deletedIds: result.deletedIds });
 }

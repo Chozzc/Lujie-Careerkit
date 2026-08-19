@@ -15,7 +15,7 @@ export type InterviewSessionStatus = "IN_PROGRESS" | "COMPLETED";
 
 export type InterviewSessionRecord = {
   id: string;
-  jobId: string;
+  jobId: string | null;
   resumeVersionId: string | null;
   mode: InterviewMode;
   status: InterviewSessionStatus;

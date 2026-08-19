@@ -61,7 +61,6 @@ export const statusMeta: Record<
   ApplicationStatus,
   { label: string; icon: ComponentType<{ className?: string }>; className: string }
 > = {
-  READY: { label: "准备投递", icon: ClipboardList, className: "text-slate-600" },
   APPLIED: { label: "已投递", icon: FileCheck2, className: "text-primary" },
   ASSESSMENT: { label: "笔试 / 测评", icon: ListChecks, className: "text-amber-700" },
   INTERVIEW: { label: "面试中", icon: Mic, className: "text-blue-700" },
@@ -95,7 +94,7 @@ export function PipelineView({
   applications: ApplicationView[];
   versions: ResumeVersionView[];
   updatePipelineEntry: (event: FormEvent<HTMLFormElement>) => void;
-  deletePipelineEntry: (jobId: string) => void;
+  deletePipelineEntry: (applicationId: string) => void;
   updateStatus: (applicationId: string, status: ApplicationStatus) => void;
 }) {
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
@@ -172,8 +171,8 @@ export function PipelineView({
           setEditingApplicationId(null);
         }}
         onDelete={() => {
-          if (!editingJob) return;
-          deletePipelineEntry(editingJob.id);
+          if (!editingJob || !editingApplication) return;
+          deletePipelineEntry(editingApplication.id);
           setEditingApplicationId(null);
         }}
       />

@@ -33,6 +33,7 @@ function makeData(): InitialData {
     versions: [
       {
         id: "plain",
+        resumeId: "resume-plain",
         jobId: null,
         name: "普通副本",
         summary: "不属于系统生成成果",
@@ -42,6 +43,7 @@ function makeData(): InitialData {
       },
       {
         id: "general",
+        resumeId: "resume-plain",
         jobId: null,
         name: "通用优化简历",
         summary: "通用优化",
@@ -55,6 +57,7 @@ function makeData(): InitialData {
       },
       {
         id: "tailored",
+        resumeId: "resume-plain",
         jobId: "job-1",
         name: "AI 产品经理定制版",
         summary: "岗位定制",
@@ -77,7 +80,6 @@ function makeData(): InitialData {
         jd: "负责 AI 产品规划。",
         link: "",
         deadline: null,
-        tags: [],
         analysis: {
           company: "字节跳动",
           title: "AI 产品经理",
@@ -240,7 +242,6 @@ function makePreparation(
     id,
     jobId,
     resumeVersionId: null,
-    resumeKey: "main",
     mode: "comprehensive",
     context: { jd: "JD", resumeName: "主简历", resume: baseResume, focus: "comprehensive", locale: "zh-CN" },
     content: {

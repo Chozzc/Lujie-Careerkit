@@ -34,7 +34,6 @@ describe("pipeline presentation helpers", () => {
           { id: "job-1", source: "手动录入", deadline: "2026-06-10" },
           { id: "job-2", source: "内推", deadline: "2026-06-20" },
           { id: "job-3", source: "Boss", deadline: null },
-          { id: "job-ready", source: "官网", deadline: "2026-06-08" },
         ],
         applications: [
           {
@@ -54,12 +53,6 @@ describe("pipeline presentation helpers", () => {
             jobId: "job-3",
             status: "OFFER",
             nextFollowUpAt: null,
-          },
-          {
-            id: "app-ready",
-            jobId: "job-ready",
-            status: "READY",
-            nextFollowUpAt: "2026-06-01",
           },
         ],
       },

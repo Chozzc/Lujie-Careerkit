@@ -63,6 +63,9 @@ export function ResumeOptimizationResult({
   onBack,
   openEditorLabel,
   onOpenEditor,
+  secondaryActionLabel,
+  onSecondaryAction,
+  secondaryActionDisabled,
   review,
   currentStep,
   onStepChange,
@@ -77,6 +80,9 @@ export function ResumeOptimizationResult({
   onBack?: () => void;
   openEditorLabel?: string;
   onOpenEditor?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  secondaryActionDisabled?: boolean;
   review?: ResumeReviewOptions;
   currentStep?: number;
   onStepChange?: (index: number) => void;
@@ -142,6 +148,11 @@ export function ResumeOptimizationResult({
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
           <div className="flex gap-3">
+            {secondaryActionLabel && onSecondaryAction ? (
+              <Button type="button" variant="outline" size="lg" onClick={onSecondaryAction} disabled={secondaryActionDisabled}>
+                {secondaryActionLabel}
+              </Button>
+            ) : null}
             {review?.onCancel ? (
               <Button type="button" variant="outline" size="lg" onClick={review.onCancel} disabled={isSaving}>
                 {t("review.cancel")}

@@ -8,7 +8,6 @@ datasource db {
 }
 
 enum ApplicationStatus {
-  READY
   APPLIED
   ASSESSMENT
   INTERVIEW
@@ -20,11 +19,12 @@ enum ApplicationStatus {
 model Resume {
   id        String   @id @default(cuid())
   name      String
-  content   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   versions ResumeVersion[]
+
+  @@index([updatedAt])
 }
 
 model ResumeVersion {
@@ -43,6 +43,10 @@ model ResumeVersion {
   applications          Application[]
   interviews            InterviewSession[]
   interviewPreparations InterviewPreparation[]
+
+  @@index([resumeId])
+  @@index([jobId])
+  @@index([updatedAt])
 }
 
 model Job {
@@ -54,7 +58,6 @@ model Job {
   jd        String
   link      String
   deadline  DateTime?
-  tags      Json
   analysis  Json?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -63,12 +66,17 @@ model Job {
   applications          Application[]
   interviews            InterviewSession[]
   interviewPreparations InterviewPreparation[]
+
+  @@index([company])
+  @@index([createdAt])
 }
 
 model Application {
   id             String            @id @default(cuid())
-  status         ApplicationStatus @default(READY)
+  status         ApplicationStatus @default(APPLIED)
+  /// The date the application was originally submitted.
   appliedAt      DateTime?
+  /// The date the application entered its current status.
   stageDate      DateTime?
   nextFollowUpAt DateTime?
   notes          String            @default("")
@@ -81,17 +89,9 @@ model Application {
   resumeVersionId String?
   resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
 
-  followUps FollowUpLog[]
-}
-
-model FollowUpLog {
-  id        String   @id @default(cuid())
-  type      String
-  content   String
-  createdAt DateTime @default(now())
-
-  applicationId String
-  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@unique([jobId])
+  @@index([resumeVersionId])
+  @@index([updatedAt])
 }
 
 model InterviewSession {
@@ -107,32 +107,36 @@ model InterviewSession {
   updatedAt            DateTime  @updatedAt
   completedAt          DateTime?
 
-  jobId           String
-  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             Job?           @relation(fields: [jobId], references: [id], onDelete: SetNull)
   resumeVersionId String?
   resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([resumeVersionId])
+  @@index([createdAt])
 }
 
 model InterviewPreparation {
   id        String   @id @default(cuid())
   mode      String   @default("comprehensive")
-  resumeKey String
   context   Json
   content   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  jobId           String
-  job             Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             Job?           @relation(fields: [jobId], references: [id], onDelete: SetNull)
   resumeVersionId String?
   resumeVersion   ResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+
+  @@index([jobId])
+  @@index([resumeVersionId])
+  @@index([createdAt])
 }
 
 model Settings {
   id               String    @id @default("singleton")
-  provider         String    @default("openai-compatible")
-  model            String    @default("deepseek-v4-flash")
-  baseUrl          String    @default("https://api.deepseek.com/v1")
   aiProvider       String    @default("deepseek")
   aiModel          String    @default("deepseek-v4-flash")
   aiBaseUrl        String    @default("https://api.deepseek.com/v1")
@@ -142,4 +146,15 @@ model Settings {
   aiLastTestedAt   DateTime?
   aiLastTestStatus String    @default("untested")
   updatedAt        DateTime  @updatedAt
+}
+
+model AgentThread {
+  id        String   @id @default(cuid())
+  title     String   @default("新对话")
+  messages  String   @default("[]")
+  summary   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updatedAt])
 }

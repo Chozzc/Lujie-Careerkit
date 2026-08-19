@@ -1,5 +1,4 @@
 export type ApplicationStatus =
-  | "READY"
   | "APPLIED"
   | "ASSESSMENT"
   | "INTERVIEW"

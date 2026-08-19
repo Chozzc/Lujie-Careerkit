@@ -16,8 +16,6 @@ import {
 } from "@/lib/resume-upload";
 import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type {
-  ApplicationStatus,
-  InterviewRound,
   JobAnalysis,
   ResumeContent,
   ResumeOptimizationMeta,
@@ -45,22 +43,8 @@ export type MatchJobView = {
   jd: string;
   link: string;
   deadline: string | null;
-  tags: string[];
   analysis: JobAnalysis | null;
   createdAt: string;
-};
-
-export type MatchApplicationView = {
-  id: string;
-  jobId: string;
-  status: ApplicationStatus;
-  interviewRound: InterviewRound;
-  resumeVersionId: string | null;
-  appliedAt: string | null;
-  stageDate: string | null;
-  nextFollowUpAt: string | null;
-  notes: string;
-  updatedAt: string;
 };
 
 export type MatchResumeVersionView = {
@@ -89,7 +73,6 @@ type MatchOptimizationPreferences = {
 
 export type MatchOptimizationResult = {
   job: MatchJobView;
-  application: MatchApplicationView;
   analysis?: JobAnalysis;
   version?: MatchResumeVersionView;
   optimization?: ResumeOptimizationMeta;
@@ -111,20 +94,24 @@ export function resumeVersionDisplayName(version: MatchResumeVersionView) {
 export function MatchView({
   resume,
   versions,
+  mainResumeVersionId,
   jobs,
-  applications,
+  trackedJobIds,
   targetVersionId,
   runMatchOptimization,
+  onTrackJob,
   onOpenResume,
   aiSettings,
   onOpenSettings,
 }: {
   resume: ResumeContent;
   versions: MatchResumeVersionView[];
+  mainResumeVersionId?: string;
   jobs: MatchJobView[];
-  applications: MatchApplicationView[];
+  trackedJobIds: string[];
   targetVersionId?: string;
   runMatchOptimization: (input: MatchOptimizationRequest) => Promise<MatchOptimizationResult>;
+  onTrackJob: (jobId: string, resumeVersionId: string) => Promise<void>;
   onOpenResume: (versionId?: string) => void;
   aiSettings: RedactedAiSettings | null;
   onOpenSettings: () => void;
@@ -188,7 +175,7 @@ export function MatchView({
   const selectedResumeRequest =
     resumeSource === "upload"
       ? { resumeContent: uploadedResume?.content }
-      : { resumeVersionId: selectedLibraryKey && selectedLibraryKey !== "main" ? selectedLibraryKey : undefined };
+      : { resumeVersionId: selectedLibraryKey === "main" ? mainResumeVersionId : selectedLibraryKey };
   const resumeReady = resumeSource === "upload" ? Boolean(uploadedResume) : Boolean(selectedBaseResume);
   const canOptimize = resumeReady && Boolean(jdDraft.trim()) && !isGenerating && !isUploadingResume;
   const currentBaseLabel =
@@ -275,13 +262,8 @@ export function MatchView({
       }
 
       const job = jobs.find((item) => item.id === version.jobId) ?? buildSyntheticJobForVersion(version);
-      const application =
-        applications.find((item) => item.resumeVersionId === version.id || item.jobId === job.id) ??
-        buildSyntheticApplicationForVersion(version, job.id);
-
       setResult({
         job,
-        application,
         analysis: job.analysis ?? undefined,
         version,
         optimization: readOptimizationMeta(version.content),
@@ -301,7 +283,7 @@ export function MatchView({
       }
       return true;
     },
-    [applications, jobs, resume, t, versions],
+    [jobs, resume, t, versions],
   );
 
   useEffect(() => {
@@ -403,6 +385,9 @@ export function MatchView({
             : undefined
         }
         onOpenEditor={() => onOpenResume(result.version?.id)}
+        secondaryActionLabel={isJdResult ? t("result.track") : undefined}
+        secondaryActionDisabled={trackedJobIds.includes(result.job.id)}
+        onSecondaryAction={isJdResult ? () => onTrackJob(result.job.id, result.version!.id) : undefined}
       />
     );
   }
@@ -543,23 +528,7 @@ function buildSyntheticJobForVersion(version: MatchResumeVersionView): MatchJobV
     jd: version.summary || version.name,
     link: "",
     deadline: null,
-    tags: [],
     analysis: null,
     createdAt: version.createdAt,
-  };
-}
-
-function buildSyntheticApplicationForVersion(version: MatchResumeVersionView, jobId: string): MatchApplicationView {
-  return {
-    id: `version-application-${version.id}`,
-    jobId,
-    status: "READY",
-    interviewRound: "",
-    resumeVersionId: version.id,
-    appliedAt: null,
-    stageDate: null,
-    nextFollowUpAt: null,
-    notes: "来自本地优化版本。",
-    updatedAt: version.updatedAt,
   };
 }

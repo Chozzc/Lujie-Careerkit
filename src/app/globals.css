@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@source "../../node_modules/streamdown/dist/*.js";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -166,6 +167,40 @@ select {
     box-shadow: none !important;
     border: 0 !important;
     max-width: none !important;
+  }
+}
+
+@keyframes lujie-agent-pet-idle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  45% { transform: translateY(-3px) rotate(-1deg); }
+  55% { transform: translateY(-3px) rotate(1deg); }
+}
+
+@keyframes lujie-agent-pet-thinking {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+.lujie-agent-pet-idle {
+  animation: lujie-agent-pet-idle 3.4s ease-in-out infinite;
+}
+
+.lujie-agent-pet-thinking {
+  animation: lujie-agent-pet-thinking 0.72s ease-in-out infinite;
+}
+
+.lujie-agent-pet-dragging {
+  transform: translateY(-2px) rotate(-2deg) scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lujie-agent-pet-idle,
+  .lujie-agent-pet-thinking {
+    animation: none;
+  }
+
+  .lujie-agent-pet-dragging {
+    transform: none;
   }
 }
 

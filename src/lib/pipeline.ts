@@ -1,7 +1,6 @@
 import type { ApplicationStatus } from "./types";
 
 export const applicationStatusDateLabels: Record<ApplicationStatus, string> = {
-  READY: "岗位截止日期",
   APPLIED: "投递日期",
   ASSESSMENT: "笔试 / 测评日期",
   INTERVIEW: "面试日期",

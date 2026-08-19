@@ -38,6 +38,7 @@ describe("resume versions route", () => {
     };
     mocks.createResumeVersion.mockResolvedValue({
       id: "version-1",
+      resumeId: "resume-1",
       jobId: null,
       name: optimizationMeta.versionName,
       summary: optimizationMeta.summary,
@@ -52,6 +53,7 @@ describe("resume versions route", () => {
       content: resume,
       baseResume: resume,
       optimizationMeta,
+      sourceResumeId: "resume-1",
     }));
 
     expect(response.status).toBe(200);
@@ -61,6 +63,7 @@ describe("resume versions route", () => {
       content: expect.objectContaining(resume),
       baseResume: expect.objectContaining(resume),
       optimizationMeta,
+      sourceResumeId: "resume-1",
     });
   });
 

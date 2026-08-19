@@ -55,6 +55,7 @@ exports/
 output/
 .superpowers/
 .impeccable/
+.playwright-cli/
 .worktrees/
 AGENTS.md
 CLAUDE.md

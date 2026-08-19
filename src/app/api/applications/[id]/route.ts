@@ -2,11 +2,11 @@ import type { ApplicationStatus } from "@prisma/client";
 import { z } from "zod";
 
 import { dateInputSchema, parseJsonRequest } from "@/lib/api-request";
-import { updateApplication } from "@/lib/repository";
+import { deleteApplication, updateApplication } from "@/lib/repository";
 
 const applicationSchema = z.object({
   status: z
-    .enum(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "REJECTED", "ARCHIVED"])
+    .enum(["APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "REJECTED", "ARCHIVED"])
     .optional(),
   interviewRound: z.enum(["", "FIRST", "SECOND", "THIRD", "HR"]).optional(),
   stageDate: dateInputSchema.nullable().optional(),
@@ -31,4 +31,10 @@ export async function PATCH(request: Request, context: RouteContext<"/api/applic
   });
 
   return Response.json({ application });
+}
+
+export async function DELETE(_request: Request, context: RouteContext<"/api/applications/[id]">) {
+  const { id } = await context.params;
+  await deleteApplication(id);
+  return Response.json({ ok: true });
 }

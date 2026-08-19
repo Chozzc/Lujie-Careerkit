@@ -10,19 +10,14 @@ import type { AiTestStatus } from "./settings";
 type StoredAiSettingsForMaintenance = {
   aiProvider: string;
   aiModel: string;
-  baseUrl?: string;
-  aiBaseUrl?: string;
-  model: string;
+  aiBaseUrl: string;
   aiApiKey: string;
   aiEnabled: boolean;
 };
 
 type AiSettingsMaintenancePatch = {
-  provider?: string;
-  baseUrl?: string;
   aiProvider?: string;
   aiBaseUrl?: string;
-  model: string;
   aiModel: string;
   aiLastTestStatus: AiTestStatus;
 };
@@ -31,10 +26,8 @@ export function getAiSettingsMaintenancePatch(
   settings: StoredAiSettingsForMaintenance,
 ): AiSettingsMaintenancePatch | null {
   const currentModel = getCurrentAiModel(settings.aiProvider, settings.aiModel);
-  const currentLegacyModel = getCurrentAiModel(settings.aiProvider, settings.model);
-  if (currentModel !== settings.aiModel || currentLegacyModel !== settings.model) {
+  if (currentModel !== settings.aiModel) {
     return {
-      model: currentLegacyModel,
       aiModel: currentModel,
       aiLastTestStatus: "untested",
     };
@@ -46,13 +39,11 @@ export function getAiSettingsMaintenancePatch(
   if (
     settings.aiProvider === "openai" &&
     legacyDefaultModels.has(settings.aiModel) &&
-    legacyDefaultModels.has(settings.model) &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
     const openAiDefaultModel = getDefaultAiModel("openai");
     return {
-      model: openAiDefaultModel,
       aiModel: openAiDefaultModel,
       aiLastTestStatus: "untested",
     };
@@ -61,17 +52,13 @@ export function getAiSettingsMaintenancePatch(
   if (
     settings.aiProvider === "deepseek" &&
     settings.aiModel === "deepseek-v4-flash" &&
-    settings.model === "deepseek-v4-flash" &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
     const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
     const defaultModel = getDefaultAiModel(defaultProvider.id);
     return {
-      provider: "openai-compatible",
-      baseUrl: defaultProvider.baseUrl,
       aiProvider: defaultProvider.id,
-      model: defaultModel,
       aiModel: defaultModel,
       aiBaseUrl: defaultProvider.baseUrl,
       aiLastTestStatus: "untested",
@@ -81,17 +68,13 @@ export function getAiSettingsMaintenancePatch(
   if (
     settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
     oldQwenDefaultModels.has(settings.aiModel) &&
-    oldQwenDefaultModels.has(settings.model) &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
     const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
     const defaultModel = getDefaultAiModel(defaultProvider.id);
     return {
-      provider: "openai-compatible",
-      baseUrl: defaultProvider.baseUrl,
       aiProvider: defaultProvider.id,
-      model: defaultModel,
       aiModel: defaultModel,
       aiBaseUrl: defaultProvider.baseUrl,
       aiLastTestStatus: "untested",
@@ -100,17 +83,14 @@ export function getAiSettingsMaintenancePatch(
 
   if (
     settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
-    (settings.aiBaseUrl === getAiProvider("deepseek").baseUrl || settings.baseUrl === getAiProvider("deepseek").baseUrl) &&
+    settings.aiBaseUrl === getAiProvider("deepseek").baseUrl &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
     const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
     const defaultModel = getDefaultAiModel(defaultProvider.id);
     return {
-      provider: "openai-compatible",
-      baseUrl: defaultProvider.baseUrl,
       aiProvider: defaultProvider.id,
-      model: settings.model || defaultModel,
       aiModel: settings.aiModel || defaultModel,
       aiBaseUrl: defaultProvider.baseUrl,
       aiLastTestStatus: "untested",

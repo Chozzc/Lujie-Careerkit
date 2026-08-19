@@ -12,7 +12,6 @@ export type JobView = {
   jd: string;
   link: string;
   deadline: string | null;
-  tags: string[];
   analysis: JobAnalysis | null;
   createdAt: string;
   updatedAt: string;
@@ -33,6 +32,7 @@ export type ApplicationView = {
 
 export type ResumeVersionView = {
   id: string;
+  resumeId: string;
   jobId: string | null;
   name: string;
   summary: string;
@@ -42,16 +42,13 @@ export type ResumeVersionView = {
 };
 
 export type InitialData = {
-  resume: { id: string; name: string; content: ResumeContent; updatedAt: string } | null;
+  resume: { id: string; resumeId: string; name: string; summary: string; content: ResumeContent; updatedAt: string } | null;
   versions: ResumeVersionView[];
   jobs: JobView[];
   applications: ApplicationView[];
   interviews: InterviewSessionRecord[];
   interviewPreparations: InterviewPreparationRecord[];
   settings: {
-    provider: string;
-    model: string;
-    baseUrl: string;
     ai: RedactedAiSettings;
     updatedAt: string;
   } | null;

@@ -8,7 +8,7 @@ describe("AI settings maintenance migration", () => {
       getAiSettingsMaintenancePatch({
         aiProvider: "deepseek",
         aiModel: "deepseek-v4-flash",
-        model: "deepseek-v4-flash",
+        aiBaseUrl: "https://api.deepseek.com/v1",
         aiApiKey: "",
         aiEnabled: false,
       }),
@@ -25,7 +25,7 @@ describe("AI settings maintenance migration", () => {
       getAiSettingsMaintenancePatch({
         aiProvider: "deepseek",
         aiModel: "deepseek-v4-flash",
-        model: "deepseek-v4-flash",
+        aiBaseUrl: "https://api.deepseek.com/v1",
         aiApiKey: "encrypted-key",
         aiEnabled: true,
       }),
@@ -37,8 +37,6 @@ describe("AI settings maintenance migration", () => {
       getAiSettingsMaintenancePatch({
         aiProvider: "qwen",
         aiModel: "qwen3.7-max",
-        model: "qwen3.7-max",
-        baseUrl: "https://api.deepseek.com/v1",
         aiBaseUrl: "https://api.deepseek.com/v1",
         aiApiKey: "",
         aiEnabled: false,
@@ -46,9 +44,7 @@ describe("AI settings maintenance migration", () => {
     ).toMatchObject({
       aiProvider: "qwen",
       aiModel: "qwen3.6-flash",
-      model: "qwen3.6-flash",
       aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       aiLastTestStatus: "untested",
     });
   });
@@ -58,13 +54,12 @@ describe("AI settings maintenance migration", () => {
       getAiSettingsMaintenancePatch({
         aiProvider: "openai",
         aiModel: "gpt-4o-mini",
-        model: "gpt-4o-mini",
+        aiBaseUrl: "https://api.openai.com/v1",
         aiApiKey: "",
         aiEnabled: false,
       }),
     ).toMatchObject({
       aiModel: "gpt-5.6",
-      model: "gpt-5.6",
       aiLastTestStatus: "untested",
     });
   });
@@ -74,13 +69,12 @@ describe("AI settings maintenance migration", () => {
       getAiSettingsMaintenancePatch({
         aiProvider: "openrouter",
         aiModel: "openai/gpt-5.6",
-        model: "openai/gpt-5.6",
+        aiBaseUrl: "https://openrouter.ai/api/v1",
         aiApiKey: "encrypted-key",
         aiEnabled: true,
       }),
     ).toMatchObject({
       aiModel: "openai/gpt-5.6-sol",
-      model: "openai/gpt-5.6-sol",
       aiLastTestStatus: "untested",
     });
   });

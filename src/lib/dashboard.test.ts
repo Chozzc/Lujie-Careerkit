@@ -7,7 +7,6 @@ describe("buildDashboardSummary", () => {
     const summary = buildDashboardSummary(
       {
         applications: [
-          application("draft", "job-draft", "READY", null, null, "2026-06-23T01:00:00.000Z"),
           application("applied", "job-applied", "APPLIED", null, "2026-06-21", "2026-06-22T01:00:00.000Z"),
           application("assessment", "job-assessment", "ASSESSMENT", "rv-1", "2026-06-25", "2026-06-22T02:00:00.000Z"),
           application("interview", "job-interview", "INTERVIEW", "rv-2", "2026-06-22", "2026-06-23T02:00:00.000Z"),
@@ -16,7 +15,6 @@ describe("buildDashboardSummary", () => {
           application("archived", "job-archived", "ARCHIVED", null, null, "2026-06-18T01:00:00.000Z"),
         ],
         jobs: [
-          job("job-draft", "百度", "产品实习生"),
           job("job-applied", "美团", "后端开发实习生"),
           job("job-assessment", "腾讯", "数据分析实习生"),
           job("job-interview", "阿里巴巴", "算法实习生"),
@@ -57,7 +55,6 @@ describe("buildDashboardSummary", () => {
           }),
           application("offer", "job-offer", "OFFER", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
           application("archived", "job-archived", "ARCHIVED", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
-          application("ready", "job-ready", "READY", null, "2026-06-01", "2026-06-20T08:00:00.000Z"),
         ],
         jobs: [
           job("job-applied", "百度", "前端开发实习生"),
@@ -65,7 +62,6 @@ describe("buildDashboardSummary", () => {
           job("job-interview", "腾讯", "产品实习生"),
           job("job-offer", "字节跳动", "算法实习生"),
           job("job-archived", "美团", "后端开发实习生"),
-          job("job-ready", "京东", "数据分析实习生"),
         ],
       },
       new Date("2026-06-10T12:00:00.000Z"),
@@ -81,21 +77,6 @@ describe("buildDashboardSummary", () => {
     expect(summary).not.toHaveProperty("recentVersions");
     expect(summary).not.toHaveProperty("recentInterviews");
     expect(summary.actions).toEqual([]);
-  });
-
-  it("does not surface placeholder ready jobs as upcoming actions", () => {
-    const summary = buildDashboardSummary({
-      applications: [
-        application("placeholder", "job-placeholder", "READY", null, null, "2026-06-20T08:00:00.000Z"),
-        application("real", "job-real", "READY", null, null, "2026-06-19T08:00:00.000Z"),
-      ],
-      jobs: [
-        job("job-placeholder", "目标公司", "目标岗位"),
-        job("job-real", "美团", "后端开发实习生"),
-      ],
-    });
-
-    expect(summary.actions.map((action) => action.applicationId)).toEqual(["real"]);
   });
 
   it("sorts actions by their resolved date without manual ordering", () => {
@@ -171,7 +152,7 @@ function job(id: string, company: string, title: string) {
 function application(
   id: string,
   jobId: string,
-  status: "READY" | "APPLIED" | "ASSESSMENT" | "INTERVIEW" | "OFFER" | "REJECTED" | "ARCHIVED",
+  status: "APPLIED" | "ASSESSMENT" | "INTERVIEW" | "OFFER" | "REJECTED" | "ARCHIVED",
   resumeVersionId: string | null,
   nextFollowUpAt: string | null,
   updatedAt: string,

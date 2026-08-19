@@ -13,7 +13,7 @@ const updateJobSchema = z.object({
   link: z.string().optional(),
   jd: z.string().optional(),
   status: z
-    .enum(["READY", "APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "REJECTED", "ARCHIVED"])
+    .enum(["APPLIED", "ASSESSMENT", "INTERVIEW", "OFFER", "REJECTED", "ARCHIVED"])
     .optional(),
   interviewRound: z.enum(["", "FIRST", "SECOND", "THIRD", "HR"]).optional(),
   appliedAt: dateInputSchema.nullable().optional(),
