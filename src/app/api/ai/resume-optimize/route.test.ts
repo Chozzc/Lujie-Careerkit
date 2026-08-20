@@ -132,6 +132,15 @@ describe("resume AI optimization route", () => {
     expect(mocks.optimizeResumeWithAI).not.toHaveBeenCalled();
   });
 
+  it("returns 404 when the selected resume version no longer exists", async () => {
+    mocks.getTailoringBaseResume.mockRejectedValue(new Error("找不到所选简历版本。"));
+
+    const response = await POST(jsonRequest({ resumeVersionId: "missing-version" }));
+
+    expect(response.status).toBe(404);
+    expect(mocks.optimizeResumeWithAI).not.toHaveBeenCalled();
+  });
+
   it("rejects automatic optimization for an issue requiring user confirmation", async () => {
     const diagnosis = {
       summary: "GPA 写法需要核实。",

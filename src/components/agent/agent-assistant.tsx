@@ -439,6 +439,9 @@ function AgentConversation({
   const locale = useLocale() === "en" ? "en" : "zh-CN";
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastAutoScrolledUserMessageId = useRef(
+    thread.messages.at(-1)?.role === "user" ? thread.messages.at(-1)?.id : undefined,
+  );
   const handledToolCalls = useRef(new Set<string>());
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/agent/chat",
@@ -474,7 +477,17 @@ function AgentConversation({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages, status]);
+  }, []);
+
+  useEffect(() => {
+    const latestMessage = messages.at(-1);
+    if (
+      latestMessage?.role !== "user" ||
+      latestMessage.id === lastAutoScrolledUserMessageId.current
+    ) return;
+    lastAutoScrolledUserMessageId.current = latestMessage.id;
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
 

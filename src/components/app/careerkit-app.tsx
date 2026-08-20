@@ -245,6 +245,7 @@ export function CareerKitApp({
   }, [active]);
 
   const navigateTo = useCallback((key: NavKey) => {
+    setToast("");
     setActive(key);
     setResumeMode("library");
     if (key !== "resume") setResumeEditorVersionId(undefined);
@@ -555,7 +556,7 @@ export function CareerKitApp({
     });
   }
 
-  function addJob(event: FormEvent<HTMLFormElement>) {
+  function addJob(event: FormEvent<HTMLFormElement>): Promise<boolean> {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -568,9 +569,9 @@ export function CareerKitApp({
     const interviewRound = stage.interviewRound;
     if (!company || !title) {
       setToast("公司和岗位名称都要填写。");
-      return;
+      return Promise.resolve(false);
     }
-    startTransition(async () => {
+    return new Promise((resolve) => startTransition(async () => {
       try {
         const jobResult = (await postJson("/api/jobs", {
           company,
@@ -597,10 +598,12 @@ export function CareerKitApp({
         ]);
         setToast("投递岗位已加入跟进。");
         form.reset();
+        resolve(true);
       } catch (error) {
         setToast(`岗位保存失败：${formatRequestError(error)}`);
+        resolve(false);
       }
-    });
+    }));
   }
 
   async function runMatchOptimization(input: MatchOptimizationRequest): Promise<MatchOptimizationResult> {
@@ -847,7 +850,7 @@ export function CareerKitApp({
     openResumeEditorFromMatch(currentResumeOptimizationResult.version.id);
   }
 
-  function updatePipelineEntry(event: FormEvent<HTMLFormElement>) {
+  function updatePipelineEntry(event: FormEvent<HTMLFormElement>): Promise<boolean> {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -858,10 +861,10 @@ export function CareerKitApp({
     const stage = parsePipelineStage(formData.get("stage") ?? formData.get("status"));
     if (!jobId || !applicationId || !company || !title) {
       setToast("公司和岗位名称都要填写。");
-      return;
+      return Promise.resolve(false);
     }
 
-    startTransition(async () => {
+    return new Promise((resolve) => startTransition(async () => {
       try {
         const result = (await postJson(
           `/api/jobs/${jobId}`,
@@ -888,10 +891,12 @@ export function CareerKitApp({
           current.map((item) => (item.id === application.id ? { ...item, ...application } : item)),
         );
         setToast(`${company} 的投递信息已更新。`);
+        resolve(true);
       } catch (error) {
         setToast(`投递信息保存失败：${formatRequestError(error)}`);
+        resolve(false);
       }
-    });
+    }));
   }
 
   function deletePipelineEntry(applicationId: string) {

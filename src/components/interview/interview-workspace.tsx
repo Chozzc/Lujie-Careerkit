@@ -307,7 +307,9 @@ export function InterviewWorkspace({
       const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
-      setMessage(t("status.imported", { fileName: draft.fileName }));
+      setMessage(draft.source === "local-fallback"
+        ? t("status.fallbackImported", { fileName: draft.fileName })
+        : t("status.imported", { fileName: draft.fileName }));
     } catch (error) {
       setUploadedResume(null);
       setUploadError(error instanceof Error ? error.message : t("status.fileReadFailed"));

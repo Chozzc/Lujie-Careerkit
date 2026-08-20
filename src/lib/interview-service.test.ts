@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { InterviewQuestion, InterviewReport } from "./interview";
+import type { InterviewAnswer, InterviewQuestion, InterviewReport } from "./interview";
 import { createInterviewService, type InterviewSessionRecord } from "./interview-service";
 
 const questions: InterviewQuestion[] = Array.from({ length: 8 }, (_, index) => ({
@@ -206,10 +206,12 @@ function createRepository(sessions: InterviewSessionRecord[]) {
     async findById(id: string) {
       return sessions.find((session) => session.id === id) ?? null;
     },
-    async saveProgress(id: string, input: Pick<InterviewSessionRecord, "answers" | "currentQuestionIndex">) {
+    async saveProgress(id: string, input: { answer?: InterviewAnswer; currentQuestionIndex?: number }) {
       const session = sessions.find((item) => item.id === id);
       if (!session) throw new Error("not found");
-      Object.assign(session, input, { updatedAt: "2026-06-22T10:01:00.000Z" });
+      if (input.answer) session.answers[input.answer.questionId] = input.answer;
+      if (input.currentQuestionIndex !== undefined) session.currentQuestionIndex = input.currentQuestionIndex;
+      session.updatedAt = "2026-06-22T10:01:00.000Z";
       return session;
     },
     async complete(id: string, feedback: InterviewReport) {

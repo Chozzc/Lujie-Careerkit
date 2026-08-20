@@ -93,7 +93,7 @@ export function PipelineView({
   jobs: JobView[];
   applications: ApplicationView[];
   versions: ResumeVersionView[];
-  updatePipelineEntry: (event: FormEvent<HTMLFormElement>) => void;
+  updatePipelineEntry: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   deletePipelineEntry: (applicationId: string) => void;
   updateStatus: (applicationId: string, status: ApplicationStatus) => void;
 }) {
@@ -166,9 +166,8 @@ export function PipelineView({
         onOpenChange={(open) => {
           if (!open) setEditingApplicationId(null);
         }}
-        onSubmit={(event) => {
-          updatePipelineEntry(event);
-          setEditingApplicationId(null);
+        onSubmit={async (event) => {
+          if (await updatePipelineEntry(event)) setEditingApplicationId(null);
         }}
         onDelete={() => {
           if (!editingJob || !editingApplication) return;
@@ -400,7 +399,7 @@ export function AddApplicationDialog({
   onOpenChange,
 }: {
   open: boolean;
-  addJob: (event: FormEvent<HTMLFormElement>) => void;
+  addJob: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("pipeline");
@@ -448,7 +447,7 @@ function AddApplicationForm({
   addJob,
   onSubmitted,
 }: {
-  addJob: (event: FormEvent<HTMLFormElement>) => void;
+  addJob: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
   onSubmitted?: () => void;
 }) {
   const t = useTranslations("pipeline");
@@ -467,13 +466,8 @@ function AddApplicationForm({
 
   return (
     <form
-      onSubmit={(event) => {
-        const formData = new FormData(event.currentTarget);
-        const hasRequiredFields =
-          String(formData.get("company") ?? "").trim() &&
-          String(formData.get("title") ?? "").trim();
-        addJob(event);
-        if (hasRequiredFields) {
+      onSubmit={async (event) => {
+        if (await addJob(event)) {
           setApplicationStage("APPLIED");
           setStageDate("");
           setNextFollowUpAt("");
@@ -706,7 +700,7 @@ function PipelineEditDialog({
   job?: JobView;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onDelete: () => void;
 }) {
   if (!open || !application || !job) return null;
@@ -733,7 +727,7 @@ function PipelineEditDialogContent({
   application: ApplicationView;
   job: JobView;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   onDelete: () => void;
 }) {
   const t = useTranslations("pipeline");

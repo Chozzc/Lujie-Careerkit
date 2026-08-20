@@ -1,6 +1,5 @@
 import {
   interviewReportSchema,
-  mergeInterviewAnswer,
   parseInterviewQuestionPack,
   type InterviewAnswer,
   type InterviewAnswers,
@@ -49,7 +48,7 @@ export type InterviewRepository = {
   findById(id: string): Promise<InterviewSessionRecord | null>;
   saveProgress(
     id: string,
-    input: Pick<InterviewSessionRecord, "answers"> & Partial<Pick<InterviewSessionRecord, "currentQuestionIndex">>,
+    input: SaveProgressInput,
   ): Promise<InterviewSessionRecord>;
   complete(id: string, feedback: InterviewReport): Promise<InterviewSessionRecord>;
   deleteSession(id: string): Promise<void>;
@@ -93,13 +92,12 @@ export function createInterviewService(dependencies: {
     async saveProgress(id: string, input: SaveProgressInput) {
       const session = await requireSession(dependencies.repository, id);
       if (session.status === "COMPLETED") throw new Error("已完成的面试记录不能继续修改。");
-      const answers = input.answer ? mergeInterviewAnswer(session.answers, input.answer) : session.answers;
       const lastIndex = Math.max(0, session.questions.length - 1);
       const currentQuestionIndex = input.currentQuestionIndex === undefined
         ? undefined
         : Math.max(0, Math.min(input.currentQuestionIndex, lastIndex));
       return dependencies.repository.saveProgress(id, {
-        answers,
+        ...(input.answer ? { answer: input.answer } : {}),
         ...(currentQuestionIndex === undefined ? {} : { currentQuestionIndex }),
       });
     },

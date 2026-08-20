@@ -7,6 +7,8 @@ export type UploadedResumeDraft = {
   fileName: string;
   content: ResumeContent;
   characterCount: number;
+  source?: string;
+  message?: string;
 };
 
 export type ResumeUploadOptions = {
@@ -80,6 +82,8 @@ async function importResumeWithAI(file: File, options: ResumeUploadOptions): Pro
     fileName: result.fileName,
     content: result.content,
     characterCount: result.characterCount,
+    source: result.source,
+    message: result.message,
   };
 }
 

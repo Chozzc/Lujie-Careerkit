@@ -10,7 +10,7 @@ import {
 } from "./ai/settings";
 import { getAiSettingsMaintenancePatch } from "./ai/settings-migration";
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER_ID, LEGACY_DEFAULT_AI_MODELS, getAiProvider } from "./ai/provider-registry";
-import { normalizeApplicationInterviewRound } from "./application";
+import { normalizeApplicationInterviewRound, resolveApplicationAppliedAt } from "./application";
 import { analyzeJobInput } from "./job-analysis";
 import { prisma } from "./db";
 import {
@@ -316,14 +316,6 @@ export async function updateResume(versionId: string, content: ResumeContent, na
   return version;
 }
 
-export async function updateResumeVersionContent(versionId: string, content: ResumeContent) {
-  await ensureSeedData();
-  return prisma.resumeVersion.update({
-    where: { id: versionId },
-    data: { content, updatedAt: new Date() },
-  });
-}
-
 export async function createResumeVersion(input: {
   name: string;
   summary?: string;
@@ -392,19 +384,6 @@ export async function updateResumeVersion(input: {
   return version;
 }
 
-export async function saveJobAnalysis(jobId: string, analysis: JobAnalysis) {
-  const company = cleanJobLabel(analysis.company);
-  const title = cleanJobLabel(analysis.title);
-  return prisma.job.update({
-    where: { id: jobId },
-    data: {
-      analysis,
-      ...(company ? { company } : {}),
-      ...(title ? { title } : {}),
-    },
-  });
-}
-
 export async function getTailoringBaseResume(input: {
   resumeVersionId?: string;
   resumeContent?: ResumeContent;
@@ -417,8 +396,10 @@ export async function getTailoringBaseResume(input: {
       select: { content: true },
     });
     if (version) return version.content as ResumeContent;
+    throw new Error("找不到所选简历版本。");
   }
   const version = await prisma.resumeVersion.findFirst({
+    where: { jobId: null },
     orderBy: { updatedAt: "desc" },
     select: { content: true },
   });
@@ -476,14 +457,20 @@ export async function createTailoredVersionForJob(input: {
   optimizationMeta?: ResumeOptimizationMeta;
 }) {
   await ensureSeedData();
-  const [source, job] = await Promise.all([
-    resolveResumeSource({
-      resumeVersionId: input.resumeVersionId,
-      resumeContent: input.resumeContent,
-    }),
+  const [job, application] = await Promise.all([
     prisma.job.findUnique({ where: { id: input.jobId } }),
+    input.applicationId
+      ? prisma.application.findUnique({ where: { id: input.applicationId }, select: { jobId: true } })
+      : null,
   ]);
   if (!job) throw new Error("找不到目标岗位。");
+  if (input.applicationId && application?.jobId !== input.jobId) {
+    throw new Error("投递记录不属于该岗位。");
+  }
+  const source = await resolveResumeSource({
+    resumeVersionId: input.resumeVersionId,
+    resumeContent: input.resumeContent,
+  });
   const baseResume = source.content;
 
   const jobIdentity = {
@@ -499,24 +486,32 @@ export async function createTailoredVersionForJob(input: {
   const versionName = input.optimizationMeta?.versionName?.trim() || tailored.name;
   const versionSummary = input.optimizationMeta?.summary?.trim() || tailored.summary;
 
-  const version = await prisma.resumeVersion.create({
-    data: {
-      name: versionName,
-      summary: versionSummary,
-      content,
-      resumeId: source.resumeId,
-      jobId: job.id,
-    },
-  });
-
-  if (input.applicationId) {
-    await prisma.application.update({
-      where: { id: input.applicationId },
-      data: { resumeVersionId: version.id },
+  return prisma.$transaction(async (transaction) => {
+    await transaction.job.update({
+      where: { id: job.id },
+      data: {
+        analysis: input.analysis,
+        company: jobIdentity.company,
+        title: jobIdentity.title,
+      },
     });
-  }
-
-  return version;
+    const version = await transaction.resumeVersion.create({
+      data: {
+        name: versionName,
+        summary: versionSummary,
+        content,
+        resumeId: source.resumeId,
+        jobId: job.id,
+      },
+    });
+    if (input.applicationId) {
+      await transaction.application.update({
+        where: { id: input.applicationId },
+        data: { resumeVersionId: version.id },
+      });
+    }
+    return version;
+  });
 }
 
 type CreateJobInput = {
@@ -619,12 +614,11 @@ export async function updateApplication(input: {
       notes: input.notes,
       resumeVersionId: input.resumeVersionId,
       interviewRound,
-      appliedAt:
-        input.status === "APPLIED" && !existingApplication?.appliedAt
-          ? input.stageDate
-            ? new Date(input.stageDate)
-            : new Date()
-          : undefined,
+      appliedAt: resolveApplicationAppliedAt({
+        status: input.status,
+        stageDate: input.stageDate,
+        existingAppliedAt: existingApplication?.appliedAt,
+      }),
     },
   });
   return application;
@@ -648,7 +642,7 @@ export async function updateJobWithApplication(input: {
 }) {
   const existingApplication = await prisma.application.findUnique({
     where: { id: input.applicationId },
-    select: { jobId: true, status: true, interviewRound: true },
+    select: { jobId: true, status: true, appliedAt: true, interviewRound: true },
   });
   if (existingApplication?.jobId !== input.jobId) throw new Error("投递记录不属于该岗位。");
   const effectiveStatus = input.status ?? existingApplication?.status;
@@ -672,11 +666,12 @@ export async function updateJobWithApplication(input: {
       where: { id: input.applicationId },
       data: {
         status: input.status,
-        appliedAt: input.appliedAt
-          ? new Date(input.appliedAt)
-          : input.status === "APPLIED" && input.stageDate
-            ? new Date(input.stageDate)
-            : input.appliedAt,
+        appliedAt: resolveApplicationAppliedAt({
+          status: input.status,
+          appliedAt: input.appliedAt,
+          stageDate: input.stageDate,
+          existingAppliedAt: existingApplication.appliedAt,
+        }),
         stageDate: input.stageDate ? new Date(input.stageDate) : input.stageDate,
         nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : input.nextFollowUpAt,
         notes: input.notes,
@@ -759,14 +754,41 @@ export const interviewSessionRepository: InterviewRepository = {
   },
 
   async saveProgress(id, input) {
-    const session = await prisma.interviewSession.update({
-      where: { id },
-      data: {
-        answers: toJsonInput(input.answers),
-        ...(input.currentQuestionIndex === undefined ? {} : { currentQuestionIndex: input.currentQuestionIndex }),
-      },
-      include: { job: true, resumeVersion: true },
-    });
+    if (!input.answer && input.currentQuestionIndex === undefined) {
+      const current = await findStoredInterviewSession(id);
+      if (!current) throw new Error("未找到这次面试练习。");
+      return toInterviewSessionRecord(current);
+    }
+
+    let count: number;
+    if (input.answer) {
+      const answerPatch = JSON.stringify({ [input.answer.questionId]: input.answer });
+      count = input.currentQuestionIndex === undefined
+        ? await prisma.$executeRaw`
+            UPDATE "InterviewSession"
+            SET "answers" = json_patch(COALESCE("answers", '{}'), json(${answerPatch})),
+                "updatedAt" = CURRENT_TIMESTAMP
+            WHERE "id" = ${id} AND "status" = 'IN_PROGRESS'
+          `
+        : await prisma.$executeRaw`
+            UPDATE "InterviewSession"
+            SET "answers" = json_patch(COALESCE("answers", '{}'), json(${answerPatch})),
+                "currentQuestionIndex" = ${input.currentQuestionIndex},
+                "updatedAt" = CURRENT_TIMESTAMP
+            WHERE "id" = ${id} AND "status" = 'IN_PROGRESS'
+          `;
+    } else {
+      count = await prisma.$executeRaw`
+        UPDATE "InterviewSession"
+        SET "currentQuestionIndex" = ${input.currentQuestionIndex},
+            "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "id" = ${id} AND "status" = 'IN_PROGRESS'
+      `;
+    }
+    if (!count) throw new Error("这次面试练习不存在或已经完成。");
+
+    const session = await findStoredInterviewSession(id);
+    if (!session) throw new Error("未找到这次面试练习。");
     return toInterviewSessionRecord(session);
   },
 

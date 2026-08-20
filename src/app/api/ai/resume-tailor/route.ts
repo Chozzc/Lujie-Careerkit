@@ -4,7 +4,7 @@ import { parseJsonRequest } from "@/lib/api-request";
 import { tailorResumeWithAI } from "@/lib/ai-service";
 import { analyzeJobInput, jobAnalysisInputSchema } from "@/lib/job-analysis";
 import { resumeContentInputSchema } from "@/lib/resume-content";
-import { createTailoredVersionForJob, getTailoringBaseResume, saveJobAnalysis } from "@/lib/repository";
+import { createTailoredVersionForJob, getTailoringBaseResume } from "@/lib/repository";
 import type { JobAnalysis, ResumeOptimizationMeta } from "@/lib/types";
 
 const schema = z.object({
@@ -33,10 +33,18 @@ export async function POST(request: Request) {
   if (!parsed.success) return parsed.response;
   const input = parsed.data;
   const analysis = input.analysis ?? analyzeJobInput(input.jd);
-  const baseResume = await getTailoringBaseResume({
-    resumeVersionId: input.resumeVersionId,
-    resumeContent: input.resumeContent,
-  });
+  let baseResume;
+  try {
+    baseResume = await getTailoringBaseResume({
+      resumeVersionId: input.resumeVersionId,
+      resumeContent: input.resumeContent,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "找不到所选简历版本。") {
+      return Response.json({ message: error.message }, { status: 404 });
+    }
+    throw error;
+  }
   const tailored = await tailorResumeWithAI({
     resume: baseResume,
     jd: input.jd,
@@ -60,16 +68,26 @@ export async function POST(request: Request) {
     versionName: "",
   };
   const effectiveAnalysis = mergeAnalysisMeta(analysis, meta);
-  await saveJobAnalysis(input.jobId, effectiveAnalysis);
-  const version = await createTailoredVersionForJob({
-    jobId: input.jobId,
-    applicationId: input.applicationId,
-    resumeVersionId: input.resumeVersionId,
-    resumeContent: input.resumeContent,
-    tailoredContent: tailored.data,
-    analysis: effectiveAnalysis,
-    optimizationMeta: meta,
-  });
+  let version;
+  try {
+    version = await createTailoredVersionForJob({
+      jobId: input.jobId,
+      applicationId: input.applicationId,
+      resumeVersionId: input.resumeVersionId,
+      resumeContent: input.resumeContent,
+      tailoredContent: tailored.data,
+      analysis: effectiveAnalysis,
+      optimizationMeta: meta,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "投递记录不属于该岗位。") {
+      return Response.json({ message: error.message }, { status: 400 });
+    }
+    if (error instanceof Error && error.message === "找不到目标岗位。") {
+      return Response.json({ message: error.message }, { status: 404 });
+    }
+    throw error;
+  }
 
   return Response.json({
     analysis: effectiveAnalysis,

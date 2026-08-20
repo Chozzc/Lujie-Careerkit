@@ -44,10 +44,18 @@ export async function POST(request: Request) {
   const parsed = await parseJsonRequest(request, schema);
   if (!parsed.success) return parsed.response;
   const input = parsed.data;
-  const baseResume = await getTailoringBaseResume({
-    resumeVersionId: input.resumeVersionId,
-    resumeContent: input.resumeContent,
-  });
+  let baseResume;
+  try {
+    baseResume = await getTailoringBaseResume({
+      resumeVersionId: input.resumeVersionId,
+      resumeContent: input.resumeContent,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "找不到所选简历版本。") {
+      return Response.json({ message: error.message }, { status: 404 });
+    }
+    throw error;
+  }
   const optimized = await optimizeResumeWithAI({
     resume: baseResume,
     diagnosis: input.diagnosis,

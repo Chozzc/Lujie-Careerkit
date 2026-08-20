@@ -1,6 +1,6 @@
 # 录阶求职 Agent 升级开发方案
 
-> 状态：方案确认稿，尚未实施
+> 状态：阶段 1 基础与投递闭环已实现；简历写入、JD、面试和在线版仍待接入
 > 日期：2026-08-19
 > 适用范围：公开本地版优先，在线版随后按浏览器存储边界适配
 
@@ -10,9 +10,11 @@
 
 - `ai@6.0.199`
 - `@ai-sdk/openai-compatible@2.0.48`
+- `@ai-sdk/react@3.0.201`
+- `streamdown@2.5.0` 与 `@streamdown/cjk@1.0.3`
 - `zod@4.4.3`
 
-AI SDK 6 已提供第一版所需的 Agent 循环、类型化工具、多步调用、停止条件、运行时上下文、UI 消息流、工具审批和消息裁剪能力。实现聊天界面时只需补充同一生态的 `@ai-sdk/react`，不需要再叠一套 Agent 框架。
+AI SDK 6 已提供第一版所需的 Agent 循环、类型化工具、多步调用、停止条件、运行时上下文、UI 消息流、工具审批和消息裁剪能力。聊天界面已补充同一生态的 `@ai-sdk/react`，并使用 Streamdown 正确渲染流式 Markdown，不需要再叠一套 Agent 框架。
 
 真正的工程重点不是“选哪个 Agent 框架”，而是：
 
@@ -156,7 +158,7 @@ flowchart LR
     CARD -->|用户确认| COMMIT[确定性提交命令]
     COMMIT --> DOMAIN
     DOMAIN --> DATA[(Resume / Job / Application / Interview)]
-    API --> THREADS[(AgentThread / AgentMessage)]
+    API --> THREADS[(AgentThread + UIMessage JSON)]
 ```
 
 核心原则：模型负责理解目标、选择工具和生成提案；真正写数据的代码仍由确定性的业务函数完成。
@@ -190,7 +192,32 @@ Agent 服务端工具直接调用现有 service / repository，不从服务端�
 
 第一版优先采用“提案 → 确认 → 确定性提交”，而不是让模型工具一调用就直接写数据库。它同时适配本地 SQLite 和在线浏览器存储，也便于用户看到将要发生什么。
 
-## 6. 第一批工具契约
+### 5.3 当前已经实现的运行链路
+
+当前首个可运行切片保持在三个工具，不为尚未接入的能力预建空壳：
+
+| 工具 | 类型 | 当前作用 |
+| --- | --- | --- |
+| `search_pipeline` | 读取 | 按公司、岗位或备注搜索现有 Job 与 Application；空关键词列出最近记录 |
+| `get_resume_context` | 读取 | 返回最多 10 份脱敏简历概览，不包含联系方式 |
+| `update_application_card` | 写入 | 新增或更新一张投递卡片；由 AI SDK 的 `needsApproval` 强制要求用户批准 |
+
+每轮请求的真实流程是：
+
+1. API 从 SQLite 读取该线程的完整 `UIMessage` 历史并合并客户端最新消息；
+2. 通过当前工具 schema 校验整段历史，拒绝客户端伪造 assistant 消息或不兼容的旧工具调用；
+3. 只把最近 12 条消息交给 `ToolLoopAgent`，更早消息仍保留供界面回放；
+4. 模型看到系统规则、三个工具的说明和 Zod 输入结构，由其通过结构化 function calling 选择工具；
+5. 写工具先在界面显示参数，收到用户批准后才执行确定性仓储函数；
+6. 一轮结束后把完整的新历史一次性写回线程，最多运行 6 个步骤。
+
+这不是 RAG：当前没有 embedding、向量数据库或语义检索。上下文由“最近消息 + 按需查询当前结构化业务数据”组成，数据库始终是事实来源。模型运行时也不会阅读本开发文档；它真正获得的是 `career-agent.ts` 中的系统规则、工具描述、输入 schema、消息和工具返回值。
+
+对于 Gemini Flash 等轻量模型，这个结构比大量细粒度工具更合适：工具数量少、职责区分明显、写入参数窄、搜索顺序写进系统规则、写操作还有代码层审批。但 Provider 和具体 Flash 型号必须真正支持 OpenAI-compatible function calling；AI SDK 统一接口不代表每个兼容服务都能可靠调用工具。当前能力探针仍未实现，属于阶段 1 的剩余项。
+
+## 6. 目标工具契约（后续阶段）
+
+以下是后续扩展后的目标契约，不代表当前已经全部开放。当前首个切片使用 5.3 节的三个合并工具；只有当真实任务证明参数或结果过于复杂时，才拆成更细的读取、提案和提交工具。
 
 ### 6.1 读取工具
 
@@ -274,39 +301,26 @@ type ApplicationChangeProposal = {
 
 ### 7.1 公开本地版
 
-新增两张最小表，不修改已发布 migration：
+当前公开本地版采用一张最小表，不修改已发布 migration：
 
 ```prisma
 model AgentThread {
   id        String   @id @default(cuid())
-  title     String
+  title     String   @default("新对话")
+  messages  String   @default("[]")
   summary   String   @default("")
-  context   Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages AgentMessage[]
-
   @@index([updatedAt])
-}
-
-model AgentMessage {
-  id        String   @id
-  sequence  Int
-  payload   Json
-  createdAt DateTime @default(now())
-
-  threadId String
-  thread   AgentThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-
-  @@unique([threadId, sequence])
-  @@index([threadId])
 }
 ```
 
-`payload` 保存完整 `UIMessage`，而不是只保存发给模型的 `ModelMessage`。从数据库恢复后必须通过 `validateUIMessages` 按当前工具 schema 校验；旧消息结构不兼容时应安全降级为只读历史，不能直接让模型执行其中的旧工具调用。
+`messages` 保存完整 `UIMessage[]` JSON，而不是只保存发给模型的 `ModelMessage`。从数据库恢复后先做基础结构校验，发给 Agent 前再通过 `safeValidateUIMessages` 按当前工具 schema 校验；旧消息结构不兼容时拒绝继续执行，不能让模型执行其中的旧工具调用。
 
-`context` 只保存当前页面和业务对象 ID。它不建立外键，原因是删除业务资料后仍应保留对话历史；每次使用这些 ID 时重新查询，找不到就标记为失效引用。
+单表 JSON 是首版本地应用的有意简化：线程整体读写、消息量有限，不需要为分页或跨消息查询先引入第二张表。只有真实对话规模导致整段读写成为瓶颈时，再拆分 `AgentMessage`，不能只为“看起来像聊天系统”提前复杂化。
+
+当前尚未持久化页面与业务对象绑定。后续加入时只保存对象 ID，不建立外键：删除业务资料后仍应保留对话历史；每次使用 ID 时重新查询，找不到就标记为失效引用。
 
 ### 7.2 在线版
 
@@ -361,17 +375,16 @@ src/components/agent/
   agent-assistant.tsx          # 团子、浮层、历史列表、消息与确认卡片
 
 src/lib/agent/
-  agent.ts                     # ToolLoopAgent、系统规则、循环控制
-  tools.ts                     # Zod 工具与提案结构
-  context.ts                   # 线程摘要、业务上下文和消息裁剪
+  career-agent.ts              # ToolLoopAgent、系统规则、三个工具注册
+  application-tools.ts         # 投递工具 schema 与确定性执行
+  message-context.ts           # 消息合并和最近 12 条裁剪
+  pet-position.ts              # 宠物位置边界与持久化数据规范化
+  thread-store.ts              # SQLite 线程与 UIMessage 持久化
 
 src/app/api/agent/
   chat/route.ts
   threads/route.ts
   threads/[id]/route.ts
-
-src/lib/
-  agent-store.ts               # 本地版线程/消息持久化
 ```
 
 在线版复用消息 DTO、Agent UI、工具 schema 和提案提交逻辑，只替换线程存储和业务提交入口。不要为每个工具新增一条独立 API 路由。

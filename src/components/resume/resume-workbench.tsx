@@ -153,6 +153,7 @@ export function ResumeWorkbench({
   const templateT = useTranslations("app.resumeLibrary.templates");
   const savedStatus = t("status.saved");
   const importReviewStatus = t("status.importReview");
+  const fallbackImportStatus = t("status.fallbackImported");
   const initialVersion = initialResumeVersionId
     ? versions.find((version) => version.id === initialResumeVersionId)
     : undefined;
@@ -216,7 +217,11 @@ export function ResumeWorkbench({
 
       const version = versions.find((item) => item.id === versionId);
       if (!version) {
+        setEditingContent(resume);
+        setEditingTitle(buildResumeTitle(resume));
+        setEditingTarget({ kind: "main" });
         setStatus(t("status.versionNotFound"));
+        window.history.replaceState(null, "", "/resume/edit");
         return;
       }
 
@@ -442,13 +447,13 @@ export function ResumeWorkbench({
     return createResumeCopy(withResumeDisplayName(content, title), title, "editor");
   }
 
-  function showImportReviewStatus() {
+  function showImportReviewStatus(message = importReviewStatus) {
     if (importNoticeTimerRef.current !== null) window.clearTimeout(importNoticeTimerRef.current);
     setShowImportReviewNotice(true);
-    setStatus(importReviewStatus);
+    setStatus(message);
     importNoticeTimerRef.current = window.setTimeout(() => {
       setShowImportReviewNotice(false);
-      setStatus((current) => (current === importReviewStatus ? savedStatus : current));
+      setStatus((current) => (current === message ? savedStatus : current));
       importNoticeTimerRef.current = null;
     }, 12000);
   }
@@ -471,7 +476,7 @@ export function ResumeWorkbench({
       } else {
         openEditor(draft.content, title, { kind: "new" });
       }
-      showImportReviewStatus();
+      showImportReviewStatus(draft.source === "local-fallback" ? fallbackImportStatus : importReviewStatus);
     } catch (error) {
       setStatus(t("status.importFailed", { message: error instanceof Error ? error.message : t("status.retryLater") }));
     } finally {

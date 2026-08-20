@@ -208,7 +208,9 @@ export function MatchView({
       const draft = await buildUploadedResumeDraft(file, { ...options, preferLocalFallback });
       setUploadedResume(draft);
       setResumeSource("upload");
-      setSaveStatus(t("status.imported", { fileName: draft.fileName }));
+      setSaveStatus(draft.source === "local-fallback"
+        ? t("status.fallbackImported", { fileName: draft.fileName })
+        : t("status.imported", { fileName: draft.fileName }));
     } catch (error) {
       setUploadedResume(null);
       setUploadError(error instanceof Error ? error.message : t("status.fileReadFailed"));

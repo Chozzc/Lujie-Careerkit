@@ -384,9 +384,12 @@ function normalizeEducation(
   original: ResumeContent["education"],
 ): ResumeContent["education"] {
   if (!Array.isArray(next)) return original;
+  const matches = matchByIdentity(original, next, (item) =>
+    factIdentity(item.school, item.degree, item.major, item.start, item.end),
+  );
   return original.map((item, index) => ({
     ...item,
-    highlights: normalizeTextList(next[index]?.highlights, item.highlights),
+    highlights: normalizeTextList(matches[index]?.highlights, item.highlights),
   }));
 }
 
@@ -395,9 +398,12 @@ function normalizeWorkItems<T extends ResumeContent["experiences"]>(
   original: T,
 ): T {
   if (!Array.isArray(next)) return original;
+  const matches = matchByIdentity(original, next, (item) =>
+    factIdentity(item.company, item.role, item.start, item.end),
+  );
   return original.map((item, index) => ({
     ...item,
-    highlights: normalizeTextList(next[index]?.highlights, item.highlights),
+    highlights: normalizeTextList(matches[index]?.highlights, item.highlights),
   })) as T;
 }
 
@@ -406,10 +412,39 @@ function normalizeProjects(
   original: ResumeContent["projects"],
 ): ResumeContent["projects"] {
   if (!Array.isArray(next)) return original;
+  const matches = matchByIdentity(original, next, (item) => factIdentity(item.name, item.role));
   return original.map((item, index) => ({
     ...item,
-    highlights: normalizeTextList(next[index]?.highlights, item.highlights),
+    highlights: normalizeTextList(matches[index]?.highlights, item.highlights),
   }));
+}
+
+function matchByIdentity<T>(original: T[], next: T[], getIdentity: (item: T) => string) {
+  const nextIndexesByIdentity = new Map<string, number[]>();
+  next.forEach((item, index) => {
+    const identity = getIdentity(item);
+    nextIndexesByIdentity.set(identity, [...(nextIndexesByIdentity.get(identity) ?? []), index]);
+  });
+
+  const matched: Array<T | undefined> = new Array(original.length);
+  const usedNextIndexes = new Set<number>();
+  original.forEach((item, index) => {
+    const nextIndex = nextIndexesByIdentity.get(getIdentity(item))?.shift();
+    if (nextIndex === undefined) return;
+    matched[index] = next[nextIndex];
+    usedNextIndexes.add(nextIndex);
+  });
+
+  const unmatchedOriginalIndexes = original.flatMap((_, index) => matched[index] ? [] : [index]);
+  const unmatchedNext = next.filter((_, index) => !usedNextIndexes.has(index));
+  if (unmatchedOriginalIndexes.length === 1 && unmatchedNext.length === 1) {
+    matched[unmatchedOriginalIndexes[0]] = unmatchedNext[0];
+  }
+  return matched;
+}
+
+function factIdentity(...parts: string[]) {
+  return parts.map(normalizeFactKey).join("\u0000");
 }
 
 function normalizeTextList(next: string[] | undefined, original: string[]) {
