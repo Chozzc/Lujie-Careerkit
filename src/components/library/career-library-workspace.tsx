@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, ChevronRight, FileSearch, FileStack, FileText, FolderOpen, MessagesSquare, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 
 import type { InitialData } from "@/components/app/types";
 import { PreparationScreen, ReportScreen } from "@/components/interview/interview-workspace";
@@ -33,6 +34,14 @@ type WorkspaceData = Pick<
   InitialData,
   "versions" | "jobs" | "applications" | "interviews" | "interviewPreparations"
 >;
+
+const libraryCategoryIcons = {
+  analysis: FileSearch,
+  resume: FileStack,
+  interview: MessagesSquare,
+} as const;
+
+const libraryChartColors = ["#7F9CBF", "#9CB69C", "#C3B1D0"];
 
 export function CareerLibraryWorkspace({
   data,
@@ -75,6 +84,7 @@ export function CareerLibraryWorkspace({
     ? requestedNodeId
     : selectedTree[0]?.id ?? requestedNodeId;
   const preparationOpen = selectedArtifact?.source.type === "interview-preparation";
+  const backToOverview = Boolean(archive && selectedArtifact);
 
   if (!archive && !directArtifact) {
     return (
@@ -98,10 +108,10 @@ export function CareerLibraryWorkspace({
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            onClick={() => preparationOpen && archive ? setSelectedArtifactKey(null) : onClose()}
+            onClick={() => backToOverview ? setSelectedArtifactKey(null) : onClose()}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-surface-low hover:text-foreground"
-            aria-label={t("backToLibrary")}
-            title={t("backToLibrary")}
+            aria-label={t(backToOverview ? "backToOverview" : "backToLibrary")}
+            title={t(backToOverview ? "backToOverview" : "backToLibrary")}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -200,16 +210,25 @@ function JobTree({
   const t = useTranslations("careerLibrary");
   const [expandedCategories, setExpandedCategories] = useState<Set<CareerArtifactCategory>>(() => new Set());
   return (
-    <nav className="space-y-4">
-      <TreeButton active={!selectedArtifactKey} depth={0} onClick={onSelectOverview}>
-        <FolderOpen className="h-4 w-4" />
-        {t("tree.job-overview")}
-      </TreeButton>
+    <nav className="space-y-1">
+      <button
+        type="button"
+        onClick={onSelectOverview}
+        className={cn(
+          "flex h-10 w-full items-center rounded-md pl-8 pr-2 text-left text-sm transition",
+          selectedArtifactKey
+            ? "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
+            : "bg-foreground/[0.04] font-semibold text-primary",
+        )}
+      >
+        <span className="truncate">{t("tree.job-overview")}</span>
+      </button>
       {(["analysis", "resume", "interview"] as CareerArtifactCategory[]).map((category) => {
         const categoryArtifacts = artifacts.filter((artifact) => artifact.category === category);
         const expanded = expandedCategories.has(category);
+        const Icon = libraryCategoryIcons[category];
         return (
-          <section key={category} className="overflow-hidden rounded-xl border border-line bg-surface/45">
+          <section key={category}>
             <button
               type="button"
               aria-expanded={expanded}
@@ -220,19 +239,20 @@ function JobTree({
                 return next;
               })}
               className={cn(
-                "flex w-full items-center justify-between gap-3 bg-surface px-3 py-2.5 text-left transition hover:bg-surface-low",
-                expanded && "border-b border-line",
+                "flex h-10 w-full items-center justify-between gap-3 rounded-md px-2 text-left transition hover:bg-foreground/[0.04]",
+                expanded && "font-semibold text-primary",
               )}
             >
-              <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-primary">
-                <ChevronRight className={cn("h-4 w-4 shrink-0 transition", expanded && "rotate-90")} />
+              <h2 className="flex min-w-0 items-center gap-2 text-sm">
+                <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition", expanded && "rotate-90")} />
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.65} />
                 <span className="truncate">{t(`categories.${category}`)}</span>
               </h2>
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {t("categoryCount", { count: categoryArtifacts.length })}
               </span>
             </button>
-            {expanded ? <div className="space-y-1">
+            {expanded ? <div className="ml-5 space-y-1">
               {categoryArtifacts.length ? categoryArtifacts.map((artifact) => {
                 const tree = buildCareerArtifactTree(artifact);
                 const childNodes = artifact.source.type === "interview-session" ? tree : tree.slice(1);
@@ -351,7 +371,7 @@ function ArtifactTreeRow({
   }
 
   return (
-    <div className={cn("flex h-10 min-w-0 items-center gap-1 rounded-lg pr-1", active && "bg-surface shadow-sm ring-1 ring-line")}>
+    <div className={cn("flex h-10 min-w-0 items-center gap-1 rounded-md pr-1", active && "bg-foreground/[0.05]")}>
       {editing ? (
         <input
           autoFocus
@@ -385,7 +405,6 @@ function ArtifactTreeRow({
           )}
           title={editable ? t("doubleClickToRename", { name: artifact.name }) : artifactTreeTitle(artifact, t)}
         >
-          <FileText className="h-4 w-4 shrink-0" />
           <span className="truncate">{artifactTreeTitle(artifact, t)}</span>
         </button>
       )}
@@ -417,7 +436,6 @@ function TreeNodes({ artifact, nodes, selectedNodeId, depth, onSelect, onDeleteN
         <div key={node.id}>
           <div className="flex min-w-0 items-center gap-1 pr-1">
           <TreeButton active={selectedNodeId === node.id} depth={depth} onClick={() => onSelect(node.id)}>
-            <FileText className="h-3.5 w-3.5" />
             <span className="truncate">{treeNodeLabel(artifact, node.id, index, t)}</span>
           </TreeButton>
           {onDeleteNode && (node.id === "questions" || node.id === "feedback") ? <button
@@ -457,7 +475,7 @@ function TreeButton({ active, depth, onClick, children }: {
       style={{ paddingLeft: `${0.5 + depth * 0.75}rem` }}
       className={cn(
         "flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg pr-2 text-left text-sm transition",
-        active ? "bg-surface text-primary shadow-sm ring-1 ring-line" : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
+        active ? "bg-foreground/[0.05] text-primary" : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
       )}
     >
       {children}
@@ -478,6 +496,13 @@ function JobOverview({
     { key: "resume", icon: FileStack, artifacts: archive.artifacts.filter((artifact) => artifact.category === "resume") },
     { key: "interview", icon: MessagesSquare, artifacts: archive.artifacts.filter((artifact) => artifact.category === "interview") },
   ] as const;
+  const chartData = categories.map((category, index) => ({
+    key: category.key,
+    label: t(`categories.${category.key}`),
+    count: category.artifacts.length,
+    color: libraryChartColors[index],
+  }));
+  const chartTotal = chartData.reduce((sum, item) => sum + item.count, 0);
   return (
     <ContentPage
       title={`${archive.company} · ${archive.role}`}
@@ -555,6 +580,60 @@ function JobOverview({
               <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm sm:p-6">
+        <header>
+          <h3 className="text-base font-semibold text-primary">{t("overviewCompositionTitle")}</h3>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">{t("overviewCompositionDescription")}</p>
+        </header>
+        <div className="mt-5 grid items-center gap-5 md:grid-cols-[minmax(17rem,1fr)_minmax(16rem,0.8fr)] md:gap-10">
+          <div className="relative h-72 min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={160}>
+              <PieChart>
+                <defs>
+                  {chartData.map((item) => (
+                    <linearGradient key={item.key} id={`library-composition-${item.key}`} x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={item.color} stopOpacity={0.95} />
+                      <stop offset="100%" stopColor={item.color} stopOpacity={0.68} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <Pie
+                  data={chartData}
+                  dataKey="count"
+                  nameKey="label"
+                  innerRadius={72}
+                  outerRadius={108}
+                  paddingAngle={3}
+                  stroke="none"
+                >
+                  {chartData.map((item) => (
+                    <Cell key={item.key} fill={`url(#library-composition-${item.key})`} />
+                  ))}
+                </Pie>
+                <RechartsTooltip contentStyle={{ borderRadius: 8, border: "1px solid #E5DDD0", fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
+              <strong className="font-serif text-4xl font-normal tabular-nums text-primary">{chartTotal}</strong>
+              <span className="mt-1 text-xs text-muted-foreground">{t("overviewCompositionTitle")}</span>
+            </div>
+          </div>
+          <div className="divide-y divide-line border-y border-line">
+            {chartData.map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-5 py-4">
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="truncate text-sm font-medium text-foreground">{item.label}</span>
+                </span>
+                <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+                  {t("categoryCount", { count: item.count })}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </ContentPage>

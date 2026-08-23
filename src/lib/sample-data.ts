@@ -192,7 +192,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: null,
     appliedAt: "2026-06-16",
     stageDate: "2026-07-15",
-    nextFollowUpAt: null,
+    nextFollowUpAt: "2026-09-05",
     notes: "已加入投递跟进。",
   },
   {
@@ -222,7 +222,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: null,
     appliedAt: "2026-07-07",
     stageDate: "2026-07-07",
-    nextFollowUpAt: null,
+    nextFollowUpAt: "2026-09-01",
     notes: "已加入投递跟进。",
   },
   {
