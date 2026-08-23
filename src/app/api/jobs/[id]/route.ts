@@ -2,12 +2,12 @@ import type { ApplicationStatus } from "@prisma/client";
 import { z } from "zod";
 
 import { dateInputSchema, parseJsonRequest } from "@/lib/api-request";
-import { deleteJobWithApplications, updateJobWithApplication } from "@/lib/repository";
+import { deleteJobWithApplications, updateJobIdentity, updateJobWithApplication } from "@/lib/repository";
 
 const updateJobSchema = z.object({
-  applicationId: z.string().trim().min(1),
-  company: z.string().trim().min(1),
-  title: z.string().trim().min(1),
+  applicationId: z.string().trim().min(1).optional(),
+  company: z.string().trim().min(1).max(100),
+  title: z.string().trim().min(1).max(100),
   city: z.string().optional(),
   source: z.string().optional(),
   link: z.string().optional(),
@@ -27,6 +27,10 @@ export async function PATCH(request: Request, context: RouteContext<"/api/jobs/[
   const parsed = await parseJsonRequest(request, updateJobSchema);
   if (!parsed.success) return parsed.response;
   const input = parsed.data;
+  if (!input.applicationId) {
+    const job = await updateJobIdentity(id, input.company, input.title);
+    return Response.json({ job });
+  }
   const result = await updateJobWithApplication({
     jobId: id,
     applicationId: input.applicationId,
@@ -49,6 +53,6 @@ export async function PATCH(request: Request, context: RouteContext<"/api/jobs/[
 
 export async function DELETE(_request: Request, context: RouteContext<"/api/jobs/[id]">) {
   const { id } = await context.params;
-  await deleteJobWithApplications(id);
-  return Response.json({ ok: true });
+  const deleted = await deleteJobWithApplications(id);
+  return Response.json({ ok: true, deleted });
 }

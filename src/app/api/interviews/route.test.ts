@@ -4,15 +4,22 @@ const runtimeMocks = vi.hoisted(() => ({
   createSession: vi.fn(),
   getSession: vi.fn(),
   saveProgress: vi.fn(),
+  finishSession: vi.fn(),
   deleteSession: vi.fn(),
   clearSessions: vi.fn(),
+}));
+const repositoryMocks = vi.hoisted(() => ({
+  updateInterviewSessionRecord: vi.fn(),
+  deleteInterviewSessionSection: vi.fn(),
 }));
 
 vi.mock("@/lib/interview-runtime", () => ({
   interviewService: runtimeMocks,
 }));
+vi.mock("@/lib/repository", () => repositoryMocks);
 
 import { DELETE as DELETE_ONE, GET, PATCH } from "./[id]/route";
+import { POST as POST_REPORT } from "./[id]/report/route";
 import { DELETE as DELETE_ALL, GET as GET_ALL, POST } from "./route";
 
 describe("interview routes", () => {
@@ -66,6 +73,24 @@ describe("interview routes", () => {
     expect(runtimeMocks.saveProgress).toHaveBeenCalledWith("session-1", { currentQuestionIndex: 1 });
   });
 
+  it("saves user edits to mock interview questions, answers and feedback", async () => {
+    const edited = {
+      context: { company: "腾讯", title: "产品经理", jd: "负责产品规划", resumeName: "主简历", resume: {} },
+      questions: [{ id: "q1", category: "general", prompt: "请介绍项目经历", focus: "项目能力", order: 0 }],
+      answers: { q1: { questionId: "q1", content: "我的回答", skipped: false, updatedAt: "2026-08-23T00:00:00.000Z" } },
+      feedback: null,
+    };
+    repositoryMocks.updateInterviewSessionRecord.mockResolvedValue({ id: "session-1", ...edited });
+
+    const response = await PATCH(jsonRequest("http://localhost/api/interviews/session-1", edited), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.updateInterviewSessionRecord).toHaveBeenCalledWith("session-1", edited);
+    expect(runtimeMocks.saveProgress).not.toHaveBeenCalled();
+  });
+
   it("deletes one session or clears all sessions", async () => {
     runtimeMocks.deleteSession.mockResolvedValue(undefined);
     runtimeMocks.clearSessions.mockResolvedValue(3);
@@ -77,6 +102,30 @@ describe("interview routes", () => {
     const response = await DELETE_ALL();
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ deletedCount: 3 });
+  });
+
+  it("deletes only one saved mock interview section", async () => {
+    repositoryMocks.deleteInterviewSessionSection.mockResolvedValue({ id: "session-1", questions: [] });
+    const context = { params: Promise.resolve({ id: "session-1" }) };
+
+    const response = await DELETE_ONE(
+      new Request("http://localhost/api/interviews/session-1?section=questions", { method: "DELETE" }),
+      context,
+    );
+
+    expect(response.status).toBe(200);
+    expect(repositoryMocks.deleteInterviewSessionSection).toHaveBeenCalledWith("session-1", "questions");
+    expect(runtimeMocks.deleteSession).not.toHaveBeenCalled();
+  });
+
+  it("explicitly regenerates an existing AI review", async () => {
+    runtimeMocks.finishSession.mockResolvedValue({ id: "session-1", feedback: { overallScore: 88 } });
+    const response = await POST_REPORT(jsonRequest("http://localhost/api/interviews/session-1/report", { regenerate: true }), {
+      params: Promise.resolve({ id: "session-1" }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(runtimeMocks.finishSession).toHaveBeenCalledWith("session-1", true);
   });
 });
 

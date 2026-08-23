@@ -168,14 +168,14 @@ export function buildCareerArtifacts(data: CareerLibraryData): CareerArtifact[] 
   }
 
   for (const preparation of data.interviewPreparations) {
-    const company = preparation.content.meta.company;
-    const role = preparation.content.meta.title;
     const job = resolveJob({
       jobId: preparation.jobId,
       resumeVersionId: preparation.resumeVersionId,
       jd: preparation.context.jd,
       createdAt: preparation.createdAt,
     });
+    const company = job?.company ?? preparation.content.meta.company;
+    const role = job?.title ?? preparation.content.meta.title;
     artifacts.push({
       id: preparation.id,
       key: `interview-preparation:${preparation.id}`,
@@ -197,14 +197,14 @@ export function buildCareerArtifacts(data: CareerLibraryData): CareerArtifact[] 
   }
 
   for (const interview of data.interviews) {
-    const company = interview.context.company;
-    const role = interview.context.title;
     const job = resolveJob({
       jobId: interview.jobId,
       resumeVersionId: interview.resumeVersionId,
       jd: interview.context.jd,
       createdAt: interview.createdAt,
     });
+    const company = job?.company ?? interview.context.company;
+    const role = job?.title ?? interview.context.title;
     artifacts.push({
       id: interview.id,
       key: `interview-session:${interview.id}`,
@@ -316,30 +316,9 @@ export function normalizeCompanyIdentity(company: string) {
 
 export function buildCareerArtifactTree(artifact: CareerArtifact): CareerTreeNode[] {
   switch (artifact.source.type) {
-    case "resume-version": {
-      const stages = readGeneralResumeOptimizationStages(artifact.source.value.content);
-      const changedSections = changedResumeSections(artifact.source.value.content);
-      const hasBaseResume = Boolean(readTailoringBaseResume(artifact.source.value.content));
-      return compactTree([
-        { id: "overview" },
-        artifact.kind === "tailored-resume" ? { id: "job-relation" } : undefined,
-        stages?.diagnosis
-          ? {
-              id: "diagnosis",
-              children: [
-                { id: "diagnosis-summary" },
-                ...(stages.diagnosis.strengths.length ? [{ id: "strengths" }] : []),
-                ...(stages.diagnosis.issues.length ? [{ id: "issues" }] : []),
-              ],
-            }
-          : undefined,
-        hasBaseResume ? { id: "original-resume" } : undefined,
-        { id: "optimized-resume" },
-        changedSections.length
-          ? { id: "changes", children: changedSections.map((id) => ({ id: `change:${id}` })) }
-          : undefined,
-      ]);
-    }
+      case "resume-version": {
+        return [{ id: "overview" }];
+      }
     case "job": {
       return [{ id: "original-jd" }];
     }
@@ -362,15 +341,7 @@ export function buildCareerArtifactTree(artifact: CareerArtifact): CareerTreeNod
     case "interview-session": {
       const interview = artifact.source.value;
       return compactTree([
-        { id: "overview" },
-        interview.questions.length
-          ? {
-              id: "questions",
-              children: interview.questions.map((question, index) => ({
-                id: `question:${question.id || index}`,
-              })),
-            }
-          : undefined,
+        interview.questions.length ? { id: "questions" } : undefined,
         interview.feedback || interview.legacyFeedback ? { id: "feedback" } : undefined,
       ]);
     }

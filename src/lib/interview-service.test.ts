@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { InterviewAnswer, InterviewQuestion, InterviewReport } from "./interview";
 import { createInterviewService, type InterviewSessionRecord } from "./interview-service";
@@ -164,6 +164,29 @@ describe("interview service", () => {
     expect(session.status).toBe("COMPLETED");
     expect(session.feedback).toEqual(report);
     expect(session.completedAt).toBeTruthy();
+  });
+
+  it("regenerates and replaces an existing report when explicitly requested", async () => {
+    const sessions = [baseSession()];
+    sessions[0].status = "COMPLETED";
+    sessions[0].feedback = { ...report, overallScore: 60 };
+    sessions[0].answers["q-1"] = {
+      questionId: "q-1",
+      content: "修改后的回答",
+      skipped: false,
+      updatedAt: "2026-06-22T10:00:00.000Z",
+    };
+    const generateReport = vi.fn(async () => ({ ...report, overallScore: 88 }));
+    const service = createInterviewService({
+      generateQuestions: async () => questions,
+      generateReport,
+      repository: createRepository(sessions),
+    });
+
+    const session = await service.finishSession("session-1", true);
+
+    expect(generateReport).toHaveBeenCalledOnce();
+    expect(session.feedback?.overallScore).toBe(88);
   });
 });
 

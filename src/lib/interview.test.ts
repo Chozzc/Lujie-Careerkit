@@ -209,6 +209,10 @@ describe("interview domain", () => {
       ["讲一个你遇到过的困难。", "困难处理"],
       ["如果面试官让你反问，你会问什么？", "面试反问"],
       ["你如何看待端侧 AI 和多模态模型的应用前景？", "技术趋势"],
+      [
+        "你提到自己熟练使用AI工具并关注前沿技术动态，请以最近的一个大模型或AI数据相关进展为例，说明它可能带来什么影响。",
+        "技术趋势",
+      ],
     ] as const;
     for (const [prompt, expected] of prompts) {
       const title = interviewQuestionNavTitle({ prompt, category: "general" });

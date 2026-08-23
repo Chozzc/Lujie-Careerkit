@@ -163,8 +163,16 @@ describe("career library", () => {
 
     const artifacts = buildCareerArtifacts(data);
 
-    expect(artifacts.find((artifact) => artifact.id === preparation.id)?.jobArchiveId).toBe("job-1");
-    expect(artifacts.find((artifact) => artifact.id === interview.id)?.jobArchiveId).toBe("job-1");
+    expect(artifacts.find((artifact) => artifact.id === preparation.id)).toMatchObject({
+      jobArchiveId: "job-1",
+      company: "字节跳动",
+      role: "AI 产品经理",
+    });
+    expect(artifacts.find((artifact) => artifact.id === interview.id)).toMatchObject({
+      jobArchiveId: "job-1",
+      company: "字节跳动",
+      role: "AI 产品经理",
+    });
   });
 
   it("only exposes tree nodes backed by data and parses deep links", () => {
@@ -173,21 +181,10 @@ describe("career library", () => {
     const jobArtifact = artifacts.find((item) => item.kind === "job-analysis");
 
     expect(artifact).toBeDefined();
-    expect(buildCareerArtifactTree(artifact!).map((node) => node.id)).toEqual([
-      "overview",
-      "original-resume",
-      "optimized-resume",
-      "changes",
-    ]);
+    expect(buildCareerArtifactTree(artifact!)).toEqual([{ id: "overview" }]);
     expect(jobArtifact).toBeDefined();
     expect(buildCareerArtifactTree(jobArtifact!)).toEqual([{ id: "original-jd" }]);
-    expect(buildCareerArtifactTree(artifacts.find((item) => item.id === "tailored")!).map((node) => node.id)).toEqual([
-      "overview",
-      "job-relation",
-      "original-resume",
-      "optimized-resume",
-      "changes",
-    ]);
+    expect(buildCareerArtifactTree(artifacts.find((item) => item.id === "tailored")!)).toEqual([{ id: "overview" }]);
     expect(parseCareerLibraryTarget("/library/jobs/job-1")).toEqual({ type: "job", id: "job-1" });
     expect(parseCareerLibraryTarget("/library/artifacts/general-resume/general")).toEqual({
       type: "artifact",

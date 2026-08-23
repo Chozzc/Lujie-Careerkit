@@ -69,6 +69,7 @@ export function ResumeOptimizationResult({
   review,
   currentStep,
   onStepChange,
+  showWorkflow = true,
 }: {
   workflowLabels: string[];
   title: string;
@@ -86,6 +87,7 @@ export function ResumeOptimizationResult({
   review?: ResumeReviewOptions;
   currentStep?: number;
   onStepChange?: (index: number) => void;
+  showWorkflow?: boolean;
 }) {
   const t = useTranslations("optimizationResult");
   const reviewChanges = useMemo(() => buildResumeReviewChanges(before, after), [after, before]);
@@ -135,11 +137,13 @@ export function ResumeOptimizationResult({
 
   return (
     <div className="space-y-5">
-      <WorkflowStepper
-        labels={workflowLabels}
-        current={currentStep ?? (review ? 1 : 2)}
-        onStepChange={onStepChange}
-      />
+      {showWorkflow ? (
+        <WorkflowStepper
+          labels={workflowLabels}
+          current={currentStep ?? (review ? 1 : 2)}
+          onStepChange={onStepChange}
+        />
+      ) : null}
       <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
@@ -147,37 +151,29 @@ export function ResumeOptimizationResult({
             <h2 className="mt-2 font-serif text-2xl font-semibold">{title}</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
           </div>
-          <div className="flex gap-3">
-            {secondaryActionLabel && onSecondaryAction ? (
-              <Button type="button" variant="outline" size="lg" onClick={onSecondaryAction} disabled={secondaryActionDisabled}>
-                {secondaryActionLabel}
-              </Button>
-            ) : null}
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             {review?.onCancel ? (
-              <Button type="button" variant="outline" size="lg" onClick={review.onCancel} disabled={isSaving}>
+              <Button type="button" variant="outline" size="lg" className="h-11 w-full sm:w-48" onClick={review.onCancel} disabled={isSaving}>
                 {t("review.cancel")}
               </Button>
             ) : backLabel && onBack ? (
-              <button
-                type="button"
-                onClick={onBack}
-                className="rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-surface-low"
-              >
+              <Button type="button" variant="outline" size="lg" className="h-11 w-full sm:w-48" onClick={onBack}>
                 {backLabel}
-              </button>
+              </Button>
             ) : null}
             {review ? (
-              <Button type="button" size="lg" onClick={saveReview} disabled={!canSaveReview}>
+              <Button type="button" size="lg" className="h-11 w-full sm:w-48" onClick={saveReview} disabled={!canSaveReview}>
                 {isSaving ? t("review.saving") : t("review.save")}
               </Button>
             ) : onOpenEditor ? (
-              <button
-                type="button"
-                onClick={onOpenEditor}
-                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
-              >
+              <Button type="button" variant="outline" size="lg" className="h-11 w-full sm:w-48" onClick={onOpenEditor}>
                 {openEditorLabel ?? t("openEditor")}
-              </button>
+              </Button>
+            ) : null}
+            {!review && secondaryActionLabel && onSecondaryAction ? (
+              <Button type="button" size="lg" className="h-11 w-full sm:w-48" onClick={onSecondaryAction} disabled={secondaryActionDisabled}>
+                {secondaryActionLabel}
+              </Button>
             ) : null}
           </div>
         </div>

@@ -16,7 +16,7 @@ import type {
 } from "@/lib/ai/resume-diagnosis";
 import type { ApplicationStatus, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
-import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
+import type { InterviewPreparation, InterviewPreparationRecord } from "@/lib/interview-preparation";
 import { cn } from "@/lib/utils";
 import { ResumeWorkbench, type ResumeSaveTarget } from "@/components/resume/resume-workbench";
 import {
@@ -112,6 +112,7 @@ export function CareerKitApp({
 }) {
   const t = useTranslations("app");
   const optimizationT = useTranslations("optimizationResult");
+  const libraryT = useTranslations("careerLibrary");
   const [active, setActive] = useState<NavKey>(initialView);
   const [resumeMode, setResumeMode] = useState<ResumeMode>(initialResumeMode);
   const [resumeEditorVersionId, setResumeEditorVersionId] = useState(initialResumeVersionId);
@@ -346,32 +347,56 @@ export function CareerKitApp({
 
   function deleteCareerArtifact(artifact: CareerArtifact) {
     if (artifact.kind === "job-analysis") {
-      deleteJobArchive(artifact.id);
+      const job = jobs.find((item) => item.id === artifact.id);
+      if (!window.confirm(libraryT("deleteAnalysisConfirm", {
+        name: `${job?.company ?? libraryT("unknownCompany")} · ${job?.title ?? libraryT("unknownJob")}`,
+      }))) return;
+      startTransition(async () => {
+        try {
+          const response = await fetch(`/api/jobs/${artifact.id}/analysis`, { method: "DELETE" });
+          if (!response.ok) throw new Error(await response.text());
+          setJobs((current) => current.map((item) => item.id === artifact.id
+            ? { ...item, jd: "", analysis: null, updatedAt: new Date().toISOString() }
+            : item));
+          setToast(libraryT("analysisDeleted"));
+        } catch (error) {
+          setToast(libraryT("deleteFailed", { error: formatRequestError(error) }));
+        }
+      });
     } else if (artifact.kind === "general-resume" || artifact.kind === "tailored-resume") {
       deleteResumeVersion(artifact.id);
     } else if (artifact.kind === "interview-preparation") {
+      if (!window.confirm(libraryT("deleteArtifactConfirm", { name: artifact.name }))) return;
       void deleteInterviewPreparation(artifact.id);
     } else if (artifact.kind === "interview-session") {
+      if (!window.confirm(libraryT("deleteArtifactConfirm", { name: artifact.name }))) return;
       void deleteInterviewSession(artifact.id);
     }
   }
 
   function deleteJobArchive(jobId: string) {
     const job = jobs.find((item) => item.id === jobId);
-    if (!window.confirm(`删除「${job?.company ?? "该公司"} · ${job?.title ?? "该岗位"}」岗位档案？对应投递记录会一并删除；简历成果和面试资料会保留，但不再关联该岗位。此操作无法撤销。`)) return;
+    const name = `${job?.company ?? libraryT("unknownCompany")} · ${job?.title ?? libraryT("unknownJob")}`;
+    if (!window.confirm(libraryT("deleteArchiveConfirm", {
+      name,
+      resumes: versions.filter((version) => version.jobId === jobId).length,
+      preparations: interviewPreparations.filter((preparation) => preparation.jobId === jobId).length,
+      interviews: interviewSessions.filter((session) => session.jobId === jobId).length,
+      applications: applications.filter((application) => application.jobId === jobId).length,
+    }))) return;
     startTransition(async () => {
       try {
         const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
         if (!response.ok) throw new Error(await response.text());
         setJobs((current) => current.filter((item) => item.id !== jobId));
         setApplications((current) => current.filter((application) => application.jobId !== jobId));
-        setVersions((current) => current.map((version) => version.jobId === jobId ? { ...version, jobId: null } : version));
-        setInterviewSessions((current) => current.map((session) => session.jobId === jobId ? { ...session, jobId: null } : session));
-        setInterviewPreparations((current) => current.map((preparation) => preparation.jobId === jobId ? { ...preparation, jobId: null } : preparation));
-        setToast("岗位档案已删除，关联成果仍保留。");
+        setVersions((current) => current.filter((version) => version.jobId !== jobId));
+        setInterviewSessions((current) => current.filter((session) => session.jobId !== jobId));
+        setInterviewPreparations((current) => current.filter((preparation) => preparation.jobId !== jobId));
+        setToast(libraryT("archiveDeleted"));
         navigateTo("library");
       } catch (error) {
-        setToast(`删除失败：${formatRequestError(error)}`);
+        setToast(libraryT("deleteFailed", { error: formatRequestError(error) }));
       }
     });
   }
@@ -474,6 +499,71 @@ export function CareerKitApp({
     setResumeUpdatedAt(result.resume.updatedAt ?? new Date().toISOString());
     setToast("原简历已保存到本地 SQLite。");
     return { kind: "main" as const };
+  }
+
+  async function renameCareerResumeArtifact(artifact: CareerArtifact, name: string) {
+    if (artifact.source.type !== "resume-version") return;
+    try {
+      await saveResume(
+        artifact.source.value.content,
+        { kind: "version", id: artifact.source.value.id },
+        name,
+      );
+    } catch (error) {
+      setToast(`修改标题失败：${formatRequestError(error)}`);
+      throw error;
+    }
+  }
+
+  async function updateLibraryJobDescription(jobId: string, jd: string) {
+    const result = await postJson(`/api/jobs/${jobId}/analysis`, { jd }, "PATCH") as { job: JobView };
+    setJobs((current) => current.map((job) => job.id === jobId ? normalizeJob(result.job) : job));
+    setToast(libraryT("edit.saved"));
+  }
+
+  async function updateLibraryJobIdentity(jobId: string, company: string, title: string) {
+    try {
+      const result = await postJson(`/api/jobs/${jobId}`, { company, title }, "PATCH") as { job: JobView };
+      setJobs((current) => current.map((job) => job.id === jobId ? normalizeJob(result.job) : job));
+      setToast(libraryT("editJob.saved"));
+    } catch (error) {
+      setToast(libraryT("editJob.failed", { error: formatRequestError(error) }));
+      throw error;
+    }
+  }
+
+  async function updateLibraryInterviewPreparation(id: string, content: InterviewPreparation) {
+    const result = await postJson(`/api/interviews/preparation/${id}`, { content }, "PATCH") as { record: InterviewPreparationRecord };
+    setInterviewPreparations((current) => current.map((record) => record.id === id ? result.record : record));
+    setToast(libraryT("edit.saved"));
+  }
+
+  async function updateLibraryInterviewSession(id: string, input: Pick<InterviewSessionRecord, "context" | "questions" | "answers" | "feedback">) {
+    const result = await postJson(`/api/interviews/${id}`, input, "PATCH") as { session: InterviewSessionRecord };
+    setInterviewSessions((current) => current.map((session) => session.id === id ? result.session : session));
+    setToast(libraryT("edit.saved"));
+  }
+
+  async function deleteLibraryInterviewSection(id: string, section: "questions" | "feedback") {
+    if (!window.confirm(libraryT(section === "questions" ? "deleteQuestionsConfirm" : "deleteFeedbackConfirm"))) return;
+    try {
+      const response = await fetch(`/api/interviews/${id}?section=${section}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(await response.text());
+      const result = await response.json() as { session: InterviewSessionRecord | null };
+      setInterviewSessions((current) => result.session
+        ? current.map((session) => session.id === id ? result.session! : session)
+        : current.filter((session) => session.id !== id));
+      setToast(libraryT(section === "questions" ? "questionsDeleted" : "feedbackDeleted"));
+    } catch (error) {
+      setToast(libraryT("deleteFailed", { error: formatRequestError(error) }));
+    }
+  }
+
+  async function regenerateLibraryInterviewReport(id: string) {
+    if (!window.confirm(libraryT("regenerateFeedbackConfirm"))) return;
+    const result = await postJson(`/api/interviews/${id}/report`, { regenerate: true }) as { session: InterviewSessionRecord };
+    setInterviewSessions((current) => current.map((session) => session.id === id ? result.session : session));
+    setToast(libraryT("feedbackRegenerated"));
   }
 
   function deleteMainResume() {
@@ -958,12 +1048,19 @@ export function CareerKitApp({
   if (active === "library" && libraryTarget) {
     return (
       <>
-        <CareerLibraryWorkspace
-          data={libraryData}
-          target={libraryTarget}
-          onClose={closeLibraryTarget}
-          onOpenResume={openResumeEditorFromMatch}
-        />
+          <CareerLibraryWorkspace
+            data={libraryData}
+            target={libraryTarget}
+            onClose={closeLibraryTarget}
+            onOpenResume={openResumeEditorFromMatch}
+            onDeleteArtifact={deleteCareerArtifact}
+            onRenameResumeArtifact={renameCareerResumeArtifact}
+            onUpdateJobDescription={updateLibraryJobDescription}
+            onUpdateInterviewPreparation={updateLibraryInterviewPreparation}
+            onUpdateInterviewSession={updateLibraryInterviewSession}
+            onDeleteInterviewSection={deleteLibraryInterviewSection}
+            onRegenerateInterviewReport={regenerateLibraryInterviewReport}
+          />
         {agentAssistant}
       </>
     );
@@ -1174,6 +1271,7 @@ export function CareerKitApp({
               group={libraryGroup}
               onGroupChange={changeLibraryGroup}
               onOpenJob={(id) => openLibraryTarget({ type: "job", id })}
+              onUpdateJob={updateLibraryJobIdentity}
               onDeleteJob={deleteJobArchive}
               onOpenArtifact={(artifact) => openLibraryTarget({ type: "artifact", kind: artifact.kind, id: artifact.id })}
               onDeleteArtifact={deleteCareerArtifact}

@@ -1,5 +1,7 @@
 ﻿import type { ApplicationStatus } from "@prisma/client";
 
+import { Prisma } from "@prisma/client";
+
 import {
   AI_SETTINGS_REGISTRY,
   buildAiSettingsPatch,
@@ -474,8 +476,8 @@ export async function createTailoredVersionForJob(input: {
   const baseResume = source.content;
 
   const jobIdentity = {
-    company: cleanJobLabel(input.analysis.company) || job.company,
-    title: cleanJobLabel(input.analysis.title) || job.title,
+    company: preserveConfirmedJobLabel(job.company, input.analysis.company),
+    title: preserveConfirmedJobLabel(job.title, input.analysis.title),
   };
   const tailored = buildTailoredResumeVersion({
     masterResume: baseResume,
@@ -682,8 +684,35 @@ export async function updateJobWithApplication(input: {
   return { job, application };
 }
 
+export async function updateJobIdentity(jobId: string, company: string, title: string) {
+  return prisma.job.update({ where: { id: jobId }, data: { company, title } });
+}
+
 export async function deleteJobWithApplications(jobId: string) {
-  return prisma.job.delete({ where: { id: jobId } });
+  return prisma.$transaction(async (transaction) => {
+    const interviewPreparations = await transaction.interviewPreparation.deleteMany({ where: { jobId } });
+    const interviews = await transaction.interviewSession.deleteMany({ where: { jobId } });
+    const applications = await transaction.application.deleteMany({ where: { jobId } });
+    const resumeVersions = await transaction.resumeVersion.deleteMany({ where: { jobId } });
+    await transaction.job.delete({ where: { id: jobId } });
+    return {
+      interviewPreparations: interviewPreparations.count,
+      interviews: interviews.count,
+      applications: applications.count,
+      resumeVersions: resumeVersions.count,
+    };
+  });
+}
+
+export async function clearJobAnalysis(jobId: string) {
+  return prisma.job.update({ where: { id: jobId }, data: { jd: "", analysis: Prisma.DbNull } });
+}
+
+export async function updateJobDescription(jobId: string, jd: string) {
+  return prisma.job.update({
+    where: { id: jobId },
+    data: { jd, analysis: Prisma.DbNull },
+  });
 }
 
 export async function deleteApplication(applicationId: string) {
@@ -728,14 +757,14 @@ function hasStoredOptimizationBase(content: unknown) {
 export const interviewSessionRepository: InterviewRepository = {
   async create(input) {
     await ensureSeedData();
-    const jobId = await resolveInterviewJob(input.jobId, input.context);
+    const job = await resolveInterviewJob(input.jobId, input.context);
     const session = await prisma.interviewSession.create({
       data: {
-        jobId,
+        jobId: job.id,
         resumeVersionId: input.resumeVersionId,
         mode: input.mode,
         status: input.status,
-        context: toJsonInput(input.context),
+        context: toJsonInput({ ...input.context, company: job.company, title: job.title }),
         questions: toJsonInput(input.questions),
         answers: toJsonInput(input.answers),
         feedback: {},
@@ -820,19 +849,23 @@ export async function createInterviewPreparationRecord(
   content: InterviewPreparation,
 ) {
   await ensureSeedData();
-  const jobId = await resolveInterviewJob(input.jobId, {
+  const job = await resolveInterviewJob(input.jobId, {
     company: content.meta.company,
     title: content.meta.title,
     jd: input.jd,
   });
   const context = interviewPreparationInputSchema.parse(input);
+  const normalizedContent = interviewPreparationSchema.parse({
+    ...content,
+    meta: { ...content.meta, company: job.company, title: job.title },
+  });
   const record = await prisma.interviewPreparation.create({
     data: {
-      jobId,
+      jobId: job.id,
       resumeVersionId: input.resumeVersionId,
       mode: input.focus,
       context: toJsonInput(context),
-      content: toJsonInput(interviewPreparationSchema.parse(content)),
+      content: toJsonInput(normalizedContent),
     },
     include: { job: true, resumeVersion: true },
   });
@@ -843,6 +876,59 @@ export async function getInterviewPreparationRecord(id: string) {
   await ensureSeedData();
   const record = await findStoredInterviewPreparation(id);
   return record ? toInterviewPreparationRecord(record) : null;
+}
+
+export async function updateInterviewPreparationRecord(id: string, content: InterviewPreparation) {
+  await ensureSeedData();
+  const record = await prisma.interviewPreparation.update({
+    where: { id },
+    data: { content: toJsonInput(interviewPreparationSchema.parse(content)) },
+    include: { job: true, resumeVersion: true },
+  });
+  return toInterviewPreparationRecord(record);
+}
+
+export async function updateInterviewSessionRecord(
+  id: string,
+  input: Pick<InterviewSessionRecord, "context" | "questions" | "answers" | "feedback">,
+) {
+  await ensureSeedData();
+  const session = await prisma.interviewSession.update({
+    where: { id },
+    data: {
+      context: toJsonInput(input.context),
+      questions: toJsonInput(input.questions),
+      answers: toJsonInput(input.answers),
+      feedback: toJsonInput(input.feedback ?? {}),
+    },
+    include: { job: true, resumeVersion: true },
+  });
+  return toInterviewSessionRecord(session);
+}
+
+export async function deleteInterviewSessionSection(id: string, section: "questions" | "feedback") {
+  await ensureSeedData();
+  const existing = await prisma.interviewSession.findUnique({ where: { id } });
+  if (!existing) throw new Error("未找到这次面试练习。");
+
+  const questions = normalizeInterviewQuestions(existing.questions);
+  const hasFeedback = interviewReportSchema.safeParse(existing.feedback).success
+    || (isRecord(existing.feedback) && Object.keys(existing.feedback).length > 0);
+  const removeSession = section === "questions" ? !hasFeedback : questions.length === 0;
+
+  if (removeSession) {
+    await prisma.interviewSession.delete({ where: { id } });
+    return null;
+  }
+
+  const session = await prisma.interviewSession.update({
+    where: { id },
+    data: section === "questions"
+      ? { questions: [], answers: {}, currentQuestionIndex: 0 }
+      : { feedback: {} },
+    include: { job: true, resumeVersion: true },
+  });
+  return toInterviewSessionRecord(session);
 }
 
 export async function deleteInterviewPreparationRecord(id: string) {
@@ -860,17 +946,17 @@ async function resolveInterviewJob(
   requestedJobId: string | null | undefined,
   context: { company?: string; title?: string; jd: string },
 ) {
-  if (requestedJobId && await prisma.job.findUnique({ where: { id: requestedJobId }, select: { id: true } })) {
-    return requestedJobId;
+  if (requestedJobId) {
+    const requested = await prisma.job.findUnique({ where: { id: requestedJobId } });
+    if (requested) return requested;
   }
+  const byJd = await prisma.job.findFirst({ where: { jd: context.jd }, orderBy: { updatedAt: "desc" } });
+  if (byJd) return byJd;
   const company = cleanJobLabel(context.company) || "目标公司";
   const title = cleanJobLabel(context.title) || "目标岗位";
-  const existing = await prisma.job.findFirst({ where: { company, title, jd: context.jd }, select: { id: true } });
-  if (existing) return existing.id;
-  const job = await prisma.job.create({
+  return prisma.job.create({
     data: { company, title, city: "", source: "面试助手", jd: context.jd, link: "" },
   });
-  return job.id;
 }
 
 type StoredInterviewSession = NonNullable<Awaited<ReturnType<typeof findStoredInterviewSession>>>;
@@ -981,6 +1067,12 @@ function cleanJobLabel(value?: string | null) {
   if (!text) return "";
   if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
   return text.length > 100 ? "" : text;
+}
+
+export function preserveConfirmedJobLabel(current: string, proposed?: string | null) {
+  const placeholder = /^(?:待填写公司|待分析岗位|目标公司|目标岗位|未知公司|未知岗位|未识别公司|未识别岗位)$/u;
+  if (current.trim() && !placeholder.test(current.trim())) return current;
+  return cleanJobLabel(proposed) || current;
 }
 
 function deriveResumeVersionName(content: ResumeContent) {

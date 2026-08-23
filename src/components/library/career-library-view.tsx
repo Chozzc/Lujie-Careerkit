@@ -1,11 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FolderKanban, FolderOpen, Search, Trash2 } from "lucide-react";
+import { FolderKanban, FolderOpen, Pencil, Search, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { InitialData } from "@/components/app/types";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   buildCareerArtifacts,
   buildCareerJobArchives,
@@ -24,6 +36,7 @@ export function CareerLibraryView({
   group,
   onGroupChange,
   onOpenJob,
+  onUpdateJob,
   onDeleteJob,
   onOpenArtifact,
   onDeleteArtifact,
@@ -32,6 +45,7 @@ export function CareerLibraryView({
   group: CareerLibraryGroup;
   onGroupChange: (group: CareerLibraryGroup) => void;
   onOpenJob: (id: string) => void;
+  onUpdateJob: (id: string, company: string, title: string) => Promise<void>;
   onDeleteJob: (id: string) => void;
   onOpenArtifact: (artifact: CareerArtifact) => void;
   onDeleteArtifact: (artifact: CareerArtifact) => void;
@@ -39,6 +53,8 @@ export function CareerLibraryView({
   const t = useTranslations("careerLibrary");
   const [query, setQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"recent" | "oldest">("recent");
+  const [editDraft, setEditDraft] = useState<{ id: string; company: string; title: string } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const artifacts = useMemo(() => buildCareerArtifacts(data), [data]);
   const archives = useMemo(
     () => buildCareerJobArchives(data, artifacts),
@@ -54,8 +70,8 @@ export function CareerLibraryView({
     <section className="pb-12">
       <div className="flex flex-col gap-6 border-b border-line pb-7 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-primary">{t("title")}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="font-serif text-3xl font-semibold tracking-normal text-primary">{t("title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("summary", { jobs: archives.length, artifacts: generatedCount })}
           </p>
         </div>
@@ -120,11 +136,12 @@ export function CareerLibraryView({
                   <LibraryCard
                     key={archive.id}
                     title={`${archive.company} · ${archive.role}`}
-                    subtitle={archive.city || t("virtualJob")}
+                    subtitle={archive.city}
                     metrics={jobMetrics(archive, t)}
                     updatedAt={archive.updatedAt}
                     badge={archive.status ? t(`status.${archive.status}`) : undefined}
                     onOpen={() => onOpenJob(archive.id)}
+                    onEdit={archive.jobId ? () => setEditDraft({ id: archive.jobId!, company: archive.company, title: archive.role }) : undefined}
                     onDelete={() => onDeleteJob(archive.id)}
                   />
                 ))}
@@ -162,6 +179,57 @@ export function CareerLibraryView({
           })}
         </div>
       )}
+      <Dialog open={Boolean(editDraft)} onOpenChange={(open) => { if (!open && !isSaving) setEditDraft(null); }}>
+        <DialogContent>
+          <form
+            className="contents"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (!editDraft) return;
+              setIsSaving(true);
+              try {
+                await onUpdateJob(editDraft.id, editDraft.company.trim(), editDraft.title.trim());
+                setEditDraft(null);
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>{t("editJob.title")}</DialogTitle>
+              <DialogDescription>{t("editJob.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label htmlFor="library-job-company">{t("editJob.company")}</Label>
+                <Input
+                  id="library-job-company"
+                  value={editDraft?.company ?? ""}
+                  maxLength={100}
+                  onChange={(event) => setEditDraft((current) => current ? { ...current, company: event.target.value } : current)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="library-job-title">{t("editJob.role")}</Label>
+                <Input
+                  id="library-job-title"
+                  value={editDraft?.title ?? ""}
+                  maxLength={100}
+                  onChange={(event) => setEditDraft((current) => current ? { ...current, title: event.target.value } : current)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose render={<Button type="button" variant="outline" disabled={isSaving} />}>
+                {t("editJob.cancel")}
+              </DialogClose>
+              <Button type="submit" disabled={isSaving || !editDraft?.company.trim() || !editDraft.title.trim()}>
+                {isSaving ? t("editJob.saving") : t("editJob.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
@@ -173,49 +241,81 @@ function LibraryCard({
   updatedAt,
   badge,
   onOpen,
+  onEdit,
   onDelete,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   metrics: string[];
   updatedAt: string;
   badge?: string;
   onOpen: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }) {
   const t = useTranslations("careerLibrary");
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-line bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg">
-      <button type="button" onClick={onOpen} className="block w-full text-left">
-        <div className="grid h-36 place-items-center border-b border-line bg-surface-low/80">
-          <FolderKanban
-            className="h-20 w-20 text-primary/70 transition group-hover:scale-[1.03]"
-            strokeWidth={1.15}
-          />
-        </div>
-        <div className="min-h-44 p-5">
-          <div className="flex items-start justify-between gap-3 pr-7">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className="group cursor-pointer overflow-hidden rounded-2xl border border-line bg-surface text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      <div className="grid h-36 place-items-center border-b border-line bg-surface-low/80">
+        <FolderKanban
+          className="h-20 w-20 text-primary/70 transition group-hover:scale-[1.03]"
+          strokeWidth={1.15}
+        />
+      </div>
+      <div className="min-h-44 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <h3 className="line-clamp-2 font-serif text-xl font-semibold leading-7 text-primary">{title}</h3>
-            {badge ? <Badge variant="secondary" className="mt-0.5 shrink-0">{badge}</Badge> : null}
+            {subtitle ? <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
-          <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{subtitle}</p>
-          <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-            {metrics.filter(Boolean).map((metric) => <span key={metric}>{metric}</span>)}
+          <div className="flex shrink-0 items-center gap-2">
+            {badge ? <Badge variant="secondary">{badge}</Badge> : null}
+            {onEdit ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit();
+                }}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-surface-low hover:text-foreground"
+                aria-label={t("editJob.action")}
+                title={t("editJob.action")}
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+            ) : null}
+            {onDelete ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete();
+                }}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
+                aria-label={t("delete")}
+                title={t("delete")}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : null}
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">{t("updatedAt", { date: formatDate(updatedAt) })}</p>
         </div>
-      </button>
-      {onDelete ? (
-        <button
-          type="button"
-          onClick={onDelete}
-          className="absolute right-4 top-[9.75rem] grid h-8 w-8 place-items-center rounded-lg text-muted-foreground opacity-70 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-          aria-label={t("delete")}
-          title={t("delete")}
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      ) : null}
+        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          {metrics.filter(Boolean).map((metric) => <span key={metric}>{metric}</span>)}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">{t("updatedAt", { date: formatDate(updatedAt) })}</p>
+      </div>
     </article>
   );
 }

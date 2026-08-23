@@ -14,6 +14,7 @@ import {
   ListChecks,
   LoaderCircle,
   MessagesSquare,
+  Pencil,
   Printer,
   RefreshCw,
   Sparkles,
@@ -31,6 +32,7 @@ import {
 } from "recharts";
 
 import type { ResumePickerOption } from "@/components/resume/resume-source-picker";
+import { InterviewPreparationEditor } from "@/components/interview/interview-preparation-editor";
 import {
   AiSetupRequiredDialog,
   PreparationOptionCard,
@@ -381,7 +383,7 @@ export function InterviewWorkspace({
     try {
       await createSession(
         {
-          jobId: "",
+          jobId: selectedVersion?.jobId ?? "",
           resumeVersionId: resumeSource === "library"
             ? selectedResumeId === "main" ? mainResumeVersionId ?? null : selectedResumeId
             : null,
@@ -415,7 +417,7 @@ export function InterviewWorkspace({
       const result = await requestJson<{ record: InterviewPreparationRecord; message: string }>(
         "/api/interviews/preparation",
         {
-          jobId: "",
+          jobId: selectedVersion?.jobId ?? "",
           jd: jdDraft.trim(),
           resumeName: selectedResumeName,
           resumeVersionId: resumeSource === "library"
@@ -760,13 +762,15 @@ function SetupScreen(props: {
   );
 }
 
-function PreparationScreen({
-  preparation,
+export function PreparationScreen({
+  preparation: initialPreparation,
   resumeName,
   isWorking,
   message,
   onBack,
   onStart,
+  libraryMode = false,
+  onSave,
 }: {
   preparation: InterviewPreparation;
   resumeName: string;
@@ -774,8 +778,14 @@ function PreparationScreen({
   message: string;
   onBack: () => void;
   onStart: () => void;
+  libraryMode?: boolean;
+  onSave?: (preparation: InterviewPreparation) => Promise<void>;
 }) {
   const t = useTranslations("interview");
+  const [preparation, setPreparation] = useState(initialPreparation);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editMessage, setEditMessage] = useState("");
   const [activeSection, setActiveSection] = useState<(typeof PREPARATION_SECTION_IDS)[number]>(PREPARATION_SECTION_IDS[0]);
   const [exportingFormat, setExportingFormat] = useState<"docx" | "pdf" | null>(null);
   const [exportMessage, setExportMessage] = useState("");
@@ -896,6 +906,21 @@ function PreparationScreen({
     }
   }
 
+  async function handleSave() {
+    if (!onSave) return;
+    setSaving(true);
+    setEditMessage("");
+    try {
+      await onSave(preparation);
+      setEditing(false);
+      setEditMessage(t("preparation.edit.saved"));
+    } catch (error) {
+      setEditMessage(error instanceof Error ? error.message : t("preparation.edit.failed"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
       <aside className="px-2 py-3 lg:sticky lg:top-24">
@@ -925,6 +950,19 @@ function PreparationScreen({
       </aside>
 
       <main className="min-w-0 space-y-6">
+        {onSave && editing ? (
+          <div className="no-print flex items-center justify-end gap-2">
+            <Button variant="outline" disabled={saving} onClick={() => { setPreparation(initialPreparation); setEditing(false); setEditMessage(""); }}>
+              {t("preparation.edit.cancel")}
+            </Button>
+            <Button disabled={saving} onClick={() => void handleSave()}>
+              {saving ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : null}
+              {t("preparation.edit.save")}
+            </Button>
+          </div>
+        ) : null}
+        {editMessage ? <p className="no-print text-right text-sm text-muted-foreground">{editMessage}</p> : null}
+        {editing ? <InterviewPreparationEditor value={preparation} onChange={setPreparation} /> : <>
         <section id="prep-overview" className="scroll-mt-24 overflow-hidden rounded-lg border border-line bg-surface shadow-[0_18px_50px_rgba(49,48,48,0.05)]">
           <div className="border-b border-line bg-brand-muted/55 px-5 py-6 lg:px-8">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
@@ -935,7 +973,10 @@ function PreparationScreen({
                 </h2>
                 <p className="mt-2 text-sm text-muted-foreground">{t("preparation.basedOn", { resumeName })}</p>
               </div>
-              <Badge variant="secondary">{preparation.meta.roleFamily}</Badge>
+              <div className="flex shrink-0 items-center gap-2">
+                <Badge variant="secondary">{preparation.meta.roleFamily}</Badge>
+                {onSave ? <Button type="button" variant="ghost" size="icon" className="no-print text-muted-foreground hover:text-foreground" onClick={() => setEditing(true)} aria-label={t("preparation.edit.action")} title={t("preparation.edit.action")}><Pencil className="h-4 w-4" /></Button> : null}
+              </div>
             </div>
           </div>
           <div className="px-5 py-6 lg:px-8">
@@ -1084,10 +1125,12 @@ function PreparationScreen({
           </ul>
         </section>
 
+        </>}
+
         <section className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center">
           <p className="text-sm text-muted-foreground">{exportMessage || message || t("preparation.footerHint")}</p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled={isWorking} onClick={onBack}><ArrowLeft data-icon="inline-start" />{t("preparation.back")}</Button>
+            {!libraryMode ? <Button variant="outline" disabled={isWorking} onClick={onBack}><ArrowLeft data-icon="inline-start" />{t("preparation.back")}</Button> : null}
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={<Button variant="outline" disabled={isWorking || Boolean(exportingFormat)} />}
@@ -1112,10 +1155,10 @@ function PreparationScreen({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button disabled={isWorking} onClick={onStart}>
+            {!libraryMode ? <Button disabled={isWorking} onClick={onStart}>
               {isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <Sparkles data-icon="inline-start" />}
               {t("preparation.start")}
-            </Button>
+            </Button> : null}
           </div>
         </section>
       </main>
@@ -1272,13 +1315,15 @@ function SessionScreen({
   );
 }
 
-function ReportScreen({
+export function ReportScreen({
   session,
   report,
   isWorking,
   message,
   onPracticeAgain,
   onReturn,
+  libraryMode = false,
+  onEdit,
 }: {
   session: InterviewSessionRecord;
   report: InterviewReport | null;
@@ -1286,6 +1331,8 @@ function ReportScreen({
   message: string;
   onPracticeAgain: () => void;
   onReturn: () => void;
+  libraryMode?: boolean;
+  onEdit?: () => void;
 }) {
   const t = useTranslations("interview");
 
@@ -1300,7 +1347,7 @@ function ReportScreen({
             </div>
           ))}
         </div>
-        <Button variant="outline" className="mt-5" onClick={onReturn}>{t("report.adjust")}</Button>
+        {!libraryMode ? <Button variant="outline" className="mt-5" onClick={onReturn}>{t("report.adjust")}</Button> : null}
       </section>
     );
   }
@@ -1311,15 +1358,18 @@ function ReportScreen({
     [t("report.dimensions.star"), report.dimensions.star],
   ] as const;
   return (
-    <div className="flex flex-col gap-5">
-      <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6">
+    <div className={cn("flex flex-col gap-5", libraryMode && "gap-6")}>
+      <section className={cn("rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)] lg:p-6", libraryMode && "p-6 lg:p-8")}>
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
           <div>
             <Badge variant="outline">{t("report.saved")}</Badge>
-            <h2 className="mt-3 font-serif text-2xl font-semibold">{t("report.title", { company: session.context.company, title: session.context.title })}</h2>
+            <h2 className={cn("mt-3 font-serif text-2xl font-semibold", libraryMode && "lg:text-3xl")}>{t("report.title", { company: session.context.company, title: session.context.title })}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{t("report.basedOn", { resumeName: session.context.resumeName })}</p>
           </div>
-          <div className="flex items-end gap-2"><span className="font-serif text-5xl font-semibold text-brand">{report.overallScore}</span><span className="pb-1 text-sm text-muted-foreground">/ 100</span></div>
+          <div className="flex items-start gap-3">
+            <div className="flex items-end gap-2"><span className={cn("font-serif text-5xl font-semibold text-brand", libraryMode && "lg:text-6xl")}>{report.overallScore}</span><span className="pb-1 text-sm text-muted-foreground">/ 100</span></div>
+            {onEdit ? <Button type="button" variant="ghost" size="icon" className="no-print shrink-0 text-muted-foreground hover:text-foreground" onClick={onEdit} aria-label={t("preparation.edit.action")} title={t("preparation.edit.action")}><Pencil className="h-4 w-4" /></Button> : null}
+          </div>
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {dimensions.map(([label, score]) => (
@@ -1329,22 +1379,21 @@ function ReportScreen({
       </section>
 
       <section className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">{t("report.strengths")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.strengths.map((item) => <li key={item}>· {item}</li>)}</ul></div>
-        <div className="rounded-lg border border-line bg-surface p-5"><h3 className="text-base font-semibold">{t("report.improvements")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.improvements.map((item) => <li key={item}>· {item}</li>)}</ul></div>
+        <div className={cn("rounded-lg border border-line bg-surface p-5", libraryMode && "lg:p-7")}><h3 className="text-base font-semibold">{t("report.strengths")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.strengths.map((item) => <li key={item}>· {item}</li>)}</ul></div>
+        <div className={cn("rounded-lg border border-line bg-surface p-5", libraryMode && "lg:p-7")}><h3 className="text-base font-semibold">{t("report.improvements")}</h3><ul className="mt-3 flex flex-col gap-2 text-sm leading-6 text-muted-foreground">{report.improvements.map((item) => <li key={item}>· {item}</li>)}</ul></div>
       </section>
 
-      <section className="rounded-lg border border-line bg-surface p-5 lg:p-6">
+      <section className={cn("rounded-lg border border-line bg-surface p-5 lg:p-6", libraryMode && "lg:p-8")}>
         <h3 className="text-base font-semibold">{t("report.questionReview")}</h3>
         <div className="mt-4 flex flex-col gap-3">
-          {session.questions.map((question, index) => {
-            const review = report.questionReviews.find((item) => item.questionId === question.id);
-            const answer = session.answers[question.id];
-            if (!review) return null;
+          {report.questionReviews.map((review, index) => {
+            const question = session.questions.find((item) => item.id === review.questionId);
+            const answer = question ? session.answers[question.id] : null;
             return (
-              <details key={question.id} className="group rounded-lg border border-line bg-background p-4" open={index === 0}>
-                <summary className="cursor-pointer list-none text-sm font-semibold">{index + 1}. {question.prompt}</summary>
+              <details key={review.questionId} className="group rounded-lg border border-line bg-background p-4" open={index === 0}>
+                <summary className="cursor-pointer list-none text-sm font-semibold">{index + 1}. {question?.prompt ?? t("report.questionNumber", { number: index + 1 })}</summary>
                 <div className="mt-4 grid gap-4 text-sm leading-6">
-                  <ReportBlock label={t("report.yourAnswer")} value={answer?.content.trim() || t("report.unanswered")} />
+                  {question ? <ReportBlock label={t("report.yourAnswer")} value={answer?.content.trim() || t("report.unanswered")} /> : null}
                   <ReportBlock label={t("report.diagnosis")} value={review.diagnosis} />
                   <ReportBlock label={t("report.suggestion")} value={review.suggestion} />
                   <ReportBlock label={t("report.reference")} value={review.improvedAnswer} emphasized />
@@ -1355,10 +1404,10 @@ function ReportScreen({
         </div>
       </section>
 
-      <section className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center">
+      {!libraryMode ? <section className="flex flex-col justify-between gap-4 rounded-lg border border-line bg-surface p-5 sm:flex-row sm:items-center">
         <div><h3 className="text-sm font-semibold">{t("report.nextActions")}</h3><p className="mt-1 text-sm text-muted-foreground">{report.nextActions.join(t("report.separator"))}</p>{message ? <p className="mt-2 text-sm text-destructive">{message}</p> : null}</div>
         <div className="flex gap-2"><Button variant="outline" disabled={isWorking} onClick={onReturn}>{t("report.adjust")}</Button><Button disabled={isWorking} onClick={onPracticeAgain}>{isWorking ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : <RefreshCw data-icon="inline-start" />}{isWorking ? t("report.generating") : t("report.practiceAgain")}</Button></div>
-      </section>
+      </section> : null}
     </div>
   );
 }

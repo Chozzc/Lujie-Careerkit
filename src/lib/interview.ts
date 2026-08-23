@@ -205,7 +205,7 @@ export function interviewQuestionNavTitle(question: { prompt: string; category: 
     [/失败|没有达到预期/, "失败复盘"],
     [/意见不一致|协作|团队合作/, "团队协作"],
     [/职业规划|未来.*年/, "职业规划"],
-    [/如何看待|应用前景|发展趋势|模型效率/, "技术趋势"],
+    [/如何看待|应用前景|发展趋势|技术动态|前沿技术|大模型|AI数据.*进展|模型效率/i, "技术趋势"],
   ];
   const matched = rules.find(([pattern]) => pattern.test(prompt));
   if (matched) return matched[1];

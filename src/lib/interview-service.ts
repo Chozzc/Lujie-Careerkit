@@ -102,9 +102,9 @@ export function createInterviewService(dependencies: {
       });
     },
 
-    async finishSession(id: string) {
+    async finishSession(id: string, regenerate = false) {
       const session = await requireSession(dependencies.repository, id);
-      if (session.status === "COMPLETED" && session.feedback) return session;
+      if (!regenerate && session.status === "COMPLETED" && session.feedback) return session;
       const hasAnswer = Object.values(session.answers).some(
         (answer) => !answer.skipped && Boolean(answer.content.trim()),
       );

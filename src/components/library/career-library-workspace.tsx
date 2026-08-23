@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ArrowLeft, ChevronRight, FileText, FolderOpen, Pencil } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, ChevronRight, FileSearch, FileStack, FileText, FolderOpen, MessagesSquare, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { InitialData } from "@/components/app/types";
+import { PreparationScreen, ReportScreen } from "@/components/interview/interview-workspace";
+import {
+  buildOptimizationDescription,
+  buildOptimizationSummary,
+  ResumeOptimizationResult,
+} from "@/components/resume/resume-optimization-result";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +23,10 @@ import {
   type CareerTreeNode,
 } from "@/lib/career-library";
 import { readGeneralResumeOptimizationStages } from "@/lib/resume-optimization-state";
-import type { ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
+import type { InterviewPreparation } from "@/lib/interview-preparation";
+import { interviewQuestionNavTitle } from "@/lib/interview";
+import type { InterviewSessionRecord } from "@/lib/interview-service";
+import type { JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type WorkspaceData = Pick<
@@ -30,11 +39,25 @@ export function CareerLibraryWorkspace({
   target,
   onClose,
   onOpenResume,
+  onDeleteArtifact,
+  onRenameResumeArtifact,
+  onUpdateJobDescription,
+  onUpdateInterviewPreparation,
+  onUpdateInterviewSession,
+  onDeleteInterviewSection,
+  onRegenerateInterviewReport,
 }: {
   data: WorkspaceData;
   target: CareerLibraryTarget;
   onClose: () => void;
   onOpenResume: (versionId: string) => void;
+  onDeleteArtifact: (artifact: CareerArtifact) => void;
+  onRenameResumeArtifact: (artifact: CareerArtifact, name: string) => Promise<void>;
+  onUpdateJobDescription: (jobId: string, jd: string) => Promise<void>;
+  onUpdateInterviewPreparation: (id: string, content: InterviewPreparation) => Promise<void>;
+  onUpdateInterviewSession: (id: string, input: Pick<InterviewSessionRecord, "context" | "questions" | "answers" | "feedback">) => Promise<void>;
+  onDeleteInterviewSection: (id: string, section: "questions" | "feedback") => Promise<void>;
+  onRegenerateInterviewReport: (id: string) => Promise<void>;
 }) {
   const t = useTranslations("careerLibrary");
   const artifacts = useMemo(() => buildCareerArtifacts(data), [data]);
@@ -47,7 +70,11 @@ export function CareerLibraryWorkspace({
   const [selectedArtifactKey, setSelectedArtifactKey] = useState<string | null>(directArtifact?.key ?? null);
   const selectedArtifact = availableArtifacts.find((item) => item.key === selectedArtifactKey) ?? null;
   const selectedTree = selectedArtifact ? buildCareerArtifactTree(selectedArtifact) : [];
-  const [selectedNodeId, setSelectedNodeId] = useState(selectedTree[0]?.id ?? "overview");
+  const [requestedNodeId, setSelectedNodeId] = useState(selectedTree[0]?.id ?? "overview");
+  const selectedNodeId = selectedTree.some((node) => node.id === requestedNodeId)
+    ? requestedNodeId
+    : selectedTree[0]?.id ?? requestedNodeId;
+  const preparationOpen = selectedArtifact?.source.type === "interview-preparation";
 
   if (!archive && !directArtifact) {
     return (
@@ -71,7 +98,7 @@ export function CareerLibraryWorkspace({
         <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => preparationOpen && archive ? setSelectedArtifactKey(null) : onClose()}
             className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-surface-low hover:text-foreground"
             aria-label={t("backToLibrary")}
             title={t("backToLibrary")}
@@ -86,16 +113,10 @@ export function CareerLibraryWorkspace({
             <p className="mt-0.5 text-xs text-muted-foreground">{t("updatedAt", { date: formatDate(updatedAt) })}</p>
           </div>
         </div>
-        {selectedArtifact?.source.type === "resume-version" ? (
-          <Button variant="outline" onClick={() => onOpenResume(selectedArtifact.source.value.id)}>
-            <Pencil />
-            <span className="hidden sm:inline">{t("openResumeEditor")}</span>
-          </Button>
-        ) : null}
       </header>
 
-      <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[19rem_minmax(0,1fr)]">
-        <aside className="no-print border-b border-line bg-surface-low/60 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r">
+      <div className={cn("grid min-h-[calc(100vh-4rem)]", !preparationOpen && "lg:grid-cols-[19rem_minmax(0,1fr)]")}>
+        {!preparationOpen ? <aside className="no-print border-b border-line bg-surface-low/60 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="p-4 lg:p-5">
             <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               {t("outline")}
@@ -110,6 +131,9 @@ export function CareerLibraryWorkspace({
                   setSelectedArtifactKey(artifact.key);
                   setSelectedNodeId(nodeId);
                 }}
+                onDelete={onDeleteArtifact}
+                onRename={onRenameResumeArtifact}
+                onDeleteInterviewSection={onDeleteInterviewSection}
               />
             ) : (
               <ArtifactTree
@@ -117,17 +141,35 @@ export function CareerLibraryWorkspace({
                 nodes={buildCareerArtifactTree(directArtifact!)}
                 selectedNodeId={selectedNodeId}
                 onSelect={setSelectedNodeId}
+                onDelete={onDeleteArtifact}
+                onRename={onRenameResumeArtifact}
+                onDeleteInterviewSection={onDeleteInterviewSection}
               />
             )}
           </div>
-        </aside>
+        </aside> : null}
 
         <main className="min-w-0 bg-background px-4 py-7 sm:px-8 lg:px-12 lg:py-10">
-          <div className="mx-auto max-w-5xl">
+          <div className={cn("mx-auto", selectedArtifact?.source.type === "resume-version" || selectedArtifact?.source.type === "interview-session" || preparationOpen ? "max-w-7xl" : "max-w-5xl")}>
             {archive && !selectedArtifact ? (
-              <JobOverview archive={archive} />
+              <JobOverview
+                archive={archive}
+                onSelect={(artifact) => {
+                  setSelectedArtifactKey(artifact.key);
+                  setSelectedNodeId(buildCareerArtifactTree(artifact)[0]?.id ?? "overview");
+                }}
+              />
             ) : selectedArtifact ? (
-              <ArtifactContent artifact={selectedArtifact} nodeId={selectedNodeId} />
+              <ArtifactContent
+                artifact={selectedArtifact}
+                nodeId={selectedNodeId}
+                jobAnalysis={data.jobs.find((job) => job.id === selectedArtifact.jobId)?.analysis}
+                onOpenResume={onOpenResume}
+                onUpdateJobDescription={onUpdateJobDescription}
+                onUpdateInterviewPreparation={onUpdateInterviewPreparation}
+                onUpdateInterviewSession={onUpdateInterviewSession}
+                onRegenerateInterviewReport={onRegenerateInterviewReport}
+              />
             ) : null}
           </div>
         </main>
@@ -142,12 +184,18 @@ function JobTree({
   selectedNodeId,
   onSelectOverview,
   onSelect,
+  onDelete,
+  onRename,
+  onDeleteInterviewSection,
 }: {
   artifacts: CareerArtifact[];
   selectedArtifactKey: string | null;
   selectedNodeId: string;
   onSelectOverview: () => void;
   onSelect: (artifact: CareerArtifact, nodeId: string) => void;
+  onDelete: (artifact: CareerArtifact) => void;
+  onRename: (artifact: CareerArtifact, name: string) => Promise<void>;
+  onDeleteInterviewSection: (id: string, section: "questions" | "feedback") => Promise<void>;
 }) {
   const t = useTranslations("careerLibrary");
   const [expandedCategories, setExpandedCategories] = useState<Set<CareerArtifactCategory>>(() => new Set());
@@ -185,34 +233,30 @@ function JobTree({
               </span>
             </button>
             {expanded ? <div className="space-y-1">
-              {category === "analysis" && categoryArtifacts[0] ? (
-                <TreeNodes
-                  artifact={categoryArtifacts[0]}
-                  nodes={buildCareerArtifactTree(categoryArtifacts[0])}
-                  selectedNodeId={selectedArtifactKey === categoryArtifacts[0].key ? selectedNodeId : ""}
-                  depth={0}
-                  onSelect={(nodeId) => onSelect(categoryArtifacts[0], nodeId)}
-                />
-              ) : categoryArtifacts.length ? categoryArtifacts.map((artifact) => {
+              {categoryArtifacts.length ? categoryArtifacts.map((artifact) => {
                 const tree = buildCareerArtifactTree(artifact);
+                const childNodes = artifact.source.type === "interview-session" ? tree : tree.slice(1);
                 const isSelected = selectedArtifactKey === artifact.key;
                 return (
                   <div key={artifact.key}>
-                    <TreeButton
-                      active={isSelected && selectedNodeId === tree[0]?.id}
-                      depth={1}
+                    <ArtifactTreeRow
+                      artifact={artifact}
+                      active={artifact.source.type !== "interview-session" && isSelected && selectedNodeId === tree[0]?.id}
                       onClick={() => onSelect(artifact, tree[0]?.id ?? "overview")}
-                    >
-                      <FileText className="h-4 w-4" />
-                      <span className="truncate">{artifactTreeTitle(artifact, t)}</span>
-                    </TreeButton>
-                    {isSelected ? (
+                      onDelete={() => onDelete(artifact)}
+                      onRename={(name) => onRename(artifact, name)}
+                      showDelete={artifact.source.type !== "interview-session"}
+                    />
+                    {isSelected && childNodes.length ? (
                       <TreeNodes
                         artifact={artifact}
-                        nodes={tree}
+                        nodes={childNodes}
                         selectedNodeId={selectedNodeId}
                         depth={2}
                         onSelect={(nodeId) => onSelect(artifact, nodeId)}
+                        onDeleteNode={artifact.source.type === "interview-session"
+                          ? (nodeId) => void onDeleteInterviewSection(artifact.id, nodeId as "questions" | "feedback")
+                          : undefined}
                       />
                     ) : null}
                   </div>
@@ -230,35 +274,160 @@ function JobTree({
   );
 }
 
-function ArtifactTree({ artifact, nodes, selectedNodeId, onSelect }: {
+function ArtifactTree({ artifact, nodes, selectedNodeId, onSelect, onDelete, onRename, onDeleteInterviewSection }: {
   artifact: CareerArtifact;
   nodes: CareerTreeNode[];
   selectedNodeId: string;
   onSelect: (nodeId: string) => void;
+  onDelete: (artifact: CareerArtifact) => void;
+  onRename: (artifact: CareerArtifact, name: string) => Promise<void>;
+  onDeleteInterviewSection: (id: string, section: "questions" | "feedback") => Promise<void>;
 }) {
+  const childNodes = artifact.source.type === "interview-session" ? nodes : nodes.slice(1);
   return (
-    <nav>
-      <TreeNodes artifact={artifact} nodes={nodes} selectedNodeId={selectedNodeId} depth={0} onSelect={onSelect} />
+    <nav className="space-y-1">
+      <ArtifactTreeRow
+        artifact={artifact}
+        active={artifact.source.type !== "interview-session" && selectedNodeId === (nodes[0]?.id ?? "overview")}
+        onClick={() => onSelect(nodes[0]?.id ?? "overview")}
+        onDelete={() => onDelete(artifact)}
+        onRename={(name) => onRename(artifact, name)}
+        showDelete={artifact.source.type !== "interview-session"}
+      />
+      {childNodes.length ? (
+        <TreeNodes
+          artifact={artifact}
+          nodes={childNodes}
+          selectedNodeId={selectedNodeId}
+          depth={1}
+          onSelect={onSelect}
+          onDeleteNode={artifact.source.type === "interview-session"
+            ? (nodeId) => void onDeleteInterviewSection(artifact.id, nodeId as "questions" | "feedback")
+            : undefined}
+        />
+      ) : null}
     </nav>
   );
 }
 
-function TreeNodes({ artifact, nodes, selectedNodeId, depth, onSelect }: {
+function ArtifactTreeRow({
+  artifact,
+  active,
+  onClick,
+  onDelete,
+  onRename,
+  showDelete = true,
+}: {
+  artifact: CareerArtifact;
+  active: boolean;
+  onClick: () => void;
+  onDelete: () => void;
+  onRename: (name: string) => Promise<void>;
+  showDelete?: boolean;
+}) {
+  const t = useTranslations("careerLibrary");
+  const editable = artifact.source.type === "resume-version";
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(artifact.name);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    const name = draft.trim();
+    if (!editable || saving) return;
+    if (!name || name === artifact.name) {
+      setDraft(artifact.name);
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onRename(name);
+      setEditing(false);
+    } catch {
+      // The parent reports the persistence error and the input stays open for retrying.
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className={cn("flex h-10 min-w-0 items-center gap-1 rounded-lg pr-1", active && "bg-surface shadow-sm ring-1 ring-line")}>
+      {editing ? (
+        <input
+          autoFocus
+          value={draft}
+          disabled={saving}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={() => void save()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") void save();
+            if (event.key === "Escape") {
+              setDraft(artifact.name);
+              setEditing(false);
+            }
+          }}
+          className="ml-2 min-w-0 flex-1 rounded-md border border-primary/30 bg-background px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/15"
+          aria-label={t("editArtifactName")}
+          title={artifact.name}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={onClick}
+          onDoubleClick={() => {
+            if (!editable) return;
+            setDraft(artifact.name);
+            setEditing(true);
+          }}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2 self-stretch rounded-lg px-2 text-left text-sm transition",
+            active ? "text-primary" : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
+          )}
+          title={editable ? t("doubleClickToRename", { name: artifact.name }) : artifactTreeTitle(artifact, t)}
+        >
+          <FileText className="h-4 w-4 shrink-0" />
+          <span className="truncate">{artifactTreeTitle(artifact, t)}</span>
+        </button>
+      )}
+      {showDelete ? <button
+        type="button"
+        onClick={onDelete}
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
+        aria-label={t("delete")}
+        title={t("delete")}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button> : null}
+    </div>
+  );
+}
+
+function TreeNodes({ artifact, nodes, selectedNodeId, depth, onSelect, onDeleteNode }: {
   artifact: CareerArtifact;
   nodes: CareerTreeNode[];
   selectedNodeId: string;
   depth: number;
   onSelect: (nodeId: string) => void;
+  onDeleteNode?: (nodeId: string) => void;
 }) {
   const t = useTranslations("careerLibrary");
   return (
     <div className={cn(depth > 0 && "mt-1 space-y-1")}>
       {nodes.map((node, index) => (
         <div key={node.id}>
+          <div className="flex min-w-0 items-center gap-1 pr-1">
           <TreeButton active={selectedNodeId === node.id} depth={depth} onClick={() => onSelect(node.id)}>
             <FileText className="h-3.5 w-3.5" />
             <span className="truncate">{treeNodeLabel(artifact, node.id, index, t)}</span>
           </TreeButton>
+          {onDeleteNode && (node.id === "questions" || node.id === "feedback") ? <button
+            type="button"
+            onClick={() => onDeleteNode(node.id)}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
+            aria-label={t("delete")}
+            title={t("delete")}
+          ><Trash2 className="h-4 w-4" /></button> : null}
+          </div>
           {node.children?.length ? (
             <TreeNodes
               artifact={artifact}
@@ -266,6 +435,7 @@ function TreeNodes({ artifact, nodes, selectedNodeId, depth, onSelect }: {
               selectedNodeId={selectedNodeId}
               depth={depth + 1}
               onSelect={onSelect}
+              onDeleteNode={onDeleteNode}
             />
           ) : null}
         </div>
@@ -286,7 +456,7 @@ function TreeButton({ active, depth, onClick, children }: {
       onClick={onClick}
       style={{ paddingLeft: `${0.5 + depth * 0.75}rem` }}
       className={cn(
-        "flex h-9 w-full items-center gap-2 rounded-lg pr-2 text-left text-sm transition",
+        "flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg pr-2 text-left text-sm transition",
         active ? "bg-surface text-primary shadow-sm ring-1 ring-line" : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
       )}
     >
@@ -295,59 +465,185 @@ function TreeButton({ active, depth, onClick, children }: {
   );
 }
 
-function JobOverview({ archive }: { archive: ReturnType<typeof buildCareerJobArchives>[number] }) {
+function JobOverview({
+  archive,
+  onSelect,
+}: {
+  archive: ReturnType<typeof buildCareerJobArchives>[number];
+  onSelect: (artifact: CareerArtifact) => void;
+}) {
   const t = useTranslations("careerLibrary");
-  const metrics = [
-    ["analysis", archive.counts.analyses],
-    ["tailoredResume", archive.counts.tailoredResumes],
-    ["preparation", archive.counts.preparations],
-    ["interview", archive.counts.interviews],
+  const categories = [
+    { key: "analysis", icon: FileSearch, artifacts: archive.artifacts.filter((artifact) => artifact.category === "analysis") },
+    { key: "resume", icon: FileStack, artifacts: archive.artifacts.filter((artifact) => artifact.category === "resume") },
+    { key: "interview", icon: MessagesSquare, artifacts: archive.artifacts.filter((artifact) => artifact.category === "interview") },
   ] as const;
   return (
-    <ContentPage title={`${archive.company} · ${archive.role}`} description={archive.city || t("virtualJob")}>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map(([key, value]) => (
-          <MetricCard key={key} value={value} label={t(`overviewMetrics.${key}`)} />
-        ))}
-      </div>
-      <ContentSection title={t("jobFilesTitle")}>
-        <div className="grid gap-3 sm:grid-cols-2">
+    <ContentPage
+      title={`${archive.company} · ${archive.role}`}
+      description={t("overviewSummary", {
+        count: archive.artifacts.length,
+        date: formatDate(archive.updatedAt),
+      })}
+    >
+      <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+        <header className="border-b border-line px-5 py-4 sm:px-6">
+          <h3 className="text-base font-semibold text-primary">{t("overviewPathTitle")}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{t("overviewPathDescription")}</p>
+        </header>
+        <div className="grid divide-y divide-line sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          {categories.map(({ key, icon: Icon, artifacts }) => {
+            const latest = artifacts[0];
+            return (
+              <button
+                key={key}
+                type="button"
+                disabled={!latest}
+                onClick={() => latest && onSelect(latest)}
+                className="group min-h-40 px-5 py-5 text-left transition hover:bg-surface-low disabled:cursor-default disabled:hover:bg-transparent sm:px-6"
+              >
+                <span className="flex items-center justify-between gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-surface-low text-primary/75">
+                    <Icon className="h-5 w-5" strokeWidth={1.6} />
+                  </span>
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {t("categoryCount", { count: artifacts.length })}
+                  </span>
+                </span>
+                <span className="mt-5 block font-semibold text-primary">{t(`categories.${key}`)}</span>
+                <span className="mt-1.5 block text-sm leading-6 text-muted-foreground">
+                  {t(`overviewPath.${key}`)}
+                </span>
+                <span className={cn(
+                  "mt-4 flex items-center justify-between gap-3 text-xs",
+                  latest ? "text-foreground/75" : "text-muted-foreground",
+                )}>
+                  <span className="truncate">{latest ? artifactTreeTitle(latest, t) : t("overviewPath.empty")}</span>
+                  {latest ? <ArrowRight className="h-4 w-4 shrink-0 transition group-hover:translate-x-0.5" /> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <header className="mb-3 flex items-end justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-primary">{t("jobFilesTitle")}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{t("jobFilesDescription")}</p>
+          </div>
+          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+            {t("categoryCount", { count: archive.artifacts.length })}
+          </span>
+        </header>
+        <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
           {archive.artifacts.map((artifact) => (
-            <div key={artifact.key} className="rounded-xl border border-line bg-surface-low/50 p-4">
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary/70" />
-                <h3 className="font-medium">{artifactTreeTitle(artifact, t)}</h3>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">{t("updatedAt", { date: formatDate(artifact.updatedAt) })}</p>
-            </div>
+            <button
+              key={artifact.key}
+              type="button"
+              onClick={() => onSelect(artifact)}
+              className="group flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-surface-low sm:px-6"
+            >
+              <FileText className="h-5 w-5 shrink-0 text-primary/65" strokeWidth={1.6} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-medium text-foreground">{artifactTreeTitle(artifact, t)}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {t(`categories.${artifact.category}`)} · {t("updatedAt", { date: formatDate(artifact.updatedAt) })}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+            </button>
           ))}
         </div>
-      </ContentSection>
+      </section>
     </ContentPage>
   );
 }
 
-function ArtifactContent({ artifact, nodeId }: { artifact: CareerArtifact; nodeId: string }) {
+function ArtifactContent({
+  artifact,
+  nodeId,
+  jobAnalysis,
+  onOpenResume,
+  onUpdateJobDescription,
+  onUpdateInterviewPreparation,
+  onUpdateInterviewSession,
+  onRegenerateInterviewReport,
+}: {
+  artifact: CareerArtifact;
+  nodeId: string;
+  jobAnalysis?: JobAnalysis | null;
+  onOpenResume: (versionId: string) => void;
+  onUpdateJobDescription: (jobId: string, jd: string) => Promise<void>;
+  onUpdateInterviewPreparation: (id: string, content: InterviewPreparation) => Promise<void>;
+  onUpdateInterviewSession: (id: string, input: Pick<InterviewSessionRecord, "context" | "questions" | "answers" | "feedback">) => Promise<void>;
+  onRegenerateInterviewReport: (id: string) => Promise<void>;
+}) {
   switch (artifact.source.type) {
     case "resume-version":
-      return <ResumeArtifactContent artifact={artifact} nodeId={nodeId} />;
+      return (
+        <ResumeArtifactContent
+          artifact={artifact}
+          nodeId={nodeId}
+          jobAnalysis={jobAnalysis}
+          onOpenResume={onOpenResume}
+        />
+      );
     case "job":
-      return <JobAnalysisContent artifact={artifact} nodeId={nodeId} />;
+      return <JobAnalysisContent artifact={artifact} onSave={onUpdateJobDescription} />;
     case "interview-preparation":
-      return <InterviewPreparationContent artifact={artifact} nodeId={nodeId} />;
+      return <InterviewPreparationContent artifact={artifact} onSave={onUpdateInterviewPreparation} />;
     case "interview-session":
-      return <InterviewSessionContent artifact={artifact} nodeId={nodeId} />;
+      return <InterviewSessionContent artifact={artifact} nodeId={nodeId} onSave={onUpdateInterviewSession} onRegenerateReport={onRegenerateInterviewReport} />;
   }
 }
 
-function ResumeArtifactContent({ artifact, nodeId }: { artifact: CareerArtifact; nodeId: string }) {
+function ResumeArtifactContent({
+  artifact,
+  nodeId,
+  jobAnalysis,
+  onOpenResume,
+}: {
+  artifact: CareerArtifact;
+  nodeId: string;
+  jobAnalysis?: JobAnalysis | null;
+  onOpenResume: (versionId: string) => void;
+}) {
   const t = useTranslations("careerLibrary");
+  const matchT = useTranslations("match");
   if (artifact.source.type !== "resume-version") return null;
   const version = artifact.source.value;
   const stages = readGeneralResumeOptimizationStages(version.content);
   const meta = readOptimizationMeta(version.content);
   const base = readOptimizationBase(version.content);
   const sectionId = nodeId.startsWith("change:") ? nodeId.slice(7) : null;
+
+  if ((nodeId === "overview" || nodeId === "optimized-resume") && base) {
+    const mode = artifact.kind === "general-resume" ? "general" : "jd";
+    return (
+      <ResumeOptimizationResult
+        workflowLabels={mode === "jd"
+          ? [matchT("steps.select"), matchT("steps.optimize"), matchT("steps.preview")]
+          : [matchT("steps.current"), matchT("steps.generalOptimize"), matchT("steps.preview")]}
+        currentStep={2}
+        showWorkflow={false}
+        title={mode === "jd"
+          ? [artifact.company, artifact.role].filter(Boolean).join(" · ") || matchT("result.jdComplete")
+          : matchT("result.generalComplete")}
+        description={buildOptimizationDescription(base, version.content, { mode, meta: meta ?? undefined })}
+        before={base}
+        after={version.content}
+        summaryItems={buildOptimizationSummary(base, version.content, {
+          mode,
+          analysis: jobAnalysis ?? undefined,
+          meta: meta ?? undefined,
+        })}
+        openEditorLabel={t("openResumeEditor")}
+        onOpenEditor={() => onOpenResume(version.id)}
+      />
+    );
+  }
 
   if (nodeId === "original-resume" && base) {
     return (
@@ -423,108 +719,175 @@ function ResumeArtifactContent({ artifact, nodeId }: { artifact: CareerArtifact;
   );
 }
 
-function JobAnalysisContent({ artifact }: { artifact: CareerArtifact; nodeId: string }) {
+function JobAnalysisContent({ artifact, onSave }: { artifact: CareerArtifact; onSave: (jobId: string, jd: string) => Promise<void> }) {
   const t = useTranslations("careerLibrary");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(artifact.source.type === "job" ? artifact.source.value.jd : "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   if (artifact.source.type !== "job") return null;
   const job = artifact.source.value;
-  return <TextPage title={t("tree.original-jd")} text={job.jd} preserve />;
+  return <ContentPage title={t("tree.original-jd")}>
+    {editing ? <div className="flex justify-end gap-2">
+      <>
+        <Button variant="outline" disabled={saving} onClick={() => { setDraft(job.jd); setEditing(false); setError(""); }}>{t("edit.cancel")}</Button>
+        <Button disabled={saving || !draft.trim()} onClick={() => void (async () => { setSaving(true); setError(""); try { await onSave(job.id, draft.trim()); setEditing(false); } catch (cause) { setError(cause instanceof Error ? cause.message : t("edit.failed")); } finally { setSaving(false); } })()}>{t("edit.save")}</Button>
+      </>
+    </div> : null}
+    {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    {editing
+      ? <textarea className="min-h-[32rem] w-full resize-y rounded-xl border border-line bg-surface p-5 text-sm leading-7 outline-none focus:border-primary/40" value={draft} onChange={(event) => setDraft(event.target.value)} />
+      : <div className="relative whitespace-pre-wrap rounded-2xl border border-line bg-surface p-6 pr-16 text-sm leading-7">
+          <EditIconButton label={t("edit.action")} onClick={() => { setEditing(true); setError(""); }} className="absolute right-4 top-4" />
+          {job.jd}
+        </div>}
+  </ContentPage>;
 }
 
-function InterviewPreparationContent({ artifact, nodeId }: { artifact: CareerArtifact; nodeId: string }) {
-  const t = useTranslations("careerLibrary");
+function InterviewPreparationContent({ artifact, onSave }: { artifact: CareerArtifact; onSave: (id: string, content: InterviewPreparation) => Promise<void> }) {
   if (artifact.source.type !== "interview-preparation") return null;
-  const content = artifact.source.value.content;
-  if (nodeId === "capability-profile") {
-    return (
-      <ContentPage title={t("tree.capability-profile")} description={content.capabilityProfile.overview}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {content.capabilityProfile.dimensions.map((dimension) => (
-            <div key={dimension.label} className="rounded-xl border border-line p-4">
-              <div className="flex items-center justify-between gap-3"><h3 className="font-semibold">{dimension.label}</h3><Badge variant="secondary">{t(`evidence.${dimension.evidenceLevel}`)}</Badge></div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{dimension.evidenceSummary}</p>
-              <p className="mt-2 text-sm leading-6"><span className="font-medium">{t("labels.nextStep")}：</span>{dimension.nextStep}</p>
-            </div>
-          ))}
-        </div>
-      </ContentPage>
-    );
-  }
-  if (nodeId === "evidence-gaps") {
-    return (
-      <ContentPage title={t("tree.evidence-gaps")} description={t("evidenceDescription")}>
-        <div className="space-y-3">{content.evidenceMatrix.map((item) => <div key={item.requirement} className="rounded-xl border border-line p-4"><h3 className="font-semibold">{item.requirement}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{item.assessment}</p><p className="mt-2 text-sm leading-6"><span className="font-medium">{t("labels.action")}：</span>{item.action}</p></div>)}</div>
-      </ContentPage>
-    );
-  }
-  if (nodeId === "core-knowledge") {
-    return <CardListPage title={t("tree.core-knowledge")} items={content.knowledgeTopics.map((item) => ({ title: item.topic, body: item.explanation, meta: item.whyRelevant }))} />;
-  }
-  if (nodeId === "experience-deep-dives") {
-    return <CardListPage title={t("tree.experience-deep-dives")} items={content.deepDives.map((item) => ({ title: item.resumeItem, body: item.personalContributionFocus, meta: item.whyRelevant, bullets: item.likelyFollowUps }))} />;
-  }
-  if (nodeId === "targeted-questions") {
-    return <CardListPage title={t("tree.targeted-questions")} items={content.targetedQuestions.map((item) => ({ title: item.question, body: item.preparationDirection, meta: item.category }))} />;
-  }
-  if (nodeId === "preparation-plan") {
-    return (
-      <ContentPage title={t("tree.preparation-plan")} description={t("planDescription")}>
-        <ContentSection title={t("plan.must")}><BulletList items={content.preparationPlan.mustPrepare} /></ContentSection>
-        <ContentSection title={t("plan.should")}><BulletList items={content.preparationPlan.shouldPrepare} /></ContentSection>
-        <ContentSection title={t("plan.optional")}><BulletList items={content.preparationPlan.optional} /></ContentSection>
-      </ContentPage>
-    );
-  }
-  return (
-    <ContentPage title={`${content.meta.company} · ${content.meta.title}`} description={content.meta.roleSummary}>
-      <ContentSection title={t("selfIntroduction")}><p className="whitespace-pre-wrap">{content.selfIntroduction}</p></ContentSection>
-      <ContentSection title={t("reverseQuestions")}><BulletList items={content.reverseQuestions} /></ContentSection>
-    </ContentPage>
-  );
+  const record = artifact.source.value;
+  return <PreparationScreen key={`${record.id}:${record.updatedAt}`} preparation={record.content} resumeName={record.context.resumeName} isWorking={false} message="" onBack={() => {}} onStart={() => {}} libraryMode onSave={(content) => onSave(record.id, content)} />;
 }
 
-function InterviewSessionContent({ artifact, nodeId }: { artifact: CareerArtifact; nodeId: string }) {
+function InterviewSessionContent({ artifact, nodeId, onSave, onRegenerateReport }: { artifact: CareerArtifact; nodeId: string; onSave: (id: string, input: Pick<InterviewSessionRecord, "context" | "questions" | "answers" | "feedback">) => Promise<void>; onRegenerateReport: (id: string) => Promise<void> }) {
   const t = useTranslations("careerLibrary");
+  const initialSession = artifact.source.type === "interview-session" ? artifact.source.value : null;
+  const [draft, setDraft] = useState(initialSession);
+  const [editing, setEditing] = useState(false);
+  const [editingAnswersOnly, setEditingAnswersOnly] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [activeQuestionId, setActiveQuestionId] = useState(initialSession?.questions[0]?.id ?? "");
+
+  useEffect(() => {
+    if (!initialSession?.questions.length) return;
+    const updateActiveQuestion = () => {
+      let current = initialSession.questions[0].id;
+      for (const question of initialSession.questions) {
+        const section = document.getElementById(`interview-question-${question.id}`);
+        if (section && section.getBoundingClientRect().top <= 180) current = question.id;
+      }
+      setActiveQuestionId(current);
+    };
+    updateActiveQuestion();
+    window.addEventListener("scroll", updateActiveQuestion, { passive: true });
+    return () => window.removeEventListener("scroll", updateActiveQuestion);
+  }, [initialSession]);
   if (artifact.source.type !== "interview-session") return null;
   const session = artifact.source.value;
-  const questionId = nodeId.startsWith("question:") ? nodeId.slice(9) : null;
-  if (questionId) {
-    const question = session.questions.find((item) => item.id === questionId);
-    const answer = question ? session.answers[question.id] : undefined;
-    if (!question) return null;
-    return (
-      <ContentPage title={question.prompt} description={question.focus}>
-        <ContentSection title={t("answer")}><p className="whitespace-pre-wrap">{answer?.content || t("unanswered")}</p></ContentSection>
-      </ContentPage>
-    );
+  if (editing && draft) {
+    return <ContentPage title={editingAnswersOnly ? t("edit.answersTitle") : t("edit.mockInterviewTitle")}>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" disabled={saving} onClick={() => { setDraft(session); setEditing(false); setEditingAnswersOnly(false); setError(""); }}>{t("edit.cancel")}</Button>
+        <Button disabled={saving} onClick={() => void (async () => { setSaving(true); setError(""); try { await onSave(session.id, { context: draft.context, questions: draft.questions, answers: draft.answers, feedback: draft.feedback }); setEditing(false); setEditingAnswersOnly(false); } catch (cause) { setError(cause instanceof Error ? cause.message : t("edit.failed")); } finally { setSaving(false); } })()}>{t("edit.save")}</Button>
+      </div>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <div className="space-y-5 rounded-2xl border border-line bg-surface p-5">
+        {!editingAnswersOnly ? <>
+          <EditField label={t("labels.company")} value={draft.context.company} onChange={(company) => setDraft({ ...draft, context: { ...draft.context, company } })} />
+          <EditField label={t("labels.role")} value={draft.context.title} onChange={(title) => setDraft({ ...draft, context: { ...draft.context, title } })} />
+          <EditField label={t("tree.original-jd")} value={draft.context.jd} multiline onChange={(jd) => setDraft({ ...draft, context: { ...draft.context, jd } })} />
+        </> : null}
+        {draft.questions.map((question, index) => <div key={question.id} className="space-y-3 rounded-xl border border-line p-4">
+          <p className="font-semibold">{t("edit.question", { number: index + 1 })}</p>
+          {!editingAnswersOnly ? <>
+            <EditField label={t("edit.questionText")} value={question.prompt} multiline onChange={(prompt) => setDraft({ ...draft, questions: draft.questions.map((item) => item.id === question.id ? { ...item, prompt } : item) })} />
+            <EditField label={t("edit.questionFocus")} value={question.focus} multiline onChange={(focus) => setDraft({ ...draft, questions: draft.questions.map((item) => item.id === question.id ? { ...item, focus } : item) })} />
+          </> : null}
+          <EditField label={t("answer")} value={draft.answers[question.id]?.content ?? ""} multiline onChange={(content) => setDraft({ ...draft, answers: { ...draft.answers, [question.id]: { questionId: question.id, content, skipped: false, updatedAt: new Date().toISOString() } } })} />
+        </div>)}
+        {!editingAnswersOnly && draft.feedback ? <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <EditNumberField label={t("edit.overallScore")} value={draft.feedback.overallScore} onChange={(overallScore) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, overallScore } : null })} />
+            {(["jobFit", "structure", "evidence", "star"] as const).map((key) => <EditNumberField key={key} label={t(`edit.dimensions.${key}`)} value={draft.feedback!.dimensions[key]} onChange={(score) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, dimensions: { ...draft.feedback.dimensions, [key]: score } } : null })} />)}
+          </div>
+          <EditField label={t("strengths")} value={draft.feedback.strengths.join("\n")} multiline onChange={(value) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, strengths: splitLines(value) } : null })} />
+          <EditField label={t("improvements")} value={draft.feedback.improvements.join("\n")} multiline onChange={(value) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, improvements: splitLines(value) } : null })} />
+          {draft.feedback.questionReviews.map((review, index) => <div key={review.questionId} className="space-y-3 rounded-xl border border-line p-4"><p className="font-semibold">{t("edit.review", { number: index + 1 })}</p><EditField label={t("edit.diagnosis")} value={review.diagnosis} multiline onChange={(diagnosis) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, questionReviews: draft.feedback.questionReviews.map((item) => item.questionId === review.questionId ? { ...item, diagnosis } : item) } : null })} /><EditField label={t("edit.suggestion")} value={review.suggestion} multiline onChange={(suggestion) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, questionReviews: draft.feedback.questionReviews.map((item) => item.questionId === review.questionId ? { ...item, suggestion } : item) } : null })} /><EditField label={t("edit.referenceAnswer")} value={review.improvedAnswer} multiline onChange={(improvedAnswer) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, questionReviews: draft.feedback.questionReviews.map((item) => item.questionId === review.questionId ? { ...item, improvedAnswer } : item) } : null })} /></div>)}
+          <EditField label={t("nextActions")} value={draft.feedback.nextActions.join("\n")} multiline onChange={(value) => setDraft({ ...draft, feedback: draft.feedback ? { ...draft.feedback, nextActions: splitLines(value) } : null })} />
+        </> : null}
+      </div>
+    </ContentPage>;
   }
   if (nodeId === "questions") {
-    return <ListPage title={t("tree.questions")} items={session.questions.map((question) => question.prompt)} />;
+    return <div className="grid items-start gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+      <aside className="no-print px-2 py-3 lg:sticky lg:top-24">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand">{t("questionOutline")}</p>
+        <nav className="mt-3" aria-label={t("questionOutline")}>
+          <ol className="space-y-1">
+            {session.questions.map((question, index) => <li key={question.id}>
+              <a
+                href={`#interview-question-${question.id}`}
+                onClick={() => setActiveQuestionId(question.id)}
+                aria-current={activeQuestionId === question.id ? "location" : undefined}
+                title={question.prompt}
+                className={cn(
+                  "flex gap-3 rounded-md border-l-2 px-3 py-2 text-sm transition-colors",
+                  activeQuestionId === question.id
+                    ? "border-brand bg-brand-muted font-medium text-brand"
+                    : "border-transparent text-muted-foreground hover:bg-surface-low hover:text-foreground",
+                )}
+              >
+                <span className="font-mono text-xs text-brand">{String(index + 1).padStart(2, "0")}</span>
+                <span className="line-clamp-2">{interviewQuestionNavTitle(question)}</span>
+              </a>
+            </li>)}
+          </ol>
+        </nav>
+      </aside>
+      <article className="min-w-0 space-y-5">
+        <div className="space-y-5">
+          {session.questions.map((question, index) => {
+            const answer = session.answers[question.id];
+            return <section id={`interview-question-${question.id}`} key={question.id} className="relative scroll-mt-24 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
+              <div className={cn("border-b border-line bg-surface-low px-5 py-5 lg:px-7", index === 0 && "pr-16 lg:pr-16")}>
+                <div className="flex items-start gap-3"><span className="font-mono text-xs font-semibold text-brand">{String(index + 1).padStart(2, "0")}</span><div><h3 className="font-semibold leading-6">{question.prompt}</h3><p className="mt-1 text-xs leading-5 text-muted-foreground">{question.focus}</p></div></div>
+              </div>
+              {index === 0 ? <EditIconButton label={t("edit.action")} onClick={() => { setDraft(session); setEditingAnswersOnly(false); setEditing(true); setError(""); }} className="absolute right-3 top-3" /> : null}
+              <div className="px-5 py-6 lg:px-7"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t("answer")}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-7">{answer?.content || t("unanswered")}</p></div>
+            </section>;
+          })}
+        </div>
+        <div className="flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{t("regenerateFeedbackHint")}</p>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Button variant="outline" disabled={regenerating} onClick={() => { setDraft(session); setEditingAnswersOnly(true); setEditing(true); setError(""); }}><Pencil data-icon="inline-start" />{t("editAnswers")}</Button>
+            <Button disabled={regenerating} onClick={() => void (async () => { setRegenerating(true); setError(""); try { await onRegenerateReport(session.id); } catch (cause) { setError(cause instanceof Error ? cause.message : t("edit.failed")); } finally { setRegenerating(false); } })()}>{regenerating ? <RefreshCw data-icon="inline-start" className="animate-spin" /> : <RefreshCw data-icon="inline-start" />}{regenerating ? t("regeneratingFeedback") : t("regenerateFeedback")}</Button>
+          </div>
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      </article>
+    </div>;
   }
   if (nodeId === "feedback") {
     if (session.feedback) {
-      return (
-        <ContentPage title={t("tree.feedback")} description={t("feedbackScore", { score: session.feedback.overallScore })}>
-          <ContentSection title={t("strengths")}><BulletList items={session.feedback.strengths} /></ContentSection>
-          <ContentSection title={t("improvements")}><BulletList items={session.feedback.improvements} /></ContentSection>
-          <ContentSection title={t("nextActions")}><BulletList items={session.feedback.nextActions} /></ContentSection>
-        </ContentPage>
-      );
+      return <ReportScreen session={session} report={session.feedback} isWorking={false} message="" onPracticeAgain={() => {}} onReturn={() => {}} libraryMode onEdit={() => { setDraft(session); setEditing(true); setError(""); }} />;
     }
-    return <DefinitionGrid items={Object.entries(session.legacyFeedback ?? {})} />;
+    return <ContentPage title={t("tree.feedback")} actions={<EditIconButton label={t("edit.action")} onClick={() => { setDraft(session); setEditing(true); setError(""); }} />}><DefinitionGrid items={Object.entries(session.legacyFeedback ?? {})} /></ContentPage>;
   }
-  return (
-    <ContentPage title={`${session.context.company} · ${session.context.title}`} description={t(`interviewStatus.${session.status}`)}>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard value={session.questions.length} label={t("overviewMetrics.questions")} />
-        <MetricCard value={Object.values(session.answers).filter((answer) => answer.content.trim()).length} label={t("overviewMetrics.answers")} />
-        <MetricCard value={session.feedback || session.legacyFeedback ? 1 : 0} label={t("overviewMetrics.feedback")} />
-      </div>
-    </ContentPage>
-  );
+  return null;
 }
 
-function ContentPage({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
-  return <article><header className="border-b border-line pb-6"><h2 className="font-serif text-3xl font-semibold text-primary">{title}</h2>{description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p> : null}</header><div className="mt-7 space-y-7">{children}</div></article>;
+function EditField({ label, value, multiline, onChange }: { label: string; value: string; multiline?: boolean; onChange: (value: string) => void }) {
+  return <label className="block text-sm"><span className="mb-1.5 block font-medium">{label}</span>{multiline ? <textarea className="min-h-24 w-full resize-y rounded-lg border border-line bg-background px-3 py-2 leading-6 outline-none focus:border-primary/40" value={value} onChange={(event) => onChange(event.target.value)} /> : <input className="h-10 w-full rounded-lg border border-line bg-background px-3 outline-none focus:border-primary/40" value={value} onChange={(event) => onChange(event.target.value)} />}</label>;
+}
+
+function EditNumberField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  return <label className="block text-sm"><span className="mb-1.5 block font-medium">{label}</span><input type="number" min={0} max={100} className="h-10 w-full rounded-lg border border-line bg-background px-3 outline-none focus:border-primary/40" value={value} onChange={(event) => onChange(Math.max(0, Math.min(100, Number(event.target.value) || 0)))} /></label>;
+}
+
+function splitLines(value: string) {
+  return value.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function EditIconButton({ label, onClick, className }: { label: string; onClick: () => void; className?: string }) {
+  return <Button type="button" variant="ghost" size="icon" className={cn("no-print shrink-0 text-muted-foreground hover:text-foreground", className)} onClick={onClick} aria-label={label} title={label}><Pencil className="h-4 w-4" /></Button>;
+}
+
+function ContentPage({ title, description, actions, children }: { title: string; description?: string; actions?: React.ReactNode; children: React.ReactNode }) {
+  return <article><header className="flex items-start justify-between gap-4 border-b border-line pb-6"><div className="min-w-0"><h2 className="font-serif text-3xl font-semibold text-primary">{title}</h2>{description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p> : null}</div>{actions}</header><div className="mt-7 space-y-7">{children}</div></article>;
 }
 function ContentSection({ title, children }: { title: string; children: React.ReactNode }) {
   return <section className="rounded-2xl border border-line bg-surface p-5 shadow-sm"><h3 className="mb-3 text-base font-semibold text-primary">{title}</h3><div className="text-sm leading-7 text-foreground/85">{children}</div></section>;
@@ -537,9 +900,6 @@ function TextPage({ title, text, preserve = false }: { title: string; text: stri
 }
 function ListPage({ title, items, empty }: { title: string; items: string[]; empty?: string }) {
   return <ContentPage title={title}><ContentSection title={title}><BulletList items={items} empty={empty} /></ContentSection></ContentPage>;
-}
-function CardListPage({ title, items }: { title: string; items: Array<{ title: string; body: string; meta?: string; bullets?: string[] }> }) {
-  return <ContentPage title={title}><div className="space-y-3">{items.map((item) => <div key={`${item.title}:${item.meta}`} className="rounded-2xl border border-line bg-surface p-5 shadow-sm">{item.meta ? <p className="text-xs font-medium text-muted-foreground">{item.meta}</p> : null}<h3 className="mt-1 font-semibold text-primary">{item.title}</h3><p className="mt-2 text-sm leading-7 text-foreground/80">{item.body}</p>{item.bullets?.length ? <div className="mt-3"><BulletList items={item.bullets} /></div> : null}</div>)}</div></ContentPage>;
 }
 function BulletList({ items, empty }: { items: string[]; empty?: string }) {
   if (!items.length) return <p className="text-muted-foreground">{empty ?? "—"}</p>;
