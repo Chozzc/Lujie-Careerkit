@@ -120,7 +120,9 @@ export type JobRecord = {
   id: string;
   company: string;
   title: string;
+  city?: string;
   source?: string;
+  link?: string;
   deadline: string | null;
   jd: string;
 };

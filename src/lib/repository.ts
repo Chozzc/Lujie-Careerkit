@@ -32,7 +32,14 @@ import {
 import type { InterviewRepository, InterviewSessionRecord } from "./interview-service";
 import { resolveResumeContentTitle } from "./resume-naming";
 import { buildTailoredResumeVersion } from "./resume-versioning";
-import { sampleApplications, sampleJobs, sampleResumeVersions } from "./sample-data";
+import {
+  sampleApplications,
+  sampleInterviewPreparation,
+  sampleInterviewSession,
+  sampleJobs,
+  sampleResumeVersions,
+  sampleTailoredResumeVersion,
+} from "./sample-data";
 import type { InterviewRound, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
 
 export async function ensureSeedData() {
@@ -44,43 +51,53 @@ export async function ensureSeedData() {
 
   const sampleVersion = sampleResumeVersions[0];
   const resume = await prisma.resume.create({ data: { name: sampleVersion?.name ?? "示例简历" } });
-  const baseVersion = sampleVersion
-    ? await prisma.resumeVersion.create({
-        data: {
-          id: sampleVersion.id,
-          resumeId: resume.id,
-          jobId: null,
-          name: sampleVersion.name,
-          summary: sampleVersion.summary,
-          content: sampleVersion.content,
-        },
-      })
-    : null;
+  if (sampleVersion) {
+    await prisma.resumeVersion.create({
+      data: {
+        id: sampleVersion.id,
+        resumeId: resume.id,
+        jobId: null,
+        name: sampleVersion.name,
+        summary: sampleVersion.summary,
+        content: sampleVersion.content,
+      },
+    });
+  }
 
   for (const job of sampleJobs) {
-    const createdJob = await prisma.job.create({
+    await prisma.job.create({
       data: {
         id: job.id,
         company: job.company,
         title: job.title,
-        city: job.company === "字节跳动" ? "北京 / 上海" : "上海",
+        city: job.city ?? "待填写",
         source: job.source ?? "企业官网",
         jd: job.jd,
-        link: "",
+        link: job.link ?? "",
         deadline: job.deadline ? new Date(job.deadline) : null,
         analysis: analyzeJobInput(`${job.company} - ${job.title}\n投递截止日期：${job.deadline}\n${job.jd}`),
       },
     });
+  }
 
-    const application = sampleApplications.find((item) => item.jobId === job.id);
-    if (!application) continue;
+  await prisma.resumeVersion.create({
+    data: {
+      id: sampleTailoredResumeVersion.id,
+      resumeId: resume.id,
+      jobId: sampleTailoredResumeVersion.jobId,
+      name: sampleTailoredResumeVersion.name,
+      summary: sampleTailoredResumeVersion.summary,
+      content: sampleTailoredResumeVersion.content,
+    },
+  });
 
+  for (const application of sampleApplications) {
     await prisma.application.create({
       data: {
         id: application.id,
-        jobId: createdJob.id,
+        jobId: application.jobId,
         status: application.status as ApplicationStatus,
-        resumeVersionId: application.resumeVersionId === baseVersion?.id ? baseVersion.id : null,
+        resumeVersionId: application.resumeVersionId,
         appliedAt: application.appliedAt ? new Date(application.appliedAt) : null,
         stageDate: application.stageDate ? new Date(application.stageDate) : null,
         nextFollowUpAt: application.nextFollowUpAt ? new Date(application.nextFollowUpAt) : null,
@@ -90,9 +107,34 @@ export async function ensureSeedData() {
     });
   }
 
+  await prisma.interviewPreparation.create({
+    data: {
+      id: sampleInterviewPreparation.id,
+      jobId: sampleInterviewPreparation.jobId,
+      resumeVersionId: sampleInterviewPreparation.resumeVersionId,
+      mode: sampleInterviewPreparation.mode,
+      context: toJsonInput(sampleInterviewPreparation.context),
+      content: toJsonInput(sampleInterviewPreparation.content),
+    },
+  });
+  await prisma.interviewSession.create({
+    data: {
+      id: sampleInterviewSession.id,
+      jobId: sampleInterviewSession.jobId,
+      resumeVersionId: sampleInterviewSession.resumeVersionId,
+      mode: sampleInterviewSession.mode,
+      status: sampleInterviewSession.status,
+      context: toJsonInput(sampleInterviewSession.context),
+      questions: toJsonInput(sampleInterviewSession.questions),
+      answers: toJsonInput(sampleInterviewSession.answers),
+      feedback: toJsonInput(sampleInterviewSession.feedback),
+      currentQuestionIndex: sampleInterviewSession.currentQuestionIndex,
+      completedAt: new Date(sampleInterviewSession.completedAt),
+    },
+  });
+
   await ensureSettings();
 }
-
 export async function resetAppDataToSample() {
   await prisma.$transaction([
     prisma.agentThread.deleteMany(),

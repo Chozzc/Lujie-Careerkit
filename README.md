@@ -26,7 +26,7 @@
 
 ## Overview
 
-LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, job-description matching, application tracking, interview preparation, mock practice, and AI review into one agent-powered career workspace. You can maintain different resume versions for different roles, use job descriptions to generate resume wording and role-specific interview prep guides that better match role requirements, track every application, and keep refining knowledge, answers, feedback, and review notes.
+LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, JD matching, career-material organization, interview preparation, mock practice, and application tracking into one workspace. You can maintain role-specific resume versions, generate tailored resumes and interview materials from a JD, and keep every analysis, practice session, and application update organized. v0.3.0 also introduces an experimental in-app career agent for selected natural-language actions.
 
 ## Online Preview
 
@@ -34,17 +34,17 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 
 ## Preview
 
-| **Control Center** | **Resume Library** |
-| --- | --- |
-| ![Control Center](public/images/01-dashboard.png?v=0.2.5) | ![Resume Library](public/images/02-resume-library.png?v=0.2.5) |
-| **Resume Editor** | **JD Matching** |
-| ![Resume Editor](public/images/03-resume-editor.png) | ![JD Matching](public/images/04-jd-match.png?v=0.2.5) |
-| **JD-Optimized Resume** | **Interview Assistant** |
-| ![JD-Optimized Resume](public/images/05-jd-optimized-resume.png) | ![Interview Assistant](public/images/06-interview-assistant.png) |
-| **Mock Interview** | **AI Review** |
-| ![Mock Interview](public/images/07-mock-interview.png) | ![AI Review](public/images/08-ai-review.png) |
-| **Application Tracking** | **Pipeline Status** |
-| ![Application Tracking](public/images/09-application-pipeline.png) | ![Pipeline Status](public/images/10-pipeline-status.png) |
+| **Control Center**                                                 | **Resume Library**                                               |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| ![Control Center](public/images/01-dashboard.png?v=0.3.0)          | ![Resume Library](public/images/02-resume-library.png?v=0.3.0)   |
+| **Resume Editor**                                                  | **JD Matching**                                                  |
+| ![Resume Editor](public/images/03-resume-editor.png)               | ![JD Matching](public/images/04-jd-match.png?v=0.3.0)            |
+| **JD-Optimized Resume**                                            | **Interview Assistant**                                          |
+| ![JD-Optimized Resume](public/images/05-jd-optimized-resume.png)   | ![Interview Assistant](public/images/06-interview-assistant.png) |
+| **Mock Interview**                                                 | **AI Review**                                                    |
+| ![Mock Interview](public/images/07-mock-interview.png)             | ![AI Review](public/images/08-ai-review.png)                     |
+| **Application Tracking**                                           | **Pipeline Status**                                              |
+| ![Application Tracking](public/images/09-application-pipeline.png) | ![Pipeline Status](public/images/10-pipeline-status.png)         |
 
 ## Highlights
 
@@ -55,19 +55,34 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 - **Role-specific interview prep**: combine a selected resume with a complete JD to generate and save a guide with an overview, capability profile, evidence gaps, core knowledge, experience deep dives, targeted questions, and a preparation plan, then export the complete guide as an editable Word document or print-ready PDF.
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
+- **Career materials library**: organize original JDs, tailored resumes, interview prep guides, mock answers, and AI reviews by role or material type, with per-artifact viewing, editing, and deletion.
+- **Experimental in-app agent**: search applications, read a privacy-filtered resume overview, and create or update application cards only after explicit user confirmation.
 - **Job-search Agent Skills**: reuse LuJie's refined workflows for resume improvement, interview preparation, mock interviews, and job application writing in coding agents such as Codex and Claude Code.
-- **Data and privacy controls**: resumes, jobs, applications, interview prep guides, mock sessions, and settings are stored in a local SQLite database for long-term personal use.
+- **Data and privacy controls**: resumes, jobs, applications, generated materials, agent conversations, and settings are stored in a local SQLite database for long-term personal use.
+
+## Experimental In-App Agent
+
+v0.3.0 adds a career agent that opens inside the workspace. It uses the model already configured and tested in Settings, so it does not require a second API key. Conversation threads are stored locally as `AgentThread` records in SQLite.
+
+The current experimental version can:
+
+- search existing jobs and application cards from natural-language requests;
+- read a privacy-filtered resume overview without sending contact details such as email or phone numbers;
+- propose creating or updating an application card, then execute only after explicit confirmation;
+- provide contextual guidance about resumes, JDs, interviews, and job-search planning.
+
+It cannot yet directly edit resumes or execute the complete JD optimization and interview-material workflows. It also does not write or delete business data without confirmation. This remains an experimental feature while its tool coverage, context handling, and approval flow continue to evolve.
 
 ## Agent Skills
 
 LuJie provides more than an application interface. Four of its refined job-search workflows are also packaged as Agent Skills for coding agents. Each skill includes a complete workflow, research requirements, factual boundaries, and quality checks rather than a single prompt.
 
-| Skill | Purpose |
-|---|---|
-| `resume-improvement` | Diagnose and improve a resume, with optional JD-specific tailoring |
-| `prepare-job-interview` | Research a company and role, then build a structured interview preparation guide |
-| `mock-interview-coach` | Run an interactive mock interview with adaptive follow-ups and evidence-based review |
-| `job-application-writer` | Write cover letters, recruiter greetings, emails, referrals, and follow-up messages |
+| Skill                    | Purpose                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `resume-improvement`     | Diagnose and improve a resume, with optional JD-specific tailoring                   |
+| `prepare-job-interview`  | Research a company and role, then build a structured interview preparation guide     |
+| `mock-interview-coach`   | Run an interactive mock interview with adaptive follow-ups and evidence-based review |
+| `job-application-writer` | Write cover letters, recruiter greetings, emails, referrals, and follow-up messages  |
 
 After cloning the repository, launch Codex from the project directory and describe the task directly. Codex can select the relevant skill automatically, or you can explicitly name one such as `$resume-improvement`. Claude Code and other coding agents can also read the corresponding `SKILL.md` and follow the same workflow.
 
@@ -80,7 +95,7 @@ For company- or role-specific tasks, the skills proactively research current inf
 
 ## Data and Privacy
 
-- Resume content, resume versions, jobs, applications, interview prep guides, mock sessions, and settings are stored in `prisma/dev.db`.
+- Resume content, resume versions, jobs, applications, interview prep guides, mock sessions, agent conversations, and settings are stored in `prisma/dev.db`.
 - API keys are configured from the in-app Settings page. They are encrypted before being saved to SQLite.
 - `LUJIE_SETTINGS_SECRET` is the local encryption secret for saved AI keys. Use a long random value in `.env.local`.
 
@@ -106,7 +121,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. After v0.2.5 is published, use `v0.2.5` to pin that release.
+Use `latest` to follow the newest `main` build. After v0.3.0 is published, use `v0.3.0` to pin that release.
 
 ### Local Development
 
@@ -160,6 +175,24 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
+### v0.3.0 (In development)
+
+#### Experimental in-app career agent
+
+- Added a draggable in-app career agent with local multi-turn threads, job and application search, privacy-filtered resume context, and confirmed application-card creation or updates.
+- Write operations require explicit confirmation. The current tool set intentionally does not directly edit resumes or execute complete JD and interview-material workflows.
+
+#### Career materials library and structured role archives
+
+- Added role-based and type-based browsing for original JDs, tailored resumes, interview prep guides, mock answers, and AI review reports.
+- Role archives now provide a structured directory, result overview, continuous reading, content editing, and per-artifact deletion while reusing the existing JD-match and interview result interfaces.
+- JD matching creates a role and tailored resume without creating an application. An application record is added only when the user explicitly starts tracking it.
+
+#### First-use guidance and demo workflow
+
+- Added a seven-step first-use tour that follows the real flow from resumes and JD matching through interviews, the materials library, and application tracking.
+- Reworked demo roles, cities, official career links, and application timelines, and added one complete example from a base resume through tailoring, interview preparation, mock answers, and AI review.
+
 ### v0.2.5
 
 #### Turn refined job-search workflows into Agent Skills
@@ -179,25 +212,11 @@ AI features stay disabled until the settings are saved and the connection test s
 - Each change can be accepted, rejected, or edited independently. The live preview follows the current choices, and only accepted content is saved to a new general-optimization version while the original resume remains unchanged.
 - The resume library distinguishes general-optimization versions from JD-optimized versions. GPA, dates, missing facts, and other information that AI should not infer are directed back to the editor for confirmation or completion.
 
-### v0.2.3
-
-#### AI resume analysis
-
-- Renamed the resume-editor action from “AI Optimize Resume” to “Analyze resume.” AI first reads the sanitized current editor content and returns a diagnosis overview, existing strengths, and concrete issues without modifying or replacing the original resume.
-- STAR is used only as a diagnostic aid to check whether actions, methods, and results are clear. The analysis does not produce a mechanical overall score or fake STAR completion rate, and returns at most 12 issues tied to a resume section and source evidence.
-- Issues are grouped into collapsible “Address first,” “Recommended,” and “Optional improvement” sections. Important issues are selected by default, while users can inspect the reason and suggestion before changing the selection.
-
-#### User-controlled optimization
-
-- Users can choose clarity, impact, concision, or ATS readability and add optional instructions to correct the diagnosis, limit the scope, or specify the desired tone.
-- AI changes only the selected issues and cannot expand the scope on its own, invent experience, skills, metrics, or results, or treat missing resume evidence as proof that the candidate lacks a capability.
-- Confirmation creates an independent optimized version while preserving the original. Diagnosis controls are locked during generation, and both analysis and optimization validate request input, sanitized snapshots, and structured model output.
-
 ## FAQ
 
 ### 1. Do I need an API key to use it?
 
-No. Resume editing and application tracking work locally. AI features such as JD matching, interview prep guides, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
+No. Resume editing, materials browsing, and application tracking work locally. The in-app agent, JD matching, interview prep guides, mock interviews, and AI review require an API key from an OpenAI-compatible provider.
 
 ### 2. Where is my data stored?
 
