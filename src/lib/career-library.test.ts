@@ -208,6 +208,7 @@ describe("career library", () => {
     const archive = (id: string, company: string, role: string): CareerJobArchive => ({
       id,
       jobId: id,
+      isSample: false,
       company,
       role,
       city: "北京",

@@ -140,6 +140,7 @@ export function CareerLibraryView({
                     metrics={jobMetrics(archive, t)}
                     updatedAt={archive.updatedAt}
                     badge={archive.status ? t(`status.${archive.status}`) : undefined}
+                    isSample={archive.isSample}
                     onOpen={() => onOpenJob(archive.id)}
                     onEdit={archive.jobId ? () => setEditDraft({ id: archive.jobId!, company: archive.company, title: archive.role }) : undefined}
                     onDelete={() => onDeleteJob(archive.id)}
@@ -240,6 +241,7 @@ function LibraryCard({
   metrics,
   updatedAt,
   badge,
+  isSample = false,
   onOpen,
   onEdit,
   onDelete,
@@ -249,6 +251,7 @@ function LibraryCard({
   metrics: string[];
   updatedAt: string;
   badge?: string;
+  isSample?: boolean;
   onOpen: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -276,6 +279,7 @@ function LibraryCard({
       <div className="min-h-44 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
+            {isSample ? <Badge variant="outline" className="mb-2">{t("sampleJob")}</Badge> : null}
             <h3 className="line-clamp-2 font-serif text-xl font-semibold leading-7 text-primary">{title}</h3>
             {subtitle ? <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>

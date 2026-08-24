@@ -401,9 +401,7 @@ export function CareerKitApp({
     });
   }
 
-  async function resetLocalDataToSample() {
-    const result = (await postJson("/api/settings/reset-data", {})) as { data: InitialData };
-    const nextData = result.data;
+  function replaceLocalData(nextData: InitialData) {
     setResume(nextData.resume?.content ?? emptyResume());
     setResumeUpdatedAt(nextData.resume?.updatedAt ?? new Date().toISOString());
     setMainResumeVersionId(nextData.resume?.id ?? "");
@@ -422,6 +420,16 @@ export function CareerKitApp({
     setInterviewSessionId(undefined);
     setInterviewPreparationId(undefined);
     setMatchResetKey((key) => key + 1);
+  }
+
+  async function clearLocalSampleData() {
+    const result = (await postJson("/api/settings/sample-data", {}, "DELETE")) as { data: InitialData };
+    replaceLocalData(result.data);
+  }
+
+  async function resetLocalDataToSample() {
+    const result = (await postJson("/api/settings/reset-data", {})) as { data: InitialData };
+    replaceLocalData(result.data);
     setToast("本地数据已清空，并恢复示例数据。");
     navigateTo("dashboard");
   }
@@ -1282,6 +1290,7 @@ export function CareerKitApp({
               settings={appSettings}
               aiSettings={aiSettings}
               onAiSettingsChange={setAiSettings}
+              onClearSampleData={clearLocalSampleData}
               onResetData={resetLocalDataToSample}
               onStatus={setToast}
             />
@@ -1297,7 +1306,6 @@ export function CareerKitApp({
       {firstUseTourOpen ? (
         <FirstUseTour
           active={active}
-          aiReady={isAiReady(aiSettings)}
           onNavigate={navigateTo}
           onFinish={finishFirstUseTour}
         />

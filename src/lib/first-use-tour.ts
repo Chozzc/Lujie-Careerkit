@@ -6,6 +6,7 @@ export type FirstUseTourStepId =
   | "welcome"
   | "dashboard"
   | "settings"
+  | "agent"
   | "resume"
   | "match"
   | "interview"
@@ -15,13 +16,15 @@ export type FirstUseTourStepId =
 export type FirstUseTourStep = {
   id: FirstUseTourStepId;
   nav?: NavKey;
+  target?: "agent";
 };
 
-export function buildFirstUseTourSteps(aiReady: boolean): FirstUseTourStep[] {
+export function buildFirstUseTourSteps(): FirstUseTourStep[] {
   return [
     { id: "welcome" },
     { id: "dashboard", nav: "dashboard" },
-    ...(!aiReady ? [{ id: "settings" as const, nav: "settings" as const }] : []),
+    { id: "settings", nav: "settings" },
+    { id: "agent", target: "agent" },
     { id: "resume", nav: "resume" },
     { id: "match", nav: "match" },
     { id: "interview", nav: "interview" },

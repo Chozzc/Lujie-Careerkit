@@ -913,10 +913,15 @@
     "languageTitle": "Language",
     "languageDescription": "Switch the app interface language. Resume content, JDs, and local data are not translated automatically.",
     "localDataTitle": "Local data",
-    "localDataDescription": "Clear local SQLite resumes, optimized versions, applications, interviews, and AI settings, then restore the built-in sample data.",
+    "localDataDescription": "Remove only the built-in samples, or clear all local career data and AI settings before restoring them.",
+    "clearSampleConfirm": "Remove all built-in sample jobs, the sample resume, and their generated materials? Your own data and AI settings will be preserved.",
+    "clearingSample": "Removing sample data",
+    "clearSample": "Remove sample data",
+    "clearSampleSuccess": "Sample data removed. Your own data was preserved.",
+    "clearSampleFailed": "Failed to remove sample data.",
     "resetConfirm": "Clear local SQLite resumes, application progress, interview records, and AI settings, then restore built-in sample data?",
     "resetting": "Restoring sample data",
-    "reset": "Clear and restore sample data",
+    "reset": "Reset and restore samples",
     "resetFailed": "Failed to reset local data.",
     "ai": {
       "title": "AI Model",
@@ -1102,6 +1107,10 @@
         "title": "Connect an AI provider first",
         "description": "Choose a provider in Settings, enter your API key, save it, and test the connection. Your key is encrypted on this device and is never written into the project code."
       },
+      "agent": {
+        "title": "Tell the LuJie Agent what you want to do",
+        "description": "Open the LuJie Agent in the lower-right corner to review saved jobs, application progress, and resume summaries, or create and update application cards from your description. It is experimental: every write requires your approval, and it cannot directly edit resumes or delete career data yet."
+      },
       "resume": {
         "title": "Prepare a base resume",
         "description": "Import an existing resume or create one from scratch. Your original stays intact, while AI review and job matching create separate versions instead of overwriting it."
@@ -1126,6 +1135,7 @@
   },
   "careerLibrary": {
     "title": "Career Library",
+    "sampleJob": "Sample job",
     "summary": "{jobs} job files · {artifacts} generated outcomes",
     "groups": { "job": "By job", "type": "By type" },
     "searchJobs": "Search company, role, or city...",

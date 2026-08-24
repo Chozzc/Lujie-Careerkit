@@ -48,6 +48,14 @@ export async function ensureSeedData() {
     await ensureSettings();
     return;
   }
+  const settings = await prisma.settings.findUnique({
+    where: { id: "singleton" },
+    select: { sampleDataCleared: true },
+  });
+  if (settings?.sampleDataCleared) {
+    await ensureSettings();
+    return;
+  }
 
   const sampleVersion = sampleResumeVersions[0];
   const resume = await prisma.resume.create({ data: { name: sampleVersion?.name ?? "示例简历" } });
@@ -150,6 +158,37 @@ export async function resetAppDataToSample() {
   return getAppData();
 }
 
+export async function clearSampleData() {
+  await ensureSettings();
+  const resumeVersionIds = [
+    ...sampleResumeVersions.map((version) => version.id),
+    sampleTailoredResumeVersion.id,
+  ];
+  const resumeRoots = await prisma.resumeVersion.findMany({
+    where: { id: { in: resumeVersionIds } },
+    select: { resumeId: true },
+  });
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.interviewPreparation.deleteMany({ where: { id: sampleInterviewPreparation.id } });
+    await transaction.interviewSession.deleteMany({ where: { id: sampleInterviewSession.id } });
+    await transaction.application.deleteMany({
+      where: { id: { in: sampleApplications.map((application) => application.id) } },
+    });
+    await transaction.resumeVersion.deleteMany({ where: { id: { in: resumeVersionIds } } });
+    await transaction.job.deleteMany({ where: { id: { in: sampleJobs.map((job) => job.id) } } });
+    for (const { resumeId } of resumeRoots) {
+      await transaction.resume.deleteMany({ where: { id: resumeId, versions: { none: {} } } });
+    }
+    await transaction.settings.update({
+      where: { id: "singleton" },
+      data: { sampleDataCleared: true },
+    });
+  });
+
+  return getAppData();
+}
+
 async function ensureSettings() {
   const legacyDefaultModels = new Set<string>(LEGACY_DEFAULT_AI_MODELS);
   const defaultModel = process.env.OPENAI_MODEL && !legacyDefaultModels.has(process.env.OPENAI_MODEL)
@@ -234,6 +273,7 @@ export async function getAppData() {
     })),
     jobs: jobs.map((job) => ({
       id: job.id,
+      isSample: sampleJobs.some((sampleJob) => sampleJob.id === job.id),
       company: job.company,
       title: job.title,
       city: job.city,

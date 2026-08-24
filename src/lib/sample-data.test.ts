@@ -46,6 +46,13 @@ describe("sample resume versions", () => {
     expect(sampleJobs.every((job) => job.city && job.link && !job.jd.includes("暂未补充"))).toBe(true);
     expect(sampleApplications.every((application) => jobIds.has(application.jobId))).toBe(true);
     expect(
+      sampleApplications.every((application) =>
+        [application.appliedAt, application.stageDate, application.nextFollowUpAt]
+          .filter(Boolean)
+          .every((date) => date?.startsWith("2026-09")),
+      ),
+    ).toBe(true);
+    expect(
       sampleApplications.every(
         (application) => application.resumeVersionId === null || versionIds.has(application.resumeVersionId),
       ),
@@ -55,6 +62,8 @@ describe("sample resume versions", () => {
     expect(sampleInterviewSession.jobId).toBe(sampleTailoredResumeVersion.jobId);
     expect(interviewPreparationSchema.safeParse(sampleInterviewPreparation.content).success).toBe(true);
     expect(sampleInterviewSession.questions).toHaveLength(8);
+    expect(Object.keys(sampleInterviewSession.answers)).toHaveLength(sampleInterviewSession.questions.length);
+    expect(sampleInterviewSession.feedback.questionReviews).toHaveLength(sampleInterviewSession.questions.length);
     expect(interviewReportSchema.safeParse(sampleInterviewSession.feedback).success).toBe(true);
   });
 });

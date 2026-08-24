@@ -8,13 +8,11 @@ import {
 } from "./first-use-tour";
 
 describe("first use tour", () => {
-  it("follows the LuJie workflow and only includes setup when AI is not ready", () => {
-    expect(buildFirstUseTourSteps(false).map((step) => step.id)).toEqual([
-      "welcome", "dashboard", "settings", "resume", "match", "interview", "library", "pipeline",
+  it("introduces the Agent immediately after AI setup", () => {
+    expect(buildFirstUseTourSteps().map((step) => step.id)).toEqual([
+      "welcome", "dashboard", "settings", "agent", "resume", "match", "interview", "library", "pipeline",
     ]);
-    expect(buildFirstUseTourSteps(true).map((step) => step.id)).toEqual([
-      "welcome", "dashboard", "resume", "match", "interview", "library", "pipeline",
-    ]);
+    expect(buildFirstUseTourSteps()[3]).toEqual({ id: "agent", target: "agent" });
   });
 
   it("records completion or skipping as seen", () => {

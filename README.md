@@ -5,7 +5,7 @@
 <h1 align="center">LuJie CareerKit</h1>
 
 <p align="center">
-  <strong>An AI-powered career workspace from resume editing to offer acceptance, covering resume editing, JD matching, application tracking, mock interviews, and review.</strong>
+  <strong>A career Agent workspace from resume editing to offer acceptance, covering resume editing, JD matching, application tracking, mock interviews, reviews, and more.</strong>
 </p>
 <p align="center">
   English · <a href="README.zh-CN.md">简体中文</a>
@@ -26,7 +26,7 @@
 
 ## Overview
 
-LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, JD matching, career-material organization, interview preparation, mock practice, and application tracking into one workspace. You can maintain role-specific resume versions, generate tailored resumes and interview materials from a JD, and keep every analysis, practice session, and application update organized. v0.3.0 also introduces an experimental in-app career agent for selected natural-language actions.
+LuJie CareerKit is built for internships, campus recruiting, and career job searches. It brings resume editing, JD matching, career-material organization, interview preparation, mock practice, and application tracking into an Agent-driven workspace. You can maintain multiple resume versions for different roles, generate more relevant resumes and interview materials from a JD, and continuously organize every analysis, practice session, and application update.
 
 ## Online Preview
 
@@ -175,23 +175,26 @@ AI features stay disabled until the settings are saved and the connection test s
 
 ## Release Notes
 
-### v0.3.0 (In development)
+### v0.3.0 (Experimental features in active development)
+
+#### Career materials library and role archives
+
+- Added “By role / By type” browsing with company grouping, search, sorting, and sample-role badges for original JDs, tailored resumes, interview prep, mock answers, and AI reviews.
+- Every role now has its own archive page with a structured directory, role overview, preparation path, artifact list, and material-composition summary.
+- Original JDs, interview preparation guides, and mock answers can be edited and saved. Role names and artifact titles can be corrected manually, while long titles are safely truncated in the directory.
 
 #### Experimental in-app career agent
 
-- Added a draggable in-app career agent with local multi-turn threads, job and application search, privacy-filtered resume context, and confirmed application-card creation or updates.
-- Write operations require explicit confirmation. The current tool set intentionally does not directly edit resumes or execute complete JD and interview-material workflows.
+- Added a draggable in-app career agent that reuses the OpenAI-compatible model already configured and tested in Settings, with local multi-turn conversation threads.
+- The agent can search existing roles and application records from natural language and read resume overviews after email addresses, phone numbers, and other contact details are filtered out.
+- It can propose creating or updating an application card, but the user must explicitly confirm the write to prevent natural-language misunderstandings from changing business data directly.
+- This remains experimental: it cannot yet directly edit resumes, run complete JD optimization, generate interview materials, delete library content, or automatically complete the full job-search workflow.
 
-#### Career materials library and structured role archives
+#### First-use guidance and sample-data updates
 
-- Added role-based and type-based browsing for original JDs, tailored resumes, interview prep guides, mock answers, and AI review reports.
-- Role archives now provide a structured directory, result overview, continuous reading, content editing, and per-artifact deletion while reusing the existing JD-match and interview result interfaces.
-- JD matching creates a role and tailored resume without creating an application. An application record is added only when the user explicitly starts tracking it.
-
-#### First-use guidance and demo workflow
-
-- Added a seven-step first-use tour that follows the real flow from resumes and JD matching through interviews, the materials library, and application tracking.
-- Reworked demo roles, cities, official career links, and application timelines, and added one complete example from a base resume through tailoring, interview preparation, mock answers, and AI review.
+- Added a first-use tour: Dashboard → Connect AI → Meet the experimental agent → Resume editing → JD matching → Interview assistant → Career materials library → Application tracking.
+- Added six structured sample roles and one complete Baidu workflow covering a base resume, tailored resume, professional interview preparation, eight complete mock answers, per-question feedback, and an AI review.
+- Added “Remove sample data” in Settings. It removes built-in sample roles, the sample resume, and generated sample materials while preserving user-created data and AI settings. “Reset and restore sample data” remains the full local reset action.
 
 ### v0.2.5
 

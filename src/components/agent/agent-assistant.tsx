@@ -384,6 +384,7 @@ export function AgentAssistant({
 
       <button
         ref={petButtonRef}
+        data-tour-agent
         type="button"
         aria-label={open ? t("close") : t("open")}
         aria-expanded={open}

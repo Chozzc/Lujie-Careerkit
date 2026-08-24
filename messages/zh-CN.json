@@ -913,10 +913,15 @@
     "languageTitle": "语言",
     "languageDescription": "切换应用界面语言。简历正文、岗位 JD 和本地数据不会被自动翻译。",
     "localDataTitle": "本地数据",
-    "localDataDescription": "会清空本地 SQLite 中的简历、优化版本、投递进度、面试记录和 AI 设置，并恢复项目内置示例数据。",
+    "localDataDescription": "可以只移除内置示例，或清空全部本地业务数据和 AI 设置后重新恢复示例。",
+    "clearSampleConfirm": "一键清空全部内置示例岗位、示例简历及其生成资料？你自己创建的数据和 AI 设置不会被删除。",
+    "clearingSample": "正在清空示例数据",
+    "clearSample": "一键清空示例数据",
+    "clearSampleSuccess": "示例数据已清空，你自己创建的数据均已保留。",
+    "clearSampleFailed": "示例数据清理失败。",
     "resetConfirm": "清空本地 SQLite 中的简历、投递进度、面试记录和 AI 设置，并恢复项目内置示例数据？",
     "resetting": "正在恢复示例数据",
-    "reset": "清空并恢复示例数据",
+    "reset": "重置并恢复示例数据",
     "resetFailed": "本地数据重置失败。",
     "ai": {
       "title": "AI 模型配置",
@@ -1102,6 +1107,10 @@
         "title": "开始前，先连接 AI",
         "description": "在设置中选择 AI 服务，填写 API Key，保存后测试连接。你的 Key 会加密保存在本机，不会写入项目代码。"
       },
+      "agent": {
+        "title": "用录阶 Agent 直接说出你要做的事",
+        "description": "点击右下角的录阶 Agent，可以查询已保存的岗位、投递进度和简历概览，也能根据你的描述新建或更新投递跟进卡片。它目前是实验功能，任何写入都会先请你确认，暂时不会直接修改简历或删除业务数据。"
+      },
       "resume": {
         "title": "先准备一份基础简历",
         "description": "可以导入已有简历，也可以从头新建。原简历会一直保留，AI 分析和岗位优化会生成独立版本，不会直接覆盖原稿。"
@@ -1126,6 +1135,7 @@
   },
   "careerLibrary": {
     "title": "求职资料库",
+    "sampleJob": "示例岗位",
     "summary": "共 {jobs} 个岗位档案 · {artifacts} 份系统生成成果",
     "groups": { "job": "按岗位", "type": "按分类" },
     "searchJobs": "搜索公司、岗位或城市...",

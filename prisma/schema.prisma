@@ -145,6 +145,7 @@ model Settings {
   aiTemperature    Float     @default(0.3)
   aiLastTestedAt   DateTime?
   aiLastTestStatus String    @default("untested")
+  sampleDataCleared Boolean  @default(false)
   updatedAt        DateTime  @updatedAt
 }
 

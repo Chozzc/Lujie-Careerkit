@@ -42,6 +42,7 @@ export type CareerArtifact = {
 export type CareerJobArchive = {
   id: string;
   jobId: string | null;
+  isSample: boolean;
   company: string;
   role: string;
   city: string;
@@ -254,6 +255,7 @@ export function buildCareerJobArchives(
       return {
         id,
         jobId,
+        isSample: job?.isSample ?? false,
         company: job?.company ?? latest.company,
         role: job?.title ?? latest.role,
         city: job?.city ?? "",

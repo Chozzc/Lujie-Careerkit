@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import confetti from "canvas-confetti";
 
@@ -15,17 +15,15 @@ type SpotlightRect = { left: number; top: number; width: number; height: number 
 
 export function FirstUseTour({
   active,
-  aiReady,
   onNavigate,
   onFinish,
 }: {
   active: NavKey;
-  aiReady: boolean;
   onNavigate: (key: NavKey) => void;
   onFinish: (outcome: "completed" | "skipped") => void;
 }) {
   const t = useTranslations("firstUseTour");
-  const steps = useMemo(() => buildFirstUseTourSteps(aiReady), [aiReady]);
+  const steps = useMemo(() => buildFirstUseTourSteps(), []);
   const [stepIndex, setStepIndex] = useState(0);
   const [spotlight, setSpotlight] = useState<SpotlightRect | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -39,13 +37,13 @@ export function FirstUseTour({
   }, [active, current.nav, onNavigate]);
 
   useEffect(() => {
-    if (isWelcome || !current.nav) {
+    if (isWelcome || (!current.nav && !current.target)) {
       const frame = window.requestAnimationFrame(() => setSpotlight(null));
       return () => window.cancelAnimationFrame(frame);
     }
 
     function measure() {
-      const target = findVisibleTarget(current.nav!);
+      const target = findVisibleTarget(current);
       if (!target) {
         setSpotlight(null);
         return;
@@ -70,7 +68,7 @@ export function FirstUseTour({
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
-  }, [active, current.nav, isWelcome]);
+  }, [active, current, isWelcome]);
 
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -111,6 +109,12 @@ export function FirstUseTour({
   if (typeof document === "undefined") return null;
 
   const dialogPosition = getDialogPosition(spotlight, isWelcome);
+  const dialogIsLeftOfSpotlight = Boolean(
+    spotlight && typeof dialogPosition.left === "number" && dialogPosition.left < spotlight.left,
+  );
+  const arrowTop = spotlight && typeof dialogPosition.top === "number"
+    ? Math.max(24, Math.min(260, spotlight.top + spotlight.height / 2 - dialogPosition.top - 20))
+    : 32;
   return createPortal(
     <div className="fixed inset-0 z-[100]">
       <div className={cn("absolute inset-0", isWelcome && "bg-black/45 backdrop-blur-[2px]")} />
@@ -140,8 +144,15 @@ export function FirstUseTour({
         style={dialogPosition}
       >
         {spotlight && dialogPosition.left !== "50%" ? (
-          <span className="absolute -left-5 top-8 grid h-10 w-10 place-items-center rounded-full border border-line bg-surface shadow-md" aria-hidden>
-            <ArrowLeft className="h-5 w-5" />
+          <span
+            className={cn(
+              "absolute grid h-10 w-10 place-items-center rounded-full border border-line bg-surface shadow-md",
+              dialogIsLeftOfSpotlight ? "-right-5" : "-left-5",
+            )}
+            style={{ top: arrowTop }}
+            aria-hidden
+          >
+            {dialogIsLeftOfSpotlight ? <ArrowRight className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />}
           </span>
         ) : null}
         <button
@@ -210,11 +221,13 @@ function fireCelebration() {
   void confetti({ ...options, angle: 120, origin: { x: 1, y: 0.8 } });
 }
 
-function findVisibleTarget(nav: NavKey) {
-  const candidates = [
-    ...document.querySelectorAll<HTMLElement>(`[data-tour-nav="${nav}"]`),
-    ...document.querySelectorAll<HTMLElement>("[data-tour-mobile-nav]"),
-  ];
+function findVisibleTarget(step: ReturnType<typeof buildFirstUseTourSteps>[number]) {
+  const candidates = step.target === "agent"
+    ? [...document.querySelectorAll<HTMLElement>("[data-tour-agent]")]
+    : [
+        ...document.querySelectorAll<HTMLElement>(`[data-tour-nav="${step.nav}"]`),
+        ...document.querySelectorAll<HTMLElement>("[data-tour-mobile-nav]"),
+      ];
   return candidates.find((element) => {
     const rect = element.getBoundingClientRect();
     const style = window.getComputedStyle(element);
@@ -227,7 +240,11 @@ function getDialogPosition(spotlight: SpotlightRect | null, centered: boolean): 
     return { left: "50%", top: "50%", transform: "translate(-50%, -50%)" };
   }
   const width = 368;
-  const left = Math.min(window.innerWidth - width - 16, spotlight.left + spotlight.width + 24);
+  const gap = 24;
+  const rightEdge = spotlight.left + spotlight.width;
+  const left = window.innerWidth - rightEdge >= width + gap
+    ? rightEdge + gap
+    : Math.max(16, spotlight.left - width - gap);
   const top = Math.min(window.innerHeight - 330, Math.max(16, spotlight.top - 24));
   return { left, top: Math.max(16, top) };
 }
