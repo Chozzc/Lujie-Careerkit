@@ -11,14 +11,18 @@ import type { InitialData } from "@/components/app/types";
 export function SettingsView({
   settings,
   aiSettings,
+  agentAssistantVisible,
   onAiSettingsChange,
+  onAgentAssistantVisibleChange,
   onClearSampleData,
   onResetData,
   onStatus,
 }: {
   settings: InitialData["settings"];
   aiSettings: RedactedAiSettings | null;
+  agentAssistantVisible: boolean;
   onAiSettingsChange: (settings: RedactedAiSettings) => void;
+  onAgentAssistantVisibleChange: (visible: boolean) => void;
   onClearSampleData: () => Promise<void>;
   onResetData: () => Promise<void>;
   onStatus: (message: string) => void;
@@ -61,7 +65,9 @@ export function SettingsView({
       <AiSettingsPanel
         key={settings?.updatedAt ?? "empty-ai-settings"}
         settings={aiSettings}
+        agentAssistantVisible={agentAssistantVisible}
         onSettingsChange={onAiSettingsChange}
+        onAgentAssistantVisibleChange={onAgentAssistantVisibleChange}
         onStatus={onStatus}
       />
       <section className="rounded-lg border border-line bg-surface p-5 shadow-[0_18px_50px_rgba(49,48,48,0.05)]">

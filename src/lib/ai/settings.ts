@@ -108,7 +108,7 @@ export function buildAiSettingsPatch(
     aiModel: validated.aiModel,
     aiBaseUrl: validated.aiBaseUrl,
     aiApiKey: nextKey,
-    aiEnabled: Boolean(validated.aiEnabled),
+    aiEnabled: true,
     aiTemperature: validated.aiTemperature,
     aiLastTestStatus: "untested",
   };
@@ -121,7 +121,7 @@ export function redactAiSettings(settings: StoredAiSettings): RedactedAiSettings
     aiProvider: effective.providerId,
     aiModel: effective.model,
     aiBaseUrl: effective.baseUrl,
-    aiEnabled: Boolean(settings.aiEnabled),
+    aiEnabled: true,
     aiTemperature: effective.temperature,
     aiLastTestedAt: toIsoString(settings.aiLastTestedAt),
     aiLastTestStatus: normalizeTestStatus(settings.aiLastTestStatus),
@@ -144,7 +144,7 @@ export function getEffectiveAiSettings(settings: StoredAiSettings): EffectiveAiS
     model,
     baseUrl,
     apiKey,
-    enabled: Boolean(settings.aiEnabled && (!requiresApiKey || apiKey)),
+    enabled: Boolean(!requiresApiKey || apiKey),
     temperature: settings.aiTemperature,
     requiresApiKey,
   };

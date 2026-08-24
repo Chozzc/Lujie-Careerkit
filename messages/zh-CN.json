@@ -226,7 +226,7 @@
     "uploadImported": "已从 {fileName} 导入 {count} 字职位描述。",
     "aiDialog": {
       "title": "需要先配置 AI",
-      "message": "请先在设置页启用 AI，并完成连接测试后再继续。",
+      "message": "请先在设置页配置 AI，并完成连接测试后再继续。",
       "later": "稍后再说",
       "settings": "前往设置"
     }
@@ -673,8 +673,8 @@
     "aiSetup": {
       "title": "需要配置 AI",
       "later": "稍后再说",
-      "optimizeMessage": "AI 功能当前未启用，请在设置页开启并测试连接。AI 优化简历需要配置可用的模型服务，暂不支持本地兜底。",
-      "applicationMessage": "生成求职信和招呼语需要可用的 AI 模型服务。请先在设置页开启 AI 并测试连接。"
+      "optimizeMessage": "请先在设置页配置并测试可用的模型服务。AI 优化简历暂不支持本地兜底。",
+      "applicationMessage": "生成求职信和招呼语需要可用的 AI 模型服务。请先在设置页完成配置并测试连接。"
     },
     "toolbar": {
       "back": "返回我的简历",
@@ -934,7 +934,7 @@
       "apiKeyOptional": "API Key（可选）",
       "apiKeySavedPlaceholder": "已保存，留空表示沿用",
       "apiKeyPlaceholder": "粘贴你的 API Key",
-      "enable": "启用 AI 功能",
+      "showAgent": "显示 Agent 小助手",
       "savedKey": "已保存 API Key",
       "missingKey": "未保存 API Key",
       "runtime": "运行模式",
@@ -1235,7 +1235,8 @@
     "panelLabel": "录阶 Agent 对话面板",
     "open": "打开录阶 Agent",
     "close": "关闭录阶 Agent",
-    "petHint": "拖动我 · 点击聊天",
+    "petHint": "今天我们从哪里开始呢？",
+    "hide": "隐藏 Agent 小助手，可在设置中重新显示",
     "newConversation": "新对话",
     "deleteConversation": "删除对话",
     "loading": "正在读取对话…",

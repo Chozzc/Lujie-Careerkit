@@ -61,6 +61,22 @@ describe("AI settings helpers", () => {
     expect(getEffectiveAiSettings(stored).enabled).toBe(false);
   });
 
+  it("ignores the removed legacy AI toggle when the provider is available", () => {
+    const stored = {
+      aiProvider: "ollama",
+      aiModel: "qwen3:8b",
+      aiBaseUrl: "http://localhost:11434/v1",
+      aiApiKey: "",
+      aiEnabled: false,
+      aiTemperature: 0.3,
+      aiLastTestedAt: null,
+      aiLastTestStatus: "success",
+    } as const;
+
+    expect(redactAiSettings(stored).aiEnabled).toBe(true);
+    expect(getEffectiveAiSettings(stored).enabled).toBe(true);
+  });
+
   it("preserves an existing key unless clearApiKey is requested", () => {
     const existingKey = encryptLocalSecret("sk-existing-value");
 

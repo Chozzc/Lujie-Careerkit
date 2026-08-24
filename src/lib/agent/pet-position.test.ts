@@ -15,6 +15,10 @@ describe("agent pet position", () => {
       right: 8,
       bottom: 217,
     });
+    expect(clampAgentPetPosition({ right: 999, bottom: 20 }, viewport)).toEqual({
+      right: 310,
+      bottom: 20,
+    });
   });
 
   it("restores valid saved coordinates and rejects malformed storage", () => {

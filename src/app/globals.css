@@ -170,19 +170,18 @@ select {
   }
 }
 
-@keyframes lujie-agent-pet-idle {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  45% { transform: translateY(-3px) rotate(-1deg); }
-  55% { transform: translateY(-3px) rotate(1deg); }
-}
-
 @keyframes lujie-agent-pet-thinking {
   0%, 100% { transform: translateY(0) rotate(-2deg); }
   50% { transform: translateY(-4px) rotate(2deg); }
 }
 
-.lujie-agent-pet-idle {
-  animation: lujie-agent-pet-idle 3.4s ease-in-out infinite;
+@keyframes lujie-agent-pet-wave {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  18% { transform: rotate(-48deg) scale(1.5, 1.16); }
+  38% { transform: rotate(24deg) scale(1.42, 1.12); }
+  58% { transform: rotate(-42deg) scale(1.48, 1.15); }
+  78% { transform: rotate(18deg) scale(1.34, 1.08); }
+  90% { transform: rotate(-10deg) scale(1.16, 1.04); }
 }
 
 .lujie-agent-pet-thinking {
@@ -193,9 +192,20 @@ select {
   transform: translateY(-2px) rotate(-2deg) scale(1.06);
 }
 
+.lujie-agent-pet-wave-arm {
+  transform-box: fill-box;
+  transform-origin: left center;
+}
+
+.lujie-agent-pet-trigger:hover .lujie-agent-pet-wave-arm,
+.lujie-agent-pet-trigger:focus-visible .lujie-agent-pet-wave-arm {
+  animation: lujie-agent-pet-wave 880ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lujie-agent-pet-idle,
-  .lujie-agent-pet-thinking {
+  .lujie-agent-pet-thinking,
+  .lujie-agent-pet-trigger:hover .lujie-agent-pet-wave-arm,
+  .lujie-agent-pet-trigger:focus-visible .lujie-agent-pet-wave-arm {
     animation: none;
   }
 

@@ -226,7 +226,7 @@
     "uploadImported": "Imported {count} characters of JD text from {fileName}.",
     "aiDialog": {
       "title": "AI setup required",
-      "message": "Enable AI in Settings and test the connection before continuing.",
+      "message": "Configure AI in Settings and test the connection before continuing.",
       "later": "Later",
       "settings": "Open settings"
     }
@@ -673,8 +673,8 @@
     "aiSetup": {
       "title": "AI setup required",
       "later": "Later",
-      "optimizeMessage": "AI features are disabled. Enable AI in Settings and test the connection first. AI resume optimization requires a working model provider and has no local fallback.",
-      "applicationMessage": "Generating cover letters and greetings requires a working AI model. Enable AI in Settings and test the connection first."
+      "optimizeMessage": "Configure and test a working model provider in Settings first. AI resume optimization has no local fallback.",
+      "applicationMessage": "Generating cover letters and greetings requires a working AI model. Complete the configuration and test the connection in Settings first."
     },
     "toolbar": {
       "back": "Back to resumes",
@@ -934,7 +934,7 @@
       "apiKeyOptional": "API Key (optional)",
       "apiKeySavedPlaceholder": "Saved; leave blank to keep it",
       "apiKeyPlaceholder": "Paste your API key",
-      "enable": "Enable AI features",
+      "showAgent": "Show Agent assistant",
       "savedKey": "API key saved",
       "missingKey": "No API key saved",
       "runtime": "Runtime",
@@ -1235,7 +1235,8 @@
     "panelLabel": "LuJie Agent conversation panel",
     "open": "Open LuJie Agent",
     "close": "Close LuJie Agent",
-    "petHint": "Drag me · Click to chat",
+    "petHint": "Where shall we start today?",
+    "hide": "Hide Agent assistant; you can show it again in Settings",
     "newConversation": "New conversation",
     "deleteConversation": "Delete conversation",
     "loading": "Loading conversation…",

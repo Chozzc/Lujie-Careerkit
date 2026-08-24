@@ -31,7 +31,9 @@ import { Switch } from "@/components/ui/switch";
 
 type AiSettingsPanelProps = {
   settings: RedactedAiSettings | null;
+  agentAssistantVisible: boolean;
   onSettingsChange: (settings: RedactedAiSettings) => void;
+  onAgentAssistantVisibleChange: (visible: boolean) => void;
   onStatus: (message: string) => void;
 };
 
@@ -72,7 +74,13 @@ const DEFAULT_SETTINGS: RedactedAiSettings = {
   requiresApiKey: true,
 };
 
-export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSettingsPanelProps) {
+export function AiSettingsPanel({
+  settings,
+  agentAssistantVisible,
+  onSettingsChange,
+  onAgentAssistantVisibleChange,
+  onStatus,
+}: AiSettingsPanelProps) {
   const t = useTranslations("settings.ai");
   const initial = settings ?? DEFAULT_SETTINGS;
   const initialProvider = getAiProvider(initial.aiProvider);
@@ -82,7 +90,6 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
   const [model, setModel] = useState(initialModel);
   const [baseUrl, setBaseUrl] = useState(initial.aiBaseUrl || initialProvider.baseUrl);
   const [apiKey, setApiKey] = useState("");
-  const [enabled, setEnabled] = useState(initial.aiEnabled);
   const [temperature, setTemperature] = useState(String(initial.aiTemperature));
   const [saved, setSaved] = useState(initial);
   const [status, setStatus] = useState("");
@@ -110,7 +117,7 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
       aiBaseUrl: baseUrl,
       aiApiKey: clearApiKey ? "" : apiKey,
       clearApiKey,
-      aiEnabled: clearApiKey ? false : enabled,
+      aiEnabled: true,
       aiTemperature: Number(temperature),
     };
   }
@@ -122,7 +129,6 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
     setModel(nextSettings.aiModel || nextProvider.defaultModel);
     setBaseUrl(nextSettings.aiBaseUrl || nextProvider.baseUrl);
     setApiKey("");
-    setEnabled(nextSettings.aiEnabled);
     setTemperature(String(nextSettings.aiTemperature));
     setCustomModel(!nextProvider.models.includes(nextSettings.aiModel));
     onSettingsChange(nextSettings);
@@ -304,10 +310,14 @@ export function AiSettingsPanel({ settings, onSettingsChange, onStatus }: AiSett
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="flex items-center justify-between rounded-lg border border-line bg-surface-low px-4 py-3">
-                <Label htmlFor="ai-enabled" className="text-sm font-medium">
-                  {t("enable")}
+                <Label htmlFor="agent-assistant-visible" className="text-sm font-medium">
+                  {t("showAgent")}
                 </Label>
-                <Switch id="ai-enabled" checked={enabled} onCheckedChange={setEnabled} />
+                <Switch
+                  id="agent-assistant-visible"
+                  checked={agentAssistantVisible}
+                  onCheckedChange={onAgentAssistantVisibleChange}
+                />
               </div>
 
               <Field label="Temperature" htmlFor="ai-temperature">

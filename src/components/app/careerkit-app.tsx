@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { useTranslations } from "next-intl";
 
 import type { NavKey } from "@/lib/navigation";
@@ -71,6 +71,38 @@ import {
 import { hasSeenFirstUseTour, markFirstUseTourSeen } from "@/lib/first-use-tour";
 
 type ResumeMode = "library" | "editor";
+const AGENT_ASSISTANT_VISIBILITY_KEY = "lujie-careerkit:agent-assistant-visible:v1";
+const AGENT_ASSISTANT_VISIBILITY_EVENT = "lujie-careerkit:agent-assistant-visibility-change";
+let agentAssistantVisibilityFallback = true;
+
+function subscribeAgentAssistantVisibility(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(AGENT_ASSISTANT_VISIBILITY_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(AGENT_ASSISTANT_VISIBILITY_EVENT, onStoreChange);
+  };
+}
+
+function readAgentAssistantVisibility() {
+  try {
+    const stored = window.localStorage.getItem(AGENT_ASSISTANT_VISIBILITY_KEY);
+    return stored === null ? agentAssistantVisibilityFallback : stored !== "false";
+  } catch {
+    return agentAssistantVisibilityFallback;
+  }
+}
+
+function writeAgentAssistantVisibility(visible: boolean) {
+  agentAssistantVisibilityFallback = visible;
+  try {
+    window.localStorage.setItem(AGENT_ASSISTANT_VISIBILITY_KEY, String(visible));
+  } catch {
+    // The preference remains active for this session when storage is unavailable.
+  }
+  window.dispatchEvent(new Event(AGENT_ASSISTANT_VISIBILITY_EVENT));
+}
+
 type ResumeOptimizationRequest = {
   resumeContent: ResumeContent;
   diagnosis: ResumeDiagnosis;
@@ -145,6 +177,11 @@ export function CareerKitApp({
   const [resumeOptimizationPreviousStage, setResumeOptimizationPreviousStage] = useState<0 | 1 | 2>(2);
   const [matchResetKey, setMatchResetKey] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const agentAssistantVisible = useSyncExternalStore(
+    subscribeAgentAssistantVisibility,
+    readAgentAssistantVisibility,
+    () => true,
+  );
 
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
   const storedResumeOptimizationResult = useMemo<ResumeOptimizationView | null>(() => {
@@ -1045,13 +1082,14 @@ export function CareerKitApp({
       : [application, ...current]);
   }, []);
 
-  const agentAssistant = (
+  const agentAssistant = agentAssistantVisible ? (
     <AgentAssistant
       aiReady={isAiReady(aiSettings)}
+      onHide={() => writeAgentAssistantVisibility(false)}
       onOpenSettings={() => navigateTo("settings")}
       onApplicationChanged={handleAgentApplicationChanged}
     />
-  );
+  ) : null;
 
   if (active === "library" && libraryTarget) {
     return (
@@ -1289,7 +1327,9 @@ export function CareerKitApp({
             <SettingsView
               settings={appSettings}
               aiSettings={aiSettings}
+              agentAssistantVisible={agentAssistantVisible}
               onAiSettingsChange={setAiSettings}
+              onAgentAssistantVisibleChange={writeAgentAssistantVisibility}
               onClearSampleData={clearLocalSampleData}
               onResetData={resetLocalDataToSample}
               onStatus={setToast}

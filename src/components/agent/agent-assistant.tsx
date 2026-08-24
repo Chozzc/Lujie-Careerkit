@@ -65,10 +65,12 @@ type ApplicationChangeResult = {
 
 export function AgentAssistant({
   aiReady,
+  onHide,
   onOpenSettings,
   onApplicationChanged,
 }: {
   aiReady: boolean;
+  onHide: () => void;
   onOpenSettings: () => void;
   onApplicationChanged: (result: ApplicationChangeResult) => void;
 }) {
@@ -382,46 +384,73 @@ export function AgentAssistant({
         </section>
       ) : null}
 
-      <button
-        ref={petButtonRef}
-        data-tour-agent
-        type="button"
-        aria-label={open ? t("close") : t("open")}
-        aria-expanded={open}
-        onClick={handlePetClick}
-        onPointerDown={startPetDrag}
-        onPointerMove={movePet}
-        onPointerUp={finishPetDrag}
-        onPointerCancel={finishPetDrag}
-        style={{ right: petPosition.right, bottom: petPosition.bottom, touchAction: "none" }}
-        className={cn(
-          "no-print group fixed z-[41] h-[75px] w-[82px] border-0 bg-transparent p-0 outline-none select-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-4",
-          petDragging ? "cursor-grabbing" : "cursor-grab",
-        )}
+      <div
+        style={{ right: petPosition.right, bottom: petPosition.bottom }}
+        className="no-print group/assistant fixed z-[41] h-[75px] w-[82px] select-none"
       >
-        {!open ? (
-          <span className="pointer-events-none absolute right-0 bottom-[calc(100%+4px)] whitespace-nowrap rounded-full border border-black/10 bg-background px-2.5 py-1 text-[11px] text-muted-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-            {t("petHint")}
+        <button
+          ref={petButtonRef}
+          data-tour-agent
+          type="button"
+          aria-label={open ? t("close") : t("open")}
+          aria-expanded={open}
+          onClick={handlePetClick}
+          onPointerDown={startPetDrag}
+          onPointerMove={movePet}
+          onPointerUp={finishPetDrag}
+          onPointerCancel={finishPetDrag}
+          style={{ touchAction: "none" }}
+          className={cn(
+            "lujie-agent-pet-trigger group/pet absolute right-0 bottom-0 h-[75px] w-[82px] border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-4",
+            petDragging ? "cursor-grabbing" : "cursor-grab",
+          )}
+        >
+          {!open ? (
+            <span className="pointer-events-none absolute left-1/2 bottom-[calc(100%+5px)] -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-full border border-black/10 bg-background px-3 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-[0_8px_24px_rgba(49,48,48,0.10)] transition-[opacity,transform] duration-200 ease-out group-hover/pet:translate-y-0 group-hover/pet:opacity-100 group-focus-visible/pet:translate-y-0 group-focus-visible/pet:opacity-100">
+              {t("petHint")}
+            </span>
+          ) : null}
+          <span ref={petVisualRef} className="block transition-transform duration-150 ease-out">
+            <span className={cn(
+              "block origin-bottom",
+              petDragging ? "lujie-agent-pet-dragging" : loading || agentBusy ? "lujie-agent-pet-thinking" : "lujie-agent-pet-idle",
+            )}>
+              <AgentPetVisual />
+            </span>
           </span>
-        ) : null}
-        <span ref={petVisualRef} className="block transition-transform duration-150 ease-out">
-          <span className={cn(
-            "block origin-bottom",
-            petDragging ? "lujie-agent-pet-dragging" : loading || agentBusy ? "lujie-agent-pet-thinking" : "lujie-agent-pet-idle",
-          )}>
-            <Image
-              src="/brand/lujie-agent.svg"
-              alt=""
-              width={82}
-              height={75}
-              priority
-              draggable={false}
-              className="h-[75px] w-[82px] object-contain drop-shadow-[0_8px_8px_rgba(0,0,0,0.16)] transition-transform duration-200 group-hover:scale-105"
-            />
-          </span>
-        </span>
-      </button>
+        </button>
+        <button
+          type="button"
+          aria-label={t("hide")}
+          title={t("hide")}
+          onClick={onHide}
+          className="absolute right-0 top-0 grid h-6 w-6 place-items-center rounded-full border border-black/10 bg-background text-muted-foreground opacity-0 shadow-[0_5px_16px_rgba(49,48,48,0.10)] transition hover:bg-surface-low hover:text-foreground group-hover/assistant:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
     </>
+  );
+}
+
+function AgentPetVisual() {
+  return (
+    <svg
+      viewBox="0 0 120 110"
+      aria-hidden="true"
+      className="h-[75px] w-[82px] overflow-visible drop-shadow-[0_8px_8px_rgba(0,0,0,0.16)]"
+    >
+      <path d="M25 28C25 17 34 10 45 10h31l20 20v48c0 15-12 24-29 24H48c-17 0-28-9-28-24V39c0-4 2-8 5-11Z" fill="#fff" stroke="#191919" strokeWidth="4" strokeLinejoin="round" />
+      <path d="M76 10v16c0 7 5 11 12 11h8" fill="#f4f1ef" stroke="#191919" strokeWidth="4" strokeLinejoin="round" />
+      <path d="M19 53c-8 1-11 8-8 14 2 4 6 5 10 4" fill="none" stroke="#191919" strokeWidth="4" strokeLinecap="round" />
+      <path className="lujie-agent-pet-wave-arm" d="M97 54c9 0 13 7 10 14-2 4-6 6-10 4" fill="none" stroke="#191919" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="48" cy="53" r="3.2" fill="#191919" />
+      <circle cx="72" cy="53" r="3.2" fill="#191919" />
+      <path d="M55 64c3 3 7 3 10 0" fill="none" stroke="#191919" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M43 78h34" stroke="#f59e0b" strokeWidth="5" strokeLinecap="round" />
+      <path d="M48 87h24" stroke="#13a06f" strokeWidth="5" strokeLinecap="round" />
+      <path d="M38 101c3-5 9-6 14-2M68 99c5-3 11-2 14 2" fill="none" stroke="#191919" strokeWidth="4" strokeLinecap="round" />
+    </svg>
   );
 }
 

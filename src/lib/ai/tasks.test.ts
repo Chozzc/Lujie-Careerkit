@@ -41,33 +41,6 @@ describe("AI task runner", () => {
     });
   });
 
-  it("uses explicit fallback when AI is disabled", async () => {
-    let called = false;
-
-    const disabledExecutor: AiObjectExecutor = async ({ schema }) => {
-      called = true;
-      return { object: schema.parse({ value: "ai" }) };
-    };
-
-    const result = await runAiObjectTask(
-      {
-        settings: getEffectiveAiSettings({ ...baseSettings(), aiEnabled: false }),
-        schema: testSchema,
-        system: "Return JSON.",
-        prompt: "Say hi.",
-        fallback: { value: "fallback" },
-        taskLabel: "测试任务",
-      },
-      {
-        generateObject: disabledExecutor,
-      },
-    );
-
-    expect(called).toBe(false);
-    expect(result.source).toBe("fallback");
-    expect(result.message).toContain("当前使用本地规则结果");
-  });
-
   it("uses explicit fallback when the provider requires a missing key", async () => {
     const result = await runAiObjectTask(
       {
