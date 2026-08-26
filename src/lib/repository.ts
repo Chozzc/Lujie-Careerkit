@@ -160,6 +160,8 @@ export async function resetAppDataToSample() {
 
 export async function clearSampleData() {
   await ensureSettings();
+  const sampleApplicationIds = sampleApplications.map((application) => application.id);
+  const sampleJobIds = sampleJobs.map((job) => job.id);
   const resumeVersionIds = [
     ...sampleResumeVersions.map((version) => version.id),
     sampleTailoredResumeVersion.id,
@@ -170,13 +172,54 @@ export async function clearSampleData() {
   });
 
   await prisma.$transaction(async (transaction) => {
+    const jobsWithUserData = await transaction.job.findMany({
+      where: {
+        id: { in: sampleJobIds },
+        OR: [
+          { applications: { some: { id: { notIn: sampleApplicationIds } } } },
+          { versions: { some: { id: { notIn: resumeVersionIds } } } },
+          { interviewPreparations: { some: { id: { not: sampleInterviewPreparation.id } } } },
+          { interviews: { some: { id: { not: sampleInterviewSession.id } } } },
+        ],
+      },
+    });
+    for (const job of jobsWithUserData) {
+      const replacementJob = await transaction.job.create({
+        data: {
+          company: job.company,
+          title: job.title,
+          city: job.city,
+          source: job.source,
+          jd: job.jd,
+          link: job.link,
+          deadline: job.deadline,
+          analysis: job.analysis === null ? Prisma.JsonNull : toJsonInput(job.analysis),
+        },
+      });
+      await transaction.application.updateMany({
+        where: { jobId: job.id, id: { notIn: sampleApplicationIds } },
+        data: { jobId: replacementJob.id },
+      });
+      await transaction.resumeVersion.updateMany({
+        where: { jobId: job.id, id: { notIn: resumeVersionIds } },
+        data: { jobId: replacementJob.id },
+      });
+      await transaction.interviewPreparation.updateMany({
+        where: { jobId: job.id, id: { not: sampleInterviewPreparation.id } },
+        data: { jobId: replacementJob.id },
+      });
+      await transaction.interviewSession.updateMany({
+        where: { jobId: job.id, id: { not: sampleInterviewSession.id } },
+        data: { jobId: replacementJob.id },
+      });
+    }
     await transaction.interviewPreparation.deleteMany({ where: { id: sampleInterviewPreparation.id } });
     await transaction.interviewSession.deleteMany({ where: { id: sampleInterviewSession.id } });
     await transaction.application.deleteMany({
-      where: { id: { in: sampleApplications.map((application) => application.id) } },
+      where: { id: { in: sampleApplicationIds } },
     });
     await transaction.resumeVersion.deleteMany({ where: { id: { in: resumeVersionIds } } });
-    await transaction.job.deleteMany({ where: { id: { in: sampleJobs.map((job) => job.id) } } });
+    await transaction.job.deleteMany({ where: { id: { in: sampleJobIds } } });
     for (const { resumeId } of resumeRoots) {
       await transaction.resume.deleteMany({ where: { id: resumeId, versions: { none: {} } } });
     }

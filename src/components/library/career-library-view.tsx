@@ -259,40 +259,34 @@ function LibraryCard({
   const t = useTranslations("careerLibrary");
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
-      className="group cursor-pointer overflow-hidden rounded-2xl border border-line bg-surface text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+      className="group relative overflow-hidden rounded-2xl border border-line bg-surface text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg focus-within:ring-2 focus-within:ring-primary/20"
     >
-      <div className="grid h-36 place-items-center border-b border-line bg-surface-low/80">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="absolute inset-0 z-0 rounded-2xl focus:outline-none"
+        aria-label={title}
+      />
+      <div className="pointer-events-none grid h-36 place-items-center border-b border-line bg-surface-low/80">
         <FolderKanban
           className="h-20 w-20 text-primary/70 transition group-hover:scale-[1.03]"
           strokeWidth={1.15}
         />
       </div>
-      <div className="min-h-44 p-5">
+      <div className="pointer-events-none min-h-44 p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {isSample ? <Badge variant="outline" className="mb-2">{t("sampleJob")}</Badge> : null}
             <h3 className="line-clamp-2 font-serif text-xl font-semibold leading-7 text-primary">{title}</h3>
             {subtitle ? <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-2">
             {badge ? <Badge variant="secondary">{badge}</Badge> : null}
             {onEdit ? (
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEdit();
-                }}
-                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-surface-low hover:text-foreground"
+                onClick={onEdit}
+                className="pointer-events-auto grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-surface-low hover:text-foreground"
                 aria-label={t("editJob.action")}
                 title={t("editJob.action")}
               >
@@ -302,11 +296,8 @@ function LibraryCard({
             {onDelete ? (
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete();
-                }}
-                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
+                onClick={onDelete}
+                className="pointer-events-auto grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
                 aria-label={t("delete")}
                 title={t("delete")}
               >
