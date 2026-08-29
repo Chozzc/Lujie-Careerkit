@@ -1085,9 +1085,18 @@ export function CareerKitApp({
   const agentAssistant = agentAssistantVisible ? (
     <AgentAssistant
       aiReady={isAiReady(aiSettings)}
+      applications={applications}
+      jobs={jobs}
       onHide={() => writeAgentAssistantVisibility(false)}
       onOpenSettings={() => navigateTo("settings")}
       onApplicationChanged={handleAgentApplicationChanged}
+      resumes={[
+        ...(mainResumeVersionId ? [{
+          id: mainResumeVersionId,
+          name: initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历"),
+        }] : []),
+        ...versions.map((version) => ({ id: version.id, name: version.name })),
+      ]}
     />
   ) : null;
 

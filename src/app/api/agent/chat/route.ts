@@ -1,10 +1,11 @@
 import type { UIMessage } from "ai";
-import { createAgentUIStreamResponse, safeValidateUIMessages } from "ai";
+import { createAgentUIStreamResponse, createIdGenerator, safeValidateUIMessages } from "ai";
 import { z } from "zod";
 
 import { createCareerAgent, type CareerAgentUIMessage } from "@/lib/agent/career-agent";
 import { mergeLatestMessage, splitAgentContext } from "@/lib/agent/message-context";
 import { getAgentThread, saveAgentThreadMessages } from "@/lib/agent/thread-store";
+import { normalizeAiError } from "@/lib/ai/errors";
 import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
 
 export const maxDuration = 60;
@@ -52,11 +53,13 @@ export async function POST(request: Request) {
     agent,
     uiMessages: context.messages,
     originalMessages: context.messages,
+    generateMessageId: createIdGenerator({ prefix: "agent-message", size: 16 }),
+    sendReasoning: false,
     abortSignal: request.signal,
     consumeSseStream: ({ stream }) => stream.pipeTo(new WritableStream()).catch(() => undefined),
     onFinish: async ({ messages: finishedMessages }) => {
       await saveAgentThreadMessages(parsed.data.id, [...context.omitted, ...finishedMessages]);
     },
-    onError: () => "Agent 暂时无法完成这次请求，请检查 AI 设置后重试。",
+    onError: (error) => normalizeAiError(error).message,
   });
 }

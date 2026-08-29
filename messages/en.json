@@ -1109,7 +1109,7 @@
       },
       "agent": {
         "title": "Tell the LuJie Agent what you want to do",
-        "description": "Open the LuJie Agent in the lower-right corner to review saved jobs, application progress, and resume summaries, or create and update application cards from your description. It is experimental: every write requires your approval, and it cannot directly edit resumes or delete career data yet."
+        "description": "Open LuJie Agent from the lower-right corner to search jobs, applications, and privacy-filtered resumes, then select parameters and confirm resumes, tailored versions, interview guides, mock interviews, template changes, or application-card updates. It remains experimental and never deletes career data."
       },
       "resume": {
         "title": "Prepare a base resume",
@@ -1235,16 +1235,19 @@
     "panelLabel": "LuJie Agent conversation panel",
     "open": "Open LuJie Agent",
     "close": "Close LuJie Agent",
+    "maximize": "Open full screen",
+    "restore": "Exit full screen",
     "petHint": "Where shall we start today?",
     "hide": "Hide Agent assistant; you can show it again in Settings",
     "newConversation": "New conversation",
+    "conversationHistory": "Conversation history",
     "deleteConversation": "Delete conversation",
     "loading": "Loading conversation…",
     "thinking": "Thinking…",
     "inputPlaceholder": "Describe what you want to handle in your job search…",
     "send": "Send",
     "stop": "Stop generating",
-    "approvalHint": "You will review every application-data change before it runs",
+    "approvalHint": "You will review every business-data write before it runs",
     "setup": {
       "title": "Configure an AI service first",
       "description": "The Agent uses LuJie's existing provider and model settings. It does not require a separate Agent key.",
@@ -1252,14 +1255,48 @@
     },
     "welcome": {
       "title": "I can help with the career information saved in LuJie",
-      "description": "This version can review saved resumes and roles, and create or update application-tracking cards from your description.",
+      "description": "Search resumes and jobs, then select parameters and confirm resumes, JD-tailored versions, interview materials, mock interviews, template changes, or application-card updates.",
       "prompt1": "Which applications am I currently tracking?",
       "prompt2": "I applied to a role today. Help me record it.",
       "prompt3": "Which resume versions do I have?"
     },
     "tools": {
       "searchingPipeline": "Checking saved roles and application records",
-      "readingResume": "Reading a privacy-safe resume overview"
+      "readingResume": "Searching privacy-filtered resume information",
+      "resumeWorking": "Preparing a resume creation",
+      "tailoredResumeWorking": "Preparing a JD-tailored resume",
+      "interviewPreparationWorking": "Preparing interview materials",
+      "mockInterviewWorking": "Preparing a mock interview",
+      "resumePresentationWorking": "Preparing a resume template change"
+    },
+    "configuration": {
+      "preparing": "Preparing selectable settings",
+      "jdTitle": "Choose how to optimize for this JD",
+      "preparationTitle": "Choose an interview-preparation focus",
+      "simulationTitle": "Choose a mock-interview mode",
+      "recommended": "(Recommended)",
+      "expired": "A later message replaced this settings card. Start the action again to continue.",
+      "confirm": "Continue with these settings",
+      "jdSelected": "Your JD-optimization settings were applied",
+      "interviewSelected": "Your interview settings were applied",
+      "jdOptions": {
+        "emphasizeImpact": "Emphasize actions and impact",
+        "quantifyResults": "Prioritize measurable results",
+        "atsFriendly": "Improve ATS readability",
+        "highlightMatchedSkills": "Highlight JD-matched skills"
+      },
+      "jdOptionDescriptions": {
+        "emphasizeImpact": "Frame responsibilities as actions, methods, and outcomes for stronger evidence.",
+        "quantifyResults": "Prioritize verifiable results already provided without inventing metrics.",
+        "atsFriendly": "Clarify structure and keywords so automated screening can read the resume reliably.",
+        "highlightMatchedSkills": "Align role requirements with genuine experience and surface matching evidence."
+      },
+      "interviewModeDescriptions": {
+        "comprehensive": "Cover fundamentals, project deep dives, scenarios, and behavioral questions in one session.",
+        "project": "Probe project context, personal contribution, technical decisions, and actual outcomes.",
+        "behavioral": "Practice STAR stories about collaboration, conflict, reflection, and growth.",
+        "hr": "Focus on motivation, role understanding, stability, compensation, and availability."
+      }
     },
     "approval": {
       "title": "Confirm this application-card change",
@@ -1272,13 +1309,35 @@
       "stageDate": "Stage date",
       "followUpDate": "Follow-up date",
       "note": "New note",
+      "resumeTitle": "Confirm creating an independent resume",
+      "tailoredResumeTitle": "Confirm generating and saving a tailored resume",
+      "interviewPreparationTitle": "Confirm generating and saving interview preparation",
+      "mockInterviewTitle": "Confirm generating a mock interview",
+      "resumePresentationTitle": "Confirm changing the resume template",
+      "resumeName": "Resume name",
+      "targetRole": "Target role",
+      "sourceFacts": "Stated facts",
+      "sourceResume": "Source resume",
+      "selectedJob": "Selected role",
+      "selectedResume": "Selected resume",
+      "jd": "Job description",
+      "savedJd": "Use the full JD saved with this job",
+      "focus": "Focus",
+      "template": "Resume template",
+      "focuses": { "comprehensive": "Comprehensive", "project": "Project deep dive", "behavioral": "Behavioral", "hr": "HR interview" },
       "cancel": "Cancel",
       "confirm": "Confirm and run",
       "executing": "Approved. Writing the change…",
       "cancelled": "This change was cancelled",
       "deniedReason": "The user cancelled this change.",
       "created": "Application card created:",
-      "updated": "Application card updated:"
+      "updated": "Application card updated:",
+      "resumeCreated": "The independent resume was created.",
+      "tailoredResumeCreated": "The JD-tailored resume was generated and saved.",
+      "interviewPreparationCreated": "The interview-preparation guide was generated and saved.",
+      "mockInterviewCreated": "The mock-interview questions were generated.",
+      "resumePresentationCreated": "The resume template was updated.",
+      "openResult": "Click to open result"
     },
     "status": {
       "applied": "Applied",
@@ -1292,7 +1351,8 @@
       "load": "Could not load the conversation.",
       "create": "Could not create the conversation.",
       "delete": "Could not delete the conversation.",
-      "request": "The Agent could not complete this request. Check your AI settings and try again."
+      "request": "The Agent could not complete this request. Check your AI settings and try again.",
+      "afterWrite": "The result was saved, but the Agent could not generate its follow-up message. Your saved data is unaffected."
     }
   },
   "themeEditor": {

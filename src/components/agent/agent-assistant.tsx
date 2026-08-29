@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
@@ -8,6 +9,7 @@ import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithApprovalResponses,
+  lastAssistantMessageIsCompleteWithToolCalls,
 } from "ai";
 import {
   ArrowUp,
@@ -16,6 +18,8 @@ import {
   FileText,
   History,
   LoaderCircle,
+  Maximize2,
+  Minimize2,
   Plus,
   Settings,
   Trash2,
@@ -34,7 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import { SpeechTextarea } from "@/components/shared/speech-textarea";
 import {
   DEFAULT_AGENT_PET_POSITION,
   AGENT_PET_HEIGHT,
@@ -65,36 +69,45 @@ type ApplicationChangeResult = {
 
 export function AgentAssistant({
   aiReady,
+  applications,
+  jobs,
   onHide,
   onOpenSettings,
   onApplicationChanged,
+  resumes,
 }: {
   aiReady: boolean;
+  applications: ApplicationView[];
+  jobs: JobView[];
   onHide: () => void;
   onOpenSettings: () => void;
   onApplicationChanged: (result: ApplicationChangeResult) => void;
+  resumes: Array<{ id: string; name: string }>;
 }) {
   const t = useTranslations("agent");
   const [open, setOpen] = useState(false);
+  const [maximized, setMaximized] = useState(false);
   const [threads, setThreads] = useState<AgentThreadSummary[]>([]);
   const [activeThread, setActiveThread] = useState<AgentThread | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [petPosition, setPetPosition] = useState(DEFAULT_AGENT_PET_POSITION);
   const [petPositionReady, setPetPositionReady] = useState(false);
-  const [petDragging, setPetDragging] = useState(false);
+  const [dragSource, setDragSource] = useState<"pet" | "panel" | null>(null);
   const [agentBusy, setAgentBusy] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
   const petButtonRef = useRef<HTMLButtonElement>(null);
   const petVisualRef = useRef<HTMLSpanElement>(null);
-  const petDrag = useRef<{
+  const groupDrag = useRef<{
+    source: "pet" | "panel";
     pointerId: number;
     startX: number;
     startY: number;
     startRight: number;
     startBottom: number;
   } | null>(null);
-  const petWasDragged = useRef(false);
+  const groupWasDragged = useRef(false);
+  const completedDragSource = useRef<"pet" | "panel" | null>(null);
 
   useEffect(() => {
     const viewport = { width: window.innerWidth, height: window.innerHeight };
@@ -110,7 +123,9 @@ export function AgentAssistant({
     function keepPetInViewport() {
       setPetPosition((current) => {
         const viewport = { width: window.innerWidth, height: window.innerHeight };
-        const panel = panelRef.current?.getBoundingClientRect();
+        const panel = panelRef.current?.dataset.maximized === "true"
+          ? undefined
+          : panelRef.current?.getBoundingClientRect();
         return panel
           ? clampAgentPetGroupPosition(current, viewport, panel)
           : clampAgentPetPosition(current, viewport);
@@ -136,6 +151,7 @@ export function AgentAssistant({
   useEffect(() => {
     if (!open) return;
     const layoutFrame = requestAnimationFrame(() => {
+      if (maximized) return;
       const panel = panelRef.current?.getBoundingClientRect();
       if (!panel) return;
       setPetPosition((current) => clampAgentPetGroupPosition(current, {
@@ -144,7 +160,7 @@ export function AgentAssistant({
       }, panel));
     });
     return () => cancelAnimationFrame(layoutFrame);
-  }, [open]);
+  }, [maximized, open]);
 
   useEffect(() => {
     const visual = petVisualRef.current;
@@ -154,7 +170,7 @@ export function AgentAssistant({
 
     let animationFrame = 0;
     function followPointer(event: PointerEvent) {
-      if (event.pointerType !== "mouse" || petDrag.current) return;
+      if (event.pointerType !== "mouse" || groupDrag.current) return;
       cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(() => {
         const button = petButtonRef.current;
@@ -231,6 +247,7 @@ export function AgentAssistant({
   function toggleOpen() {
     if (open) {
       setOpen(false);
+      setMaximized(false);
       return;
     }
     setOpen(true);
@@ -238,27 +255,30 @@ export function AgentAssistant({
     if (!activeThread && !loading) void loadThreads();
   }
 
-  function startPetDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+  function startGroupDrag(event: ReactPointerEvent<HTMLElement>, source: "pet" | "panel") {
+    if (source === "panel" && maximized) return;
     if (event.button !== 0 || !event.isPrimary) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    petDrag.current = {
+    groupDrag.current = {
+      source,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
       startRight: petPosition.right,
       startBottom: petPosition.bottom,
     };
-    petWasDragged.current = false;
-    setPetDragging(true);
+    groupWasDragged.current = false;
+    completedDragSource.current = null;
+    setDragSource(source);
   }
 
-  function movePet(event: ReactPointerEvent<HTMLButtonElement>) {
-    const drag = petDrag.current;
+  function moveGroup(event: ReactPointerEvent<HTMLElement>) {
+    const drag = groupDrag.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     const deltaX = event.clientX - drag.startX;
     const deltaY = event.clientY - drag.startY;
-    if (Math.hypot(deltaX, deltaY) >= AGENT_PET_DRAG_THRESHOLD) petWasDragged.current = true;
-    if (!petWasDragged.current) return;
+    if (Math.hypot(deltaX, deltaY) >= AGENT_PET_DRAG_THRESHOLD) groupWasDragged.current = true;
+    if (!groupWasDragged.current) return;
     const nextPosition = {
       right: drag.startRight - deltaX,
       bottom: drag.startBottom - deltaY,
@@ -267,29 +287,43 @@ export function AgentAssistant({
       width: window.innerWidth,
       height: window.innerHeight,
     };
-    const panel = panelRef.current?.getBoundingClientRect();
+    const panel = maximized ? undefined : panelRef.current?.getBoundingClientRect();
     setPetPosition(panel
       ? clampAgentPetGroupPosition(nextPosition, viewport, panel)
       : clampAgentPetPosition(nextPosition, viewport));
   }
 
-  function finishPetDrag(event: ReactPointerEvent<HTMLButtonElement>) {
-    const drag = petDrag.current;
+  function finishGroupDrag(event: ReactPointerEvent<HTMLElement>) {
+    const drag = groupDrag.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    petDrag.current = null;
-    setPetDragging(false);
+    completedDragSource.current = groupWasDragged.current ? drag.source : null;
+    groupDrag.current = null;
+    setDragSource(null);
   }
 
   function handlePetClick(event: React.MouseEvent<HTMLButtonElement>) {
-    if (petWasDragged.current) {
-      petWasDragged.current = false;
+    if (completedDragSource.current === "pet") {
+      completedDragSource.current = null;
       event.preventDefault();
       return;
     }
     toggleOpen();
+  }
+
+  function startPanelDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (!(event.target instanceof Node) || !event.currentTarget.contains(event.target)) return;
+    if (event.target instanceof Element && event.target.closest("button, a, input, textarea, select, [data-agent-panel-action]")) return;
+    startGroupDrag(event, "panel");
+  }
+
+  function suppressPanelClickAfterDrag(event: React.MouseEvent<HTMLElement>) {
+    if (completedDragSource.current !== "panel") return;
+    completedDragSource.current = null;
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   return (
@@ -297,27 +331,57 @@ export function AgentAssistant({
       {open ? (
         <section
           ref={panelRef}
+          data-maximized={maximized}
           aria-label={t("panelLabel")}
-          style={{
+          style={maximized ? undefined : {
             right: petPosition.right,
             bottom: petPosition.bottom + AGENT_PET_HEIGHT + AGENT_PET_PANEL_GAP,
           }}
-          className="no-print fixed z-40 flex h-[min(640px,calc(100vh-7.75rem))] w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/10 bg-background shadow-2xl shadow-black/15 sm:w-[420px]"
+          className={cn(
+            "no-print fixed flex flex-col overflow-hidden border border-black/10 bg-background shadow-2xl shadow-black/15",
+            maximized
+              ? "inset-0 z-50 h-dvh w-screen rounded-none"
+              : "z-40 h-[min(640px,calc(100vh-7.75rem))] w-[calc(100vw-2rem)] rounded-2xl sm:w-[420px]",
+          )}
         >
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-[#f7f5f3] px-3">
+          <header
+            onPointerDown={startPanelDrag}
+            onPointerMove={moveGroup}
+            onPointerUp={finishGroupDrag}
+            onPointerCancel={finishGroupDrag}
+            onClickCapture={suppressPanelClickAfterDrag}
+            style={{ touchAction: maximized ? "auto" : "none" }}
+            className={cn(
+              "flex h-14 shrink-0 items-center gap-2 border-b bg-[#f7f5f3] px-3",
+              maximized ? "cursor-default" : dragSource === "panel" ? "cursor-grabbing" : "cursor-grab",
+            )}
+          >
             <Image
               src="/brand/lujie-agent.svg"
               alt=""
+              draggable={false}
               width={38}
               height={35}
               className="h-[35px] w-[38px]"
             />
+            <div className="min-w-0 flex-1 px-1">
+              <span className="block truncate font-semibold">
+                {displayThreadTitle(activeThread?.title, t("newConversation"), t("title"))}
+              </span>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={<Button variant="ghost" className="min-w-0 flex-1 justify-start px-1" />}
+                render={(
+                  <Button
+                    data-agent-panel-action
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("conversationHistory")}
+                    title={t("conversationHistory")}
+                  />
+                )}
               >
-                <span className="truncate font-semibold">{displayThreadTitle(activeThread?.title, t("newConversation"), t("title"))}</span>
-                <ChevronDown className="ml-auto size-4 text-muted-foreground" />
+                <ChevronDown className="size-4 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-72">
                 <DropdownMenuItem onClick={() => void createThread()}>
@@ -349,7 +413,20 @@ export function AgentAssistant({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" size="icon" aria-label={t("close")} onClick={() => setOpen(false)}>
+            <Button
+              data-agent-panel-action
+              variant="ghost"
+              size="icon"
+              aria-label={maximized ? t("restore") : t("maximize")}
+              title={maximized ? t("restore") : t("maximize")}
+              onClick={() => setMaximized((current) => !current)}
+            >
+              {maximized ? <Minimize2 /> : <Maximize2 />}
+            </Button>
+            <Button data-agent-panel-action variant="ghost" size="icon" aria-label={t("close")} onClick={() => {
+              setOpen(false);
+              setMaximized(false);
+            }}>
               <X />
             </Button>
           </header>
@@ -364,6 +441,9 @@ export function AgentAssistant({
             aiReady ? (
               <AgentConversation
                 key={activeThread.id}
+                applications={applications}
+                jobs={jobs}
+                resumes={resumes}
                 thread={activeThread}
                 onApplicationChanged={onApplicationChanged}
                 onBusyChange={setAgentBusy}
@@ -395,14 +475,14 @@ export function AgentAssistant({
           aria-label={open ? t("close") : t("open")}
           aria-expanded={open}
           onClick={handlePetClick}
-          onPointerDown={startPetDrag}
-          onPointerMove={movePet}
-          onPointerUp={finishPetDrag}
-          onPointerCancel={finishPetDrag}
+          onPointerDown={(event) => startGroupDrag(event, "pet")}
+          onPointerMove={moveGroup}
+          onPointerUp={finishGroupDrag}
+          onPointerCancel={finishGroupDrag}
           style={{ touchAction: "none" }}
           className={cn(
             "lujie-agent-pet-trigger group/pet absolute right-0 bottom-0 h-[75px] w-[82px] border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-4",
-            petDragging ? "cursor-grabbing" : "cursor-grab",
+            dragSource === "pet" ? "cursor-grabbing" : "cursor-grab",
           )}
         >
           {!open ? (
@@ -413,7 +493,7 @@ export function AgentAssistant({
           <span ref={petVisualRef} className="block transition-transform duration-150 ease-out">
             <span className={cn(
               "block origin-bottom",
-              petDragging ? "lujie-agent-pet-dragging" : loading || agentBusy ? "lujie-agent-pet-thinking" : "lujie-agent-pet-idle",
+              dragSource ? "lujie-agent-pet-dragging" : loading || agentBusy ? "lujie-agent-pet-thinking" : "lujie-agent-pet-idle",
             )}>
               <AgentPetVisual />
             </span>
@@ -455,11 +535,17 @@ function AgentPetVisual() {
 }
 
 function AgentConversation({
+  applications,
+  jobs,
+  resumes,
   thread,
   onApplicationChanged,
   onBusyChange,
   onThreadUpdated,
 }: {
+  applications: ApplicationView[];
+  jobs: JobView[];
+  resumes: Array<{ id: string; name: string }>;
   thread: AgentThread;
   onApplicationChanged: (result: ApplicationChangeResult) => void;
   onBusyChange: (busy: boolean) => void;
@@ -473,6 +559,15 @@ function AgentConversation({
     thread.messages.at(-1)?.role === "user" ? thread.messages.at(-1)?.id : undefined,
   );
   const handledToolCalls = useRef(new Set<string>());
+  const jobLabels = useMemo(
+    () => new Map(jobs.map((job) => [job.id, [job.company, job.title].filter(Boolean).join(" · ")])),
+    [jobs],
+  );
+  const resumeLabels = useMemo(() => new Map(resumes.map((resume) => [resume.id, resume.name])), [resumes]);
+  const applicationJobIds = useMemo(
+    () => new Map(applications.map((application) => [application.id, application.jobId])),
+    [applications],
+  );
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/agent/chat",
     prepareSendMessagesRequest: ({ id, messages }) => ({
@@ -487,11 +582,14 @@ function AgentConversation({
     error,
     stop,
     addToolApprovalResponse,
+    addToolOutput,
   } = useChat<CareerAgentUIMessage>({
     id: thread.id,
     messages: thread.messages,
     transport,
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    sendAutomaticallyWhen: (options) =>
+      lastAssistantMessageIsCompleteWithApprovalResponses(options)
+      || lastAssistantMessageIsCompleteWithToolCalls(options),
     onFinish: ({ messages: finishedMessages }) => {
       for (const message of finishedMessages) {
         for (const part of message.parts) {
@@ -520,6 +618,10 @@ function AgentConversation({
   }, [messages]);
 
   const busy = status === "submitted" || status === "streaming";
+  const latestMessage = messages.at(-1);
+  const completedWriteBeforeError = latestMessage?.role === "assistant" && latestMessage.parts.some(
+    (part) => isAgentWriteToolPart(part) && part.state === "output-available",
+  );
 
   useEffect(() => {
     onBusyChange(busy);
@@ -559,7 +661,7 @@ function AgentConversation({
             </div>
           ) : null}
 
-          {messages.map((message) => (
+          {messages.filter(hasVisibleAgentMessageContent).map((message) => (
             <div key={message.id} className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}>
               <div className={cn(
                 "max-w-[88%] space-y-2 text-sm leading-6",
@@ -567,6 +669,7 @@ function AgentConversation({
               )}>
                 {message.parts.map((part, index) => {
                   if (part.type === "text") {
+                    if (!part.text.trim()) return null;
                     if (message.role === "user") {
                       return <p key={`${message.id}-${index}`} className="whitespace-pre-wrap">{part.text}</p>;
                     }
@@ -585,11 +688,67 @@ function AgentConversation({
                   if (part.type === "tool-get_resume_context") {
                     return <ToolActivity key={part.toolCallId} done={part.state === "output-available"} label={t("tools.readingResume")} />;
                   }
+                  if (part.type === "tool-configure_jd_optimization") {
+                    if (part.state === "input-streaming") {
+                      return <ToolActivity key={part.toolCallId} done={false} label={t("configuration.preparing")} />;
+                    }
+                    return (
+                      <JdOptimizationConfiguration
+                        key={part.toolCallId}
+                        part={part}
+                        disabled={message.id !== latestMessage?.id}
+                        onSubmit={(preferences) => addToolOutput({
+                          tool: "configure_jd_optimization",
+                          toolCallId: part.toolCallId,
+                          output: { preferences },
+                        })}
+                      />
+                    );
+                  }
+                  if (part.type === "tool-configure_interview") {
+                    if (part.state === "input-streaming") {
+                      return <ToolActivity key={part.toolCallId} done={false} label={t("configuration.preparing")} />;
+                    }
+                    return (
+                      <InterviewConfiguration
+                        key={part.toolCallId}
+                        part={part}
+                        disabled={message.id !== latestMessage?.id}
+                        onSubmit={(task, mode) => addToolOutput({
+                          tool: "configure_interview",
+                          toolCallId: part.toolCallId,
+                          output: { task, mode },
+                        })}
+                      />
+                    );
+                  }
                   if (part.type === "tool-update_application_card") {
                     return (
                       <ApplicationApproval
                         key={part.toolCallId}
                         part={part}
+                        targetLabel={resolveApplicationTargetLabel(part.input, jobLabels, applicationJobIds)}
+                        onDecision={(approved) => void addToolApprovalResponse({
+                          id: part.state === "approval-requested" ? part.approval.id : "",
+                          approved,
+                          reason: approved ? undefined : t("approval.deniedReason"),
+                        })}
+                      />
+                    );
+                  }
+                  if (
+                    part.type === "tool-create_resume_from_experience" ||
+                    part.type === "tool-create_jd_tailored_resume" ||
+                    part.type === "tool-create_interview_preparation" ||
+                    part.type === "tool-create_mock_interview" ||
+                    part.type === "tool-update_resume_presentation"
+                  ) {
+                    return (
+                      <AgentWriteApproval
+                        key={part.toolCallId}
+                        part={part}
+                        jobLabel={resolveWriteJobLabel(part, jobLabels)}
+                        resumeLabel={resolveWriteResumeLabel(part, resumeLabels)}
                         onDecision={(approved) => void addToolApprovalResponse({
                           id: part.state === "approval-requested" ? part.approval.id : "",
                           approved,
@@ -604,22 +763,32 @@ function AgentConversation({
             </div>
           ))}
 
-          {status === "submitted" ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {busy ? (
+            <div role="status" aria-live="polite" className="flex items-center gap-2 text-sm text-muted-foreground">
               <LoaderCircle className="size-4 animate-spin" />
               {t("thinking")}
             </div>
           ) : null}
-          {error ? <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{t("errors.request")}</p> : null}
+          {error ? (
+            <p className={cn(
+              "rounded-lg px-3 py-2 text-sm",
+              completedWriteBeforeError
+                ? "border border-amber-200 bg-amber-50 text-amber-900"
+                : "bg-destructive/10 text-destructive",
+            )}>
+              {completedWriteBeforeError ? t("errors.afterWrite") : formatError(error, t("errors.request"))}
+            </p>
+          ) : null}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
       <div className="shrink-0 border-t bg-background p-3">
         <div className="flex items-end gap-2 rounded-xl border bg-[#faf9f8] p-2 focus-within:border-black/30 focus-within:ring-2 focus-within:ring-black/5">
-          <Textarea
+          <SpeechTextarea
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onValueChange={setInput}
+            speechSeparator=" "
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -627,9 +796,12 @@ function AgentConversation({
               }
             }}
             disabled={busy}
+            maxLength={50_000}
             rows={1}
             placeholder={t("inputPlaceholder")}
-            className="max-h-28 min-h-9 resize-none border-0 bg-transparent px-1 py-1.5 shadow-none focus-visible:ring-0"
+            wrapperClassName="min-w-0 flex-1"
+            speechButtonClassName="top-1 right-0 border-0 bg-transparent shadow-none hover:bg-black/5"
+            className="max-h-28 min-h-9 resize-none border-0 bg-transparent py-1.5 pl-1 shadow-none focus-visible:ring-0"
           />
           {busy ? (
             <Button size="icon" variant="outline" aria-label={t("stop")} onClick={stop}><X /></Button>
@@ -643,6 +815,26 @@ function AgentConversation({
   );
 }
 
+function isAgentWriteToolPart(part: CareerAgentUIMessage["parts"][number]) {
+  return part.type === "tool-update_application_card" ||
+    part.type === "tool-create_resume_from_experience" ||
+    part.type === "tool-create_jd_tailored_resume" ||
+    part.type === "tool-create_interview_preparation" ||
+    part.type === "tool-create_mock_interview" ||
+    part.type === "tool-update_resume_presentation";
+}
+
+function hasVisibleAgentMessageContent(message: CareerAgentUIMessage) {
+  return message.parts.some((part) =>
+    (part.type === "text" && Boolean(part.text.trim())) ||
+    part.type === "tool-search_pipeline" ||
+    part.type === "tool-get_resume_context" ||
+    part.type === "tool-configure_jd_optimization" ||
+    part.type === "tool-configure_interview" ||
+    isAgentWriteToolPart(part),
+  );
+}
+
 function ToolActivity({ label, done }: { label: string; done: boolean }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -652,11 +844,176 @@ function ToolActivity({ label, done }: { label: string; done: boolean }) {
   );
 }
 
+type MatchPreferenceKey = "emphasizeImpact" | "quantifyResults" | "atsFriendly" | "highlightMatchedSkills";
+type MatchPreferences = Record<MatchPreferenceKey, boolean>;
+type InterviewMode = "comprehensive" | "project" | "behavioral" | "hr";
+
+function JdOptimizationConfiguration({
+  part,
+  disabled,
+  onSubmit,
+}: {
+  part: Extract<CareerAgentUIMessage["parts"][number], { type: "tool-configure_jd_optimization" }>;
+  disabled: boolean;
+  onSubmit: (preferences: MatchPreferences) => void;
+}) {
+  const t = useTranslations("agent");
+  const input = part.input;
+  const recommended: MatchPreferences = {
+    emphasizeImpact: true,
+    quantifyResults: true,
+    atsFriendly: true,
+    highlightMatchedSkills: true,
+    ...input?.recommended,
+  };
+  const [preferences, setPreferences] = useState<MatchPreferences>(recommended);
+  const [submitted, setSubmitted] = useState(false);
+
+  if (part.state === "output-available") {
+    return <ToolActivity done label={t("configuration.jdSelected")} />;
+  }
+  if (part.state === "output-error") {
+    return <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{part.errorText}</p>;
+  }
+  if (part.state !== "input-available" || !input) {
+    return <ToolActivity done={false} label={t("configuration.preparing")} />;
+  }
+
+  const options: MatchPreferenceKey[] = [
+    "emphasizeImpact",
+    "quantifyResults",
+    "atsFriendly",
+    "highlightMatchedSkills",
+  ];
+  return (
+    <div className="rounded-xl border bg-[#faf9f8] p-3 text-foreground">
+      <p className="font-semibold">{t("configuration.jdTitle")}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{input.resumeName} → {input.jobName}</p>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">{input.reason}</p>
+      <div className="mt-3 grid auto-rows-fr grid-cols-2 items-stretch gap-2">
+        {options.map((option) => {
+          const selected = preferences[option];
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={selected}
+              disabled={submitted || disabled}
+              className={cn(
+                "h-full min-h-28 rounded-lg border px-3 py-2.5 text-left text-xs transition",
+                selected ? "border-black bg-background shadow-sm" : "border-black/10 bg-transparent text-muted-foreground",
+              )}
+              onClick={() => setPreferences((current) => ({ ...current, [option]: !current[option] }))}
+            >
+              <span className="flex items-start gap-1.5 font-medium leading-5">
+                {selected ? <Check className="mt-0.5 size-3.5 shrink-0" /> : <span className="mt-0.5 size-3.5 shrink-0 rounded border" />}
+                <span>
+                  {t(`configuration.jdOptions.${option}`)}
+                  {recommended[option] ? (
+                    <span className="ms-1 whitespace-nowrap font-normal text-emerald-700">{t("configuration.recommended")}</span>
+                  ) : null}
+                </span>
+              </span>
+              <span className="mt-1.5 block text-[11px] leading-4 text-muted-foreground">
+                {t(`configuration.jdOptionDescriptions.${option}`)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {disabled ? <p className="mt-3 text-xs text-muted-foreground">{t("configuration.expired")}</p> : null}
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" disabled={submitted || disabled} onClick={() => {
+          setSubmitted(true);
+          onSubmit(preferences);
+        }}>
+          {t("configuration.confirm")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function InterviewConfiguration({
+  part,
+  disabled,
+  onSubmit,
+}: {
+  part: Extract<CareerAgentUIMessage["parts"][number], { type: "tool-configure_interview" }>;
+  disabled: boolean;
+  onSubmit: (task: "preparation" | "simulation", mode: InterviewMode) => void;
+}) {
+  const t = useTranslations("agent");
+  const input = part.input;
+  const [mode, setMode] = useState<InterviewMode>(() => input?.recommendedMode ?? "comprehensive");
+  const [submitted, setSubmitted] = useState(false);
+
+  if (part.state === "output-available") {
+    return <ToolActivity done label={t("configuration.interviewSelected")} />;
+  }
+  if (part.state === "output-error") {
+    return <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{part.errorText}</p>;
+  }
+  if (part.state !== "input-available" || !input) {
+    return <ToolActivity done={false} label={t("configuration.preparing")} />;
+  }
+
+  const modes: InterviewMode[] = ["comprehensive", "project", "behavioral", "hr"];
+  return (
+    <div className="rounded-xl border bg-[#faf9f8] p-3 text-foreground">
+      <p className="font-semibold">
+        {input.task === "simulation" ? t("configuration.simulationTitle") : t("configuration.preparationTitle")}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">{input.resumeName} → {input.jobName}</p>
+      <p className="mt-2 text-xs leading-5 text-muted-foreground">{input.reason}</p>
+      <div className="mt-3 grid auto-rows-fr grid-cols-2 items-stretch gap-2">
+        {modes.map((option) => (
+          <button
+            key={option}
+            type="button"
+            aria-pressed={mode === option}
+            disabled={submitted || disabled}
+            className={cn(
+              "h-full min-h-28 rounded-lg border px-3 py-2.5 text-left text-xs transition",
+              mode === option ? "border-black bg-background shadow-sm" : "border-black/10 bg-transparent text-muted-foreground",
+            )}
+            onClick={() => setMode(option)}
+          >
+            <span className="flex items-start gap-1.5 font-medium leading-5">
+              {mode === option ? <Check className="mt-0.5 size-3.5 shrink-0" /> : <span className="mt-0.5 size-3.5 shrink-0 rounded-full border" />}
+              <span>
+                {t(`approval.focuses.${option}`)}
+                {input.recommendedMode === option ? (
+                  <span className="ms-1 whitespace-nowrap font-normal text-emerald-700">{t("configuration.recommended")}</span>
+                ) : null}
+              </span>
+            </span>
+            <span className="mt-1.5 block text-[11px] leading-4 text-muted-foreground">
+              {t(`configuration.interviewModeDescriptions.${option}`)}
+            </span>
+          </button>
+        ))}
+      </div>
+      {disabled ? <p className="mt-3 text-xs text-muted-foreground">{t("configuration.expired")}</p> : null}
+      <div className="mt-3 flex justify-end">
+        <Button size="sm" disabled={submitted || disabled} onClick={() => {
+          setSubmitted(true);
+          onSubmit(input.task ?? "preparation", mode);
+        }}>
+          {t("configuration.confirm")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function ApplicationApproval({
   part,
+  targetLabel,
   onDecision,
 }: {
   part: Extract<CareerAgentUIMessage["parts"][number], { type: "tool-update_application_card" }>;
+  targetLabel?: string;
   onDecision: (approved: boolean) => void;
 }) {
   const t = useTranslations("agent");
@@ -676,7 +1033,7 @@ function ApplicationApproval({
     }[input.status] : "-";
     const rows = [
       [t("approval.operation"), input.action === "create" ? t("approval.create") : t("approval.update")],
-      [t("approval.target"), [input.company, input.title].filter(Boolean).join(" ") || input.applicationId || input.jobId || "-"],
+      [t("approval.target"), targetLabel || [input.company, input.title].filter(Boolean).join(" · ") || t("approval.selectedJob")],
       [t("approval.status"), statusLabel],
       [t("approval.stageDate"), input.stageDate || "-"],
       [t("approval.followUpDate"), input.nextFollowUpAt || "-"],
@@ -716,6 +1073,160 @@ function ApplicationApproval({
     return <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{part.errorText}</p>;
   }
   return null;
+}
+
+type AgentWritePart = Extract<CareerAgentUIMessage["parts"][number], {
+  type:
+    | "tool-create_resume_from_experience"
+    | "tool-create_jd_tailored_resume"
+    | "tool-create_interview_preparation"
+    | "tool-create_mock_interview"
+    | "tool-update_resume_presentation";
+}>;
+
+function resolveWriteJobLabel(part: AgentWritePart, jobLabels: Map<string, string>) {
+  if (part.type === "tool-create_resume_from_experience" || part.type === "tool-update_resume_presentation") return undefined;
+  return part.input?.jobId ? jobLabels.get(part.input.jobId) : undefined;
+}
+
+function resolveWriteResumeLabel(part: AgentWritePart, resumeLabels: Map<string, string>) {
+  if (part.type === "tool-create_resume_from_experience") return undefined;
+  return part.input?.resumeVersionId ? resumeLabels.get(part.input.resumeVersionId) : undefined;
+}
+
+function AgentWriteApproval({
+  part,
+  jobLabel,
+  resumeLabel,
+  onDecision,
+}: {
+  part: AgentWritePart;
+  jobLabel?: string;
+  resumeLabel?: string;
+  onDecision: (approved: boolean) => void;
+}) {
+  const t = useTranslations("agent");
+  const templateT = useTranslations("resume.library.templates");
+  if (part.state === "input-streaming" || part.state === "input-available") {
+    return <ToolActivity done={false} label={t(`tools.${writeToolKey(part.type)}Working`)} />;
+  }
+  if (part.state === "approval-requested") {
+    const rows = writeApprovalRows(part, t, templateT, jobLabel, resumeLabel);
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-foreground">
+        <p className="font-semibold">{t(`approval.${writeToolKey(part.type)}Title`)}</p>
+        <dl className="mt-2 space-y-1.5 text-xs">
+          {rows.map(([label, value]) => (
+            <div key={label} className="grid grid-cols-[76px_1fr] gap-2">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="break-words">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-3 flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={() => onDecision(false)}>{t("approval.cancel")}</Button>
+          <Button size="sm" onClick={() => onDecision(true)}>{t("approval.confirm")}</Button>
+        </div>
+      </div>
+    );
+  }
+  if (part.state === "approval-responded") {
+    return <ToolActivity done label={part.approval.approved ? t("approval.executing") : t("approval.cancelled")} />;
+  }
+  if (part.state === "output-available") {
+    return (
+      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+        <Check className="mr-1.5 inline size-3.5" />
+        {t(`approval.${writeToolKey(part.type)}Created`)}
+        <Button
+          render={<Link href={part.output.href} />}
+          nativeButton={false}
+          size="sm"
+          variant="link"
+          className="ml-1 h-auto p-0 text-xs text-emerald-900"
+        >
+          {t("approval.openResult")}
+        </Button>
+      </div>
+    );
+  }
+  if (part.state === "output-error") {
+    return <p className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{part.errorText}</p>;
+  }
+  return null;
+}
+
+function writeToolKey(type: AgentWritePart["type"]) {
+  if (type === "tool-create_resume_from_experience") return "resume" as const;
+  if (type === "tool-create_jd_tailored_resume") return "tailoredResume" as const;
+  if (type === "tool-create_interview_preparation") return "interviewPreparation" as const;
+  if (type === "tool-create_mock_interview") return "mockInterview" as const;
+  return "resumePresentation" as const;
+}
+
+function writeApprovalRows(
+  part: AgentWritePart,
+  t: ReturnType<typeof useTranslations>,
+  templateT: ReturnType<typeof useTranslations>,
+  jobLabel?: string,
+  resumeLabel?: string,
+) {
+  if (part.type === "tool-create_resume_from_experience") {
+    const input = part.input;
+    if (!input) return [];
+    return [
+      [t("approval.resumeName"), input.resumeName || "-"],
+      [t("approval.targetRole"), input.targetRole || "-"],
+      [t("approval.sourceFacts"), truncateApprovalText(input.sourceText || "") || "-"],
+    ];
+  }
+  if (part.type === "tool-create_jd_tailored_resume") {
+    const input = part.input;
+    if (!input) return [];
+    return [
+      [t("approval.sourceResume"), resumeLabel || t("approval.selectedResume")],
+      [t("approval.target"), jobLabel || [input.company, input.title].filter(Boolean).join(" · ") || t("approval.selectedJob")],
+      [t("approval.jd"), input.jd ? truncateApprovalText(input.jd) : t("approval.savedJd")],
+    ];
+  }
+  if (part.type === "tool-update_resume_presentation") {
+    const input = part.input;
+    if (!input) return [];
+    return [
+      [t("approval.sourceResume"), resumeLabel || t("approval.selectedResume")],
+      [t("approval.template"), input.template ? templateT(input.template) : "-"],
+    ];
+  }
+  if (part.type === "tool-create_interview_preparation") {
+    const input = part.input;
+    if (!input) return [];
+    return [
+      [t("approval.target"), jobLabel || t("approval.selectedJob")],
+      [t("approval.sourceResume"), resumeLabel || t("approval.selectedResume")],
+      [t("approval.focus"), input.focus ? t(`approval.focuses.${input.focus}`) : "-"],
+    ];
+  }
+  const input = part.input;
+  if (!input) return [];
+  return [
+    [t("approval.target"), jobLabel || t("approval.selectedJob")],
+    [t("approval.sourceResume"), resumeLabel || t("approval.selectedResume")],
+    [t("approval.focus"), input.mode ? t(`approval.focuses.${input.mode}`) : "-"],
+  ];
+}
+
+function resolveApplicationTargetLabel(
+  input: Extract<CareerAgentUIMessage["parts"][number], { type: "tool-update_application_card" }>["input"],
+  jobLabels: Map<string, string>,
+  applicationJobIds: Map<string, string>,
+) {
+  const jobId = input?.jobId || (input?.applicationId ? applicationJobIds.get(input.applicationId) : undefined);
+  return jobId ? jobLabels.get(jobId) : undefined;
+}
+
+function truncateApprovalText(value: string) {
+  const text = value.replace(/\s+/g, " ").trim();
+  return text.length > 180 ? `${text.slice(0, 180)}…` : text;
 }
 
 async function refreshThreadSummary(threadId: string, onThreadUpdated: (thread: AgentThreadSummary) => void) {

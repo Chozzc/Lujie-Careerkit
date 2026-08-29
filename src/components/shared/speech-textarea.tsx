@@ -14,6 +14,7 @@ type SpeechTextareaProps = Omit<ComponentProps<typeof Textarea>, "value" | "defa
   value: string;
   onValueChange: (value: string) => void;
   speechSeparator?: string;
+  speechButtonClassName?: string;
   wrapperClassName?: string;
 };
 
@@ -21,6 +22,7 @@ export function SpeechTextarea({
   value,
   onValueChange,
   speechSeparator = "\n",
+  speechButtonClassName,
   wrapperClassName,
   className,
   maxLength = 8000,
@@ -66,7 +68,7 @@ export function SpeechTextarea({
                 type="button"
                 variant={speech.isListening ? "secondary" : "outline"}
                 size="icon-sm"
-                className="absolute top-2 right-2 bg-background"
+                className={cn("absolute top-2 right-2 bg-background", speechButtonClassName)}
                 disabled={disabled || !speech.isSupported || isBusy}
                 aria-label={label}
                 aria-pressed={speech.isListening}

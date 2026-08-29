@@ -1109,7 +1109,7 @@
       },
       "agent": {
         "title": "用录阶 Agent 直接说出你要做的事",
-        "description": "点击右下角的录阶 Agent，可以查询已保存的岗位、投递进度和简历概览，也能根据你的描述新建或更新投递跟进卡片。它目前是实验功能，任何写入都会先请你确认，暂时不会直接修改简历或删除业务数据。"
+        "description": "点击右下角的录阶 Agent，可以检索岗位、投递和脱敏简历，也能在你选择参数并确认后创建简历、生成岗位定制版本、面试资料与模拟面试、切换模板或更新投递卡片。它仍是实验功能，不会删除业务数据。"
       },
       "resume": {
         "title": "先准备一份基础简历",
@@ -1235,16 +1235,19 @@
     "panelLabel": "录阶 Agent 对话面板",
     "open": "打开录阶 Agent",
     "close": "关闭录阶 Agent",
+    "maximize": "全屏显示",
+    "restore": "退出全屏",
     "petHint": "今天我们从哪里开始呢？",
     "hide": "隐藏 Agent 小助手，可在设置中重新显示",
     "newConversation": "新对话",
+    "conversationHistory": "对话记录",
     "deleteConversation": "删除对话",
     "loading": "正在读取对话…",
     "thinking": "正在思考…",
     "inputPlaceholder": "说说你想处理的求职事项…",
     "send": "发送",
     "stop": "停止生成",
-    "approvalHint": "更改投递数据前会先让你确认",
+    "approvalHint": "写入任何业务数据前都会先让你确认",
     "setup": {
       "title": "先配置 AI 服务",
       "description": "Agent 会沿用录阶现有的 Provider 与模型设置，不需要额外的 Agent Key。",
@@ -1252,14 +1255,48 @@
     },
     "welcome": {
       "title": "我能帮你处理录阶里的求职信息",
-      "description": "当前已支持查看已存简历与岗位，以及根据你的描述新建或更新投递跟进卡片。",
+      "description": "可以检索简历与岗位，也能在你选择参数并确认后创建简历、生成 JD 定制版本、面试资料与模拟面试、切换模板或更新投递卡片。",
       "prompt1": "帮我看看现在有哪些投递在跟进",
       "prompt2": "我今天投了一个岗位，帮我记录",
       "prompt3": "我现在有哪些简历版本？"
     },
     "tools": {
       "searchingPipeline": "正在核对岗位与投递记录",
-      "readingResume": "正在读取脱敏后的简历概览"
+      "readingResume": "正在检索脱敏后的简历信息",
+      "resumeWorking": "正在准备简历创建操作",
+      "tailoredResumeWorking": "正在准备 JD 定制简历",
+      "interviewPreparationWorking": "正在准备面试资料",
+      "mockInterviewWorking": "正在准备模拟面试",
+      "resumePresentationWorking": "正在准备简历模板调整"
+    },
+    "configuration": {
+      "preparing": "正在整理可选设置",
+      "jdTitle": "选择这次 JD 优化方式",
+      "preparationTitle": "选择面试准备重点",
+      "simulationTitle": "选择模拟面试方式",
+      "recommended": "（推荐）",
+      "expired": "这张设置卡已被后续对话替代，请重新发起对应操作。",
+      "confirm": "按这些设置继续",
+      "jdSelected": "已采用你选择的 JD 优化设置",
+      "interviewSelected": "已采用你选择的面试设置",
+      "jdOptions": {
+        "emphasizeImpact": "突出行动与结果",
+        "quantifyResults": "优先量化成果",
+        "atsFriendly": "增强 ATS 可读性",
+        "highlightMatchedSkills": "突出 JD 匹配技能"
+      },
+      "jdOptionDescriptions": {
+        "emphasizeImpact": "把职责整理为行动、方法与结果，让经历更有说服力。",
+        "quantifyResults": "优先呈现已有的可验证数据，不添加未提供的数字。",
+        "atsFriendly": "优化结构和关键词表达，提升机器筛选的识别效果。",
+        "highlightMatchedSkills": "将岗位要求与真实经历对齐，突出已有匹配证据。"
+      },
+      "interviewModeDescriptions": {
+        "comprehensive": "兼顾技术基础、项目深挖、场景题与行为问题，适合完整演练。",
+        "project": "围绕项目背景、个人贡献、技术决策和实际结果连续追问。",
+        "behavioral": "重点练习 STAR 表达、协作冲突、复盘与成长经历。",
+        "hr": "聚焦求职动机、岗位认知、稳定性、薪资与到岗安排。"
+      }
     },
     "approval": {
       "title": "确认这次投递卡片变更",
@@ -1272,13 +1309,35 @@
       "stageDate": "阶段日期",
       "followUpDate": "跟进日期",
       "note": "新增备注",
+      "resumeTitle": "确认创建一份独立简历",
+      "tailoredResumeTitle": "确认生成并保存岗位定制简历",
+      "interviewPreparationTitle": "确认生成并保存面试准备资料",
+      "mockInterviewTitle": "确认生成模拟面试题目",
+      "resumePresentationTitle": "确认切换简历模板",
+      "resumeName": "简历名称",
+      "targetRole": "目标岗位",
+      "sourceFacts": "口述事实",
+      "sourceResume": "来源简历",
+      "selectedJob": "已选择的岗位",
+      "selectedResume": "已选择的简历",
+      "jd": "岗位 JD",
+      "savedJd": "使用岗位中已保存的完整 JD",
+      "focus": "准备重点",
+      "template": "简历模板",
+      "focuses": { "comprehensive": "综合准备", "project": "项目深挖", "behavioral": "行为面试", "hr": "HR 面试" },
       "cancel": "取消",
       "confirm": "确认执行",
       "executing": "已确认，正在写入…",
       "cancelled": "已取消这次变更",
       "deniedReason": "用户取消了这次变更。",
       "created": "已新建投递卡片：",
-      "updated": "已更新投递卡片："
+      "updated": "已更新投递卡片：",
+      "resumeCreated": "独立简历已经创建。",
+      "tailoredResumeCreated": "岗位定制简历已经生成并保存。",
+      "interviewPreparationCreated": "面试准备资料已经生成并保存。",
+      "mockInterviewCreated": "模拟面试题目已经生成。",
+      "resumePresentationCreated": "简历模板已经更新。",
+      "openResult": "点击打开结果"
     },
     "status": {
       "applied": "已投递",
@@ -1292,7 +1351,8 @@
       "load": "对话读取失败。",
       "create": "对话创建失败。",
       "delete": "对话删除失败。",
-      "request": "Agent 暂时无法完成这次请求，请检查 AI 设置后重试。"
+      "request": "Agent 暂时无法完成这次请求，请检查 AI 设置后重试。",
+      "afterWrite": "内容已经成功保存，但 Agent 没能继续生成后续说明；已保存的结果不受影响。"
     }
   },
   "themeEditor": {

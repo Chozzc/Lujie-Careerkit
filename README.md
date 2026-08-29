@@ -56,7 +56,7 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
 - **Career materials library**: organize original JDs, tailored resumes, interview prep guides, mock answers, and AI reviews by role or material type, with per-artifact viewing, editing, and deletion.
-- **Experimental in-app agent**: search applications, read a privacy-filtered resume overview, and create or update application cards only after explicit user confirmation.
+- **Experimental in-app agent**: search jobs and privacy-filtered resumes, then select parameters and confirm creating independent resumes, JD-tailored versions, interview guides, mock interviews, resume-template changes, or application-card updates.
 - **Job-search Agent Skills**: reuse LuJie's refined workflows for resume improvement, interview preparation, mock interviews, and job application writing in coding agents such as Codex and Claude Code.
 - **Data and privacy controls**: resumes, jobs, applications, generated materials, agent conversations, and settings are stored in a local SQLite database for long-term personal use.
 
@@ -67,11 +67,16 @@ v0.3.0 adds a career agent that opens inside the workspace. It uses the model al
 The current experimental version can:
 
 - search existing jobs and application cards from natural-language requests;
-- read a privacy-filtered resume overview without sending contact details such as email or phone numbers;
+- search resumes by name, role, skill, school, company, or project, then read one complete privacy-filtered version by ID;
 - propose creating or updating an application card, then execute only after explicit confirmation;
+- create a new independent resume from experience the user explicitly stated;
+- create a new JD-tailored resume version without overwriting its source;
+- generate interview-preparation material for an exact saved job and resume;
+- select an interview mode, generate a mock interview, and open the interactive answering workspace;
+- change a saved resume's template while preserving its facts and sections;
 - provide contextual guidance about resumes, JDs, interviews, and job-search planning.
 
-It cannot yet directly edit resumes or execute the complete JD optimization and interview-material workflows. It also does not write or delete business data without confirmation. This remains an experimental feature while its tool coverage, context handling, and approval flow continue to evolve.
+It does not overwrite existing resume content, delete business data, or operate external recruitment sites. Every business-data write requires confirmation. It remains experimental while context handling and approval flows continue to evolve.
 
 ## Agent Skills
 
