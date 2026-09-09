@@ -249,18 +249,12 @@ export function ResumePreview({ resume, mode = "standalone" }: ResumePreviewProp
     ? { ...resume, themeConfig: theme, sections: normalizePreviewSections(resume.sections) }
     : { ...resume, themeConfig: theme, sections: [] };
 
+  // ponytail: Keep preview and bitmap export on local/system fonts until font files are self-hosted and embedded.
   return (
-    <>
-      {/* Load the same Google Fonts used in PDF/HTML export so preview renders
-          with identical font metrics (Inter for Latin, Noto Sans SC for CJK). */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      <div data-theme-scope={scopeId} data-resume-render-mode={mode}>
-        <style dangerouslySetInnerHTML={{ __html: buildThemeCSS(scopeId, theme, safeResume.template) }} />
-        <Template resume={safeResume} />
-      </div>
-    </>
+    <div data-theme-scope={scopeId} data-resume-render-mode={mode}>
+      <style dangerouslySetInnerHTML={{ __html: buildThemeCSS(scopeId, theme, safeResume.template) }} />
+      <Template resume={safeResume} />
+    </div>
   );
 }
 

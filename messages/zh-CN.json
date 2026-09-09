@@ -823,6 +823,7 @@
       "primaryColor": "主色",
       "accentColor": "强调色",
       "font": "字体",
+      "fontHint": "使用本机已安装的字体；未安装所选字体时，预览和 PDF、图片导出均使用系统替代字体。",
       "fontSize": "字号",
       "fontSizes": {
         "small": "小",

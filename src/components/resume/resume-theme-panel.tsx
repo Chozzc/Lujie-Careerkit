@@ -94,6 +94,7 @@ export function ResumeThemePanel({
 
         <ThemeField label={t("font")}>
           <select
+            aria-label={t("font")}
             value={theme.fontFamily}
             onChange={(event) => onChange({ fontFamily: event.target.value })}
             className="w-full rounded-lg border border-line bg-surface-low px-3 py-2 text-sm outline-none focus:border-primary"
@@ -104,6 +105,7 @@ export function ResumeThemePanel({
             <option value="Georgia">Georgia</option>
             <option value="Arial">Arial</option>
           </select>
+          <span className="mt-1.5 block text-xs font-normal leading-5">{t("fontHint")}</span>
         </ThemeField>
 
         <ThemeField label={t("fontSize")}>

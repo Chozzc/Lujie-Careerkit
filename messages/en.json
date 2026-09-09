@@ -823,6 +823,7 @@
       "primaryColor": "Primary color",
       "accentColor": "Accent color",
       "font": "Font",
+      "fontHint": "Uses fonts installed on this device. If the selected font is unavailable, the preview, PDF and image exports use a system fallback.",
       "fontSize": "Font size",
       "fontSizes": {
         "small": "Small",
