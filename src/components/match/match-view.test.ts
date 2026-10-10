@@ -18,10 +18,10 @@ const result: MatchOptimizationResult = {
   version: {
     id: "resume-1",
     jobId: null,
-    name: "AI优化-曹志超-AI应用开发工程师",
+    name: "AI优化-林舟-AI应用开发工程师",
     summary: "",
     content: {
-      basics: { name: "曹志超", email: "", phone: "", city: "", links: [] },
+      basics: { name: "林舟", email: "", phone: "", city: "", links: [] },
       profile: { title: "AI应用开发工程师", summary: "" },
       education: [],
       experiences: [],
@@ -41,7 +41,7 @@ const result: MatchOptimizationResult = {
     keywords: ["AI Agent开发"],
     summary: "已优化简历表达。",
     changes: ["自我评价"],
-    versionName: "AI优化-曹志超-AI应用开发工程师",
+    versionName: "AI优化-林舟-AI应用开发工程师",
   },
 };
 

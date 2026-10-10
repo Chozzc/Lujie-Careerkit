@@ -30,5 +30,17 @@ build
 backups
 exports
 output
+outputs
+data/campus/*
+!data/campus/current.json
 .superpowers
 .worktrees
+AGENTS.md
+CLAUDE.md
+PRODUCT.md
+.vercel
+.codex-logs
+.playwright-cli
+.impeccable
+tmp
+brand/promo-videos

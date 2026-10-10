@@ -54,7 +54,8 @@ backups/
 exports/
 output/
 /outputs/
-/data/campus/
+/data/campus/*
+!/data/campus/current.json
 /tmp/
 /.codex-logs/
 /brand/promo-videos/

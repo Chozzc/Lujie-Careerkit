@@ -1,7 +1,7 @@
 import { generateText, type LanguageModel } from "ai";
 import { z } from "zod";
 
-import { createAiModel } from "./client";
+import { createAiModel, getAiTemperature } from "./client";
 import { normalizeAiError } from "./errors";
 import type { EffectiveAiSettings } from "./settings";
 
@@ -25,7 +25,7 @@ export type AiObjectExecutor = <TSchema extends z.ZodType>(input: {
   schema: TSchema;
   system: string;
   prompt: string;
-  temperature: number;
+  temperature?: number;
 }) => Promise<{ object: z.infer<TSchema> }>;
 
 const connectionTestSchema = z.object({
@@ -52,7 +52,7 @@ export async function runAiObjectTask<TSchema extends z.ZodType>(
       schema: input.schema,
       system: input.system,
       prompt: input.prompt,
-      temperature: input.settings.temperature,
+      temperature: getAiTemperature(input.settings),
     });
 
     return {
@@ -87,7 +87,7 @@ async function defaultGenerateObject<TSchema extends z.ZodType>(input: {
   schema: TSchema;
   system: string;
   prompt: string;
-  temperature: number;
+  temperature?: number;
 }) {
   const schemaDescription = JSON.stringify(z.toJSONSchema(input.schema));
   const result = await generateText({

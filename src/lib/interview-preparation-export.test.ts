@@ -4,6 +4,7 @@ import {
   buildInterviewPreparationFileName,
   buildInterviewPreparationPrintHtml,
   exportInterviewPreparationDocx,
+  printInterviewPreparation,
   type InterviewPreparationExportLabels,
 } from "@/lib/interview-preparation-export";
 import type { InterviewPreparation } from "@/lib/interview-preparation";
@@ -101,6 +102,30 @@ const labels: InterviewPreparationExportLabels = {
 };
 
 describe("interview preparation export", () => {
+  it("waits for print content to load without opening a popup, then cleans up", () => {
+    const oldFrame = { remove: vi.fn() };
+    const frameEvents = new Map<string, () => void>();
+    const printEvents = new Map<string, () => void>();
+    const printWindow = { focus: vi.fn(), print: vi.fn(), addEventListener: (event: string, fn: () => void) => printEvents.set(event, fn) };
+    const frame = { style: {}, setAttribute: vi.fn(), remove: vi.fn(), contentWindow: printWindow, srcdoc: "", addEventListener: (event: string, fn: () => void) => frameEvents.set(event, fn) };
+    const append = vi.fn(() => {
+      expect(frame.srcdoc).toContain("负责 &lt;Agent&gt; 开发");
+      expect(frameEvents.has("load")).toBe(true);
+    });
+    vi.stubGlobal("document", { getElementById: () => oldFrame, createElement: () => frame, body: { appendChild: append } });
+    try {
+      printInterviewPreparation(preparation, labels);
+      expect(oldFrame.remove).toHaveBeenCalledOnce();
+      expect(append).toHaveBeenCalledOnce();
+      expect(printWindow.print).not.toHaveBeenCalled();
+      frameEvents.get("load")!();
+      expect(printWindow.print).toHaveBeenCalledOnce();
+      expect(frame.remove).not.toHaveBeenCalled();
+      printEvents.get("afterprint")!();
+      expect(frame.remove).toHaveBeenCalledOnce();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("builds a filesystem-safe export name", () => {
     expect(buildInterviewPreparationFileName(preparation)).toBe("A-B-公司-AI 工程师-面试准备资料");
   });

@@ -143,7 +143,7 @@ export function CareerLibraryView({
                     isSample={archive.isSample}
                     onOpen={() => onOpenJob(archive.id)}
                     onEdit={archive.jobId ? () => setEditDraft({ id: archive.jobId!, company: archive.company, title: archive.role }) : undefined}
-                    onDelete={() => onDeleteJob(archive.id)}
+                    onDelete={archive.jobId ? () => onDeleteJob(archive.jobId!) : undefined}
                   />
                 ))}
               </div>

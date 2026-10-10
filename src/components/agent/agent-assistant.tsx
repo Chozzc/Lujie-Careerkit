@@ -685,6 +685,9 @@ function AgentConversation({
                   if (part.type === "tool-search_pipeline") {
                     return <ToolActivity key={part.toolCallId} done={part.state === "output-available"} label={t("tools.searchingPipeline")} />;
                   }
+                  if (part.type === "tool-search_campus") {
+                    return <CampusToolResult key={part.toolCallId} part={part} />;
+                  }
                   if (part.type === "tool-get_resume_context") {
                     return <ToolActivity key={part.toolCallId} done={part.state === "output-available"} label={t("tools.readingResume")} />;
                   }
@@ -828,10 +831,43 @@ function hasVisibleAgentMessageContent(message: CareerAgentUIMessage) {
   return message.parts.some((part) =>
     (part.type === "text" && Boolean(part.text.trim())) ||
     part.type === "tool-search_pipeline" ||
+    part.type === "tool-search_campus" ||
     part.type === "tool-get_resume_context" ||
     part.type === "tool-configure_jd_optimization" ||
     part.type === "tool-configure_interview" ||
     isAgentWriteToolPart(part),
+  );
+}
+
+function CampusToolResult({ part }: {
+  part: Extract<CareerAgentUIMessage["parts"][number], { type: "tool-search_campus" }>;
+}) {
+  const t = useTranslations("agent.campus");
+  const campus = useTranslations("app.campus");
+  if (part.state === "output-error") {
+    return <p role="status" className="rounded-lg border p-3 text-sm text-destructive">{t("error")}</p>;
+  }
+  if (part.state !== "output-available") return <ToolActivity done={false} label={t("searching")} />;
+  const result = part.output;
+  if (result.status === "no_dataset") return <p className="text-sm text-muted-foreground">{campus("noDatasetHint")}</p>;
+  if (result.status === "not_found") return <p className="text-sm text-muted-foreground">{campus("recordNotFound")}</p>;
+  if (!result.total) return <p className="text-sm text-muted-foreground">{campus("noResultsHint")}</p>;
+  return (
+    <div className="space-y-3 rounded-lg border bg-muted/20 p-3 text-sm">
+      <p className="font-medium">{t("results", { total: result.total, page: result.page, pages: result.pages })}</p>
+      <ul className="space-y-3">
+        {result.records.map((record) => <li key={record.id} className="space-y-1 border-t pt-3">
+          <Link href={record.href} prefetch={false} className="font-medium underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">{record.company}</Link>
+          <p className="text-xs text-muted-foreground">{[...record.recruitmentTypes, ...record.targets].join(" · ")}</p>
+          <p className="line-clamp-3 whitespace-pre-wrap break-words">{record.positions || campus("notProvided")}</p>
+          <p className="text-xs text-muted-foreground">{record.location || campus("notProvided")}</p>
+          <p className="text-xs">{campus(`deadline.${record.deadlineStatus}`)}{record.deadlineDate ? ` · ${record.deadlineDate}` : ""}</p>
+          {record.reviewNote ? <p className="text-xs text-muted-foreground">{campus("reviewNote", { note: record.reviewNote })}</p> : null}
+        </li>)}
+      </ul>
+      {result.hasMore ? <p className="text-xs text-muted-foreground">{t("more")}</p> : null}
+      <p className="text-xs text-muted-foreground">{t("detailHint")}{" "}{campus("freshnessNote")}</p>
+    </div>
   );
 }
 

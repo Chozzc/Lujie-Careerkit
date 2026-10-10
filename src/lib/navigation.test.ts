@@ -5,6 +5,7 @@ import { navKeyFromPathname, pathnameForNavKey } from "./navigation";
 describe("workspace navigation paths", () => {
   it("maps product views to stable top-level routes", () => {
     expect(pathnameForNavKey("dashboard")).toBe("/dashboard");
+    expect(pathnameForNavKey("campus")).toBe("/campus");
     expect(pathnameForNavKey("resume")).toBe("/resume");
     expect(pathnameForNavKey("match")).toBe("/match");
     expect(pathnameForNavKey("pipeline")).toBe("/pipeline");
@@ -15,6 +16,7 @@ describe("workspace navigation paths", () => {
   it("derives the visible workspace view from the current route", () => {
     expect(navKeyFromPathname("/")).toBeNull();
     expect(navKeyFromPathname("/dashboard")).toBe("dashboard");
+    expect(navKeyFromPathname("/campus/")).toBe("campus");
     expect(navKeyFromPathname("/resume")).toBe("resume");
     expect(navKeyFromPathname("/resume/edit")).toBe("resume");
     expect(navKeyFromPathname("/match")).toBe("match");

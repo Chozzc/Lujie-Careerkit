@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTOSAVE_DELAY } from "@/lib/constants";
 import type { PersonalInfoContent, Resume } from "@/types/resume";
 import { useResumeStore } from "./resume-store";
+import { installSaveCloseGuard } from "@/lib/save-close-guard";
 
 const now = new Date("2026-06-09T10:00:00.000Z");
 
@@ -61,6 +62,7 @@ describe("resume editor store persistence", () => {
 
   afterEach(() => {
     useResumeStore.getState().reset();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -104,5 +106,81 @@ describe("resume editor store persistence", () => {
     const state = useResumeStore.getState() as unknown as { isDirty: boolean; saveError: string | null };
     expect(state.isDirty).toBe(true);
     expect(state.saveError).toBe("SQLite 写入失败");
+  });
+
+  it("serializes writes and waits until edits made during a save are persisted", async () => {
+    const first = Promise.withResolvers<void>();
+    const written: string[] = [];
+    const persist = vi.fn(async (resume: Resume) => {
+      if (!written.length) await first.promise;
+      written.push(resume.title);
+    });
+    const store = useResumeStore.getState();
+    store.setPersistence(persist);
+    store.setResume(createResume());
+    store.setTitle("first");
+    const autosave = store.save("auto");
+    await Promise.resolve();
+    store.setTitle("latest");
+    const closing = store.save("auto");
+    await Promise.resolve();
+    expect(persist).toHaveBeenCalledTimes(1);
+    first.resolve();
+    expect(await autosave).toBe(true);
+    expect(await closing).toBe(true);
+    expect(written).toEqual(["first", "latest"]);
+    expect(useResumeStore.getState().isDirty).toBe(false);
+    await runAutosaveTimer();
+    expect(persist).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not overwrite a newly opened editor when an old save finishes", async () => {
+    const pending = Promise.withResolvers<void>();
+    const store = useResumeStore.getState();
+    store.setPersistence(() => pending.promise);
+    store.setResume(createResume());
+    store.setTitle("old edit");
+    const saving = store.save();
+    await Promise.resolve();
+    store.setResume({ ...createResume(), id: "resume-2", title: "other resume" });
+    store.setTitle("other edit");
+    pending.resolve();
+    expect(await saving).toBe(false);
+    expect(useResumeStore.getState().currentResume?.title).toBe("other edit");
+    expect(useResumeStore.getState().isDirty).toBe(true);
+  });
+
+  it("never reports a missing database writer as saved and permits a later retry", async () => {
+    const store = useResumeStore.getState();
+    store.setResume(createResume());
+    store.setTitle("must reach the database");
+    expect(await store.save()).toBe(false);
+    expect(useResumeStore.getState().isDirty).toBe(true);
+    const persist = vi.fn(async () => undefined);
+    store.setPersistence(persist);
+    expect(await store.save()).toBe(true);
+    expect(persist).toHaveBeenCalledTimes(1);
+  });
+
+  function mockBrowser() {
+    const listeners = new Map<string, (event: BeforeUnloadEvent) => void>();
+    vi.stubGlobal("window", {
+      addEventListener: (name: string, handler: (event: BeforeUnloadEvent) => void) => listeners.set(name, handler),
+      removeEventListener: (name: string) => listeners.delete(name),
+    });
+    const cleanup = installSaveCloseGuard();
+    return { listeners, cleanup };
+  }
+
+  it("warns about unsaved browser edits and removes listeners on cleanup", async () => {
+    const browser = mockBrowser();
+    const event = { preventDefault: vi.fn(), returnValue: undefined };
+    useResumeStore.getState().setResume(createResume());
+    useResumeStore.getState().setTitle("unsaved");
+    browser.listeners.get("beforeunload")!(event as unknown as BeforeUnloadEvent);
+    expect(event.preventDefault).toHaveBeenCalledTimes(1);
+    await Promise.resolve();
+    browser.cleanup();
+    expect(browser.listeners.size).toBe(0);
   });
 });

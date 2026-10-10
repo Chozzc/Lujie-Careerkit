@@ -7,6 +7,7 @@
       "en": "English"
     },
     "nav": {
+      "campus": "校招信息库",
       "dashboard": "控制中心",
       "resume": "简历编辑器",
       "match": "JD匹配优化",
@@ -14,6 +15,88 @@
       "pipeline": "投递岗位跟进",
       "library": "求职资料库",
       "settings": "设置"
+    },
+    "campus": {
+      "any": "不限",
+      "popularCities": "热门城市",
+      "pageNumber": "输入页码，按回车跳转",
+      "closeDetails": "关闭招聘详情",
+      "sortLabel": "更改排列方式",
+      "sort": {
+        "updated_desc": "更新时间：从新到旧",
+        "updated_asc": "更新时间：从旧到新",
+        "deadline_asc": "截止时间：从近到远",
+        "deadline_desc": "截止时间：从远到近",
+        "company_asc": "公司名称：按拼音"
+      },
+      "title": "校招信息库",
+      "subtitle": "找公司、看招聘方向，快速找到值得进一步了解的机会。",
+      "catalogCount": "{count, number} 条招聘信息",
+      "searchPlaceholder": "搜索公司、岗位或专业，多个关键词用空格分隔",
+      "clearSearch": "清空搜索",
+      "locationPlaceholder": "工作地点，如北京",
+      "moreFilters": "更多筛选",
+      "resetAdvanced": "重置这些条件",
+      "clearFilters": "清空筛选",
+      "removeFilter": "移除{filter}：{value}",
+      "filters": {
+        "q": "搜索招聘信息",
+        "recruitmentType": "招聘类型",
+        "target": "毕业届别",
+        "location": "工作地点",
+        "companyType": "企业性质不限",
+        "industry": "所属行业不限",
+        "exam": "笔试情况不限"
+      },
+      "fields": {
+        "q": "关键词",
+        "company": "公司 / 招聘类型",
+        "recruitmentType": "招聘类型",
+        "target": "招聘对象",
+        "location": "工作地点",
+        "companyType": "企业性质",
+        "industry": "所属行业",
+        "exam": "笔试情况",
+        "positions": "岗位与专业",
+        "deadline": "截止时间",
+        "updatedAt": "信息源更新时间"
+      },
+      "deadline": {
+        "dated": "按日期未截止",
+        "expired": "按日期已截止",
+        "unspecified": "无明确日期",
+        "invalid": "日期待核验",
+        "byDate": "以招聘公告为准"
+      },
+      "loading": "正在加载招聘信息…",
+      "loadFailed": "暂时无法读取招聘信息",
+      "loadFailedHint": "招聘信息读取失败，请稍后重试。",
+      "retry": "重新加载",
+      "resultCount": "找到 {count, number} 条信息",
+      "sortUpdated": "按原表更新时间排列",
+      "details": "详情",
+      "viewCompany": "查看{company}的招聘详情",
+      "notProvided": "未提供",
+      "updated": "更新于 {date}",
+      "pagination": "招聘信息分页",
+      "page": "第 {page} / {pages} 页",
+      "previous": "上一页",
+      "next": "下一页",
+      "noResults": "没有找到符合条件的信息",
+      "noResultsHint": "试试更短的关键词，或减少筛选条件。",
+      "noDataset": "暂无校招数据",
+      "noDatasetHint": "当前安装还没有可用的招聘信息数据。",
+      "recordNotFound": "这条招聘记录已不存在或暂不可用，可以在校招信息库中重新搜索。",
+      "source": "数据来源于公开网络信息，经收集、清洗与整理。",
+      "referenceNote": "信息仅供求职参考，可能存在错漏或更新延迟；",
+      "officialNote": "招聘要求、截止时间和投递方式请以招聘方官方公告为准。",
+      "freshnessNote": "信息仅供求职参考，可能存在错漏或更新延迟；招聘要求、截止时间和投递方式请以招聘方官方公告为准。",
+      "rightsNote": "如发现信息错误，或认为相关内容涉及侵权，请<contact>联系项目维护者</contact>，我们将核实并更正或删除。",
+      "originalDeadline": "原文：{value}",
+      "reviewNote": "信息待核验：{note}",
+      "openApplication": "打开投递入口",
+      "openNotice": "查看相关公告",
+      "noLinks": "暂无可用的投递或公告链接。"
     },
     "navGroups": {
       "workflow": "求职流程",
@@ -1116,6 +1199,10 @@
         "title": "先准备一份基础简历",
         "description": "可以导入已有简历，也可以从头新建。原简历会一直保留，AI 分析和岗位优化会生成独立版本，不会直接覆盖原稿。"
       },
+      "campus": {
+        "title": "在校招信息库寻找机会",
+        "description": "按公司、岗位关键词、毕业届别和工作地点筛选招聘信息，打开详情查看要求与投递入口。信息请以招聘方官方公告为准；当前安装未配置招聘数据时，这里会显示空状态。"
+      },
       "match": {
         "title": "再针对具体岗位做 JD 匹配",
         "description": "选择一份简历并粘贴完整 JD，录阶会生成岗位定制简历，同时保留优化前后内容并建立对应岗位档案。"
@@ -1256,10 +1343,17 @@
     },
     "welcome": {
       "title": "我能帮你处理录阶里的求职信息",
-      "description": "可以检索简历与岗位，也能在你选择参数并确认后创建简历、生成 JD 定制版本、面试资料与模拟面试、切换模板或更新投递卡片。",
-      "prompt1": "帮我看看现在有哪些投递在跟进",
+      "description": "可以按条件查找校招信息、阅读招聘详情，也能检索简历与岗位，并在你选择参数和确认后生成求职资料或更新投递卡片。",
+      "prompt1": "帮我找面向 2027 届、杭州的软件开发校招信息",
       "prompt2": "我今天投了一个岗位，帮我记录",
       "prompt3": "我现在有哪些简历版本？"
+    },
+    "campus": {
+      "searching": "正在检索校招信息",
+      "results": "找到 {total} 条招聘记录 · 第 {page}/{pages} 页",
+      "more": "还有更多结果，可以继续下一页或缩小筛选范围。",
+      "detailHint": "点击公司名称查看完整招聘记录和相关链接。",
+      "error": "校招信息暂时无法读取，请稍后重试；这不代表没有匹配记录。"
     },
     "tools": {
       "searchingPipeline": "正在核对岗位与投递记录",

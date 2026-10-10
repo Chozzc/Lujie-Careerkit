@@ -269,6 +269,8 @@ export function ResumeWorkbench({
         const result = await persistResume(contentWithTitle, target, resolvedTitle);
         if (target.kind === "new" && result.kind === "version") {
           const nextTarget: ResumeSaveTarget = { kind: "version", id: result.version.id };
+          // A queued save can start before React commits the new target.
+          saveContextRef.current = { ...saveContextRef.current, editingTarget: nextTarget };
           setEditingTarget(nextTarget);
           setEditingTitle(versionTitle(result.version));
           onEditorTargetChange(result.version.id);
@@ -398,7 +400,8 @@ export function ResumeWorkbench({
     }
   }
 
-  function closeEditor() {
+  async function closeEditor() {
+    if (!(await useResumeStore.getState().save("auto"))) return;
     onModeChange("library");
     onEditorTargetChange(undefined);
     setShowThemePanel(false);

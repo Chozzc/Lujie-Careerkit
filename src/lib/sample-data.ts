@@ -181,7 +181,7 @@ export const sampleJobs: JobRecord[] = [
     city: "杭州",
     source: "实习僧",
     link: "https://campus.163.com/",
-    deadline: "2026-09-18",
+    deadline: "2026-11-18",
     jd: "岗位职责：\n1. 参与内容与社区业务后端服务的设计、开发和维护；\n2. 使用 Java / Go 完成接口开发、数据处理和性能优化；\n3. 与产品、前端和测试协作，定位线上问题并完善监控。\n岗位要求：\n1. 计算机相关专业，熟悉数据结构、网络和操作系统基础；\n2. 熟悉 MySQL、Redis，了解常见 Web 框架；\n3. 有课程项目、开源贡献或实习经验者优先。",
   },
   {
@@ -191,7 +191,7 @@ export const sampleJobs: JobRecord[] = [
     city: "北京",
     source: "BOSS直聘",
     link: "https://talent.baidu.com/jobs/list?recruitType=INTERN",
-    deadline: "2026-09-20",
+    deadline: "2026-11-20",
     jd: "岗位职责：\n1. 参与大模型数据产品的需求分析、方案设计和效果评估；\n2. 协助建设数据生产与质量评估流程，整理用户反馈并形成迭代建议；\n3. 联动算法、工程和运营团队推进功能上线与复盘。\n岗位要求：\n1. 计算机、人工智能或相关专业在读；\n2. 熟悉 SQL / Python，具备数据分析和结构化表达能力；\n3. 关注大模型应用，有模型评测、数据治理或 AI 产品项目经验者优先。",
   },
   {
@@ -201,7 +201,7 @@ export const sampleJobs: JobRecord[] = [
     city: "深圳",
     source: "猎聘",
     link: "https://career.huawei.com/cn/campus-recruitment-job-list",
-    deadline: "2026-09-22",
+    deadline: "2026-11-22",
     jd: "岗位职责：\n1. 参与 AI 平台与模型服务的测试方案设计和用例执行；\n2. 建设接口、性能和稳定性自动化测试，跟踪缺陷闭环；\n3. 分析测试数据，协助定位模型效果与工程链路问题。\n岗位要求：\n1. 熟悉软件测试基础、Python 和 Linux；\n2. 了解接口测试、自动化测试或持续集成；\n3. 有机器学习基础或 AI 应用测试经历者优先。",
   },
   {
@@ -211,7 +211,7 @@ export const sampleJobs: JobRecord[] = [
     city: "杭州",
     source: "企业官网",
     link: "https://campus-talent.alibaba.com/campus/gov",
-    deadline: "2026-09-25",
+    deadline: "2026-11-25",
     jd: "岗位职责：\n1. 参与千问大模型应用与工具链开发，完成需求拆解、编码和验证；\n2. 优化模型调用、提示词与评测流程，提升任务完成率和稳定性；\n3. 跟踪大模型技术进展并沉淀可复用的工程组件。\n岗位要求：\n1. 熟悉 Python，掌握数据结构与算法基础；\n2. 了解大模型推理、Agent 或 RAG 等技术；\n3. 有相关项目、竞赛或开源实践者优先。",
   },
   {
@@ -221,7 +221,7 @@ export const sampleJobs: JobRecord[] = [
     city: "上海",
     source: "内推",
     link: "https://hr.xiaohongshu.com/",
-    deadline: "2026-09-15",
+    deadline: "2026-11-15",
     jd: "岗位职责：\n1. 参与 Agent 产品的用户运营、内容策划与反馈收集；\n2. 结合使用数据和用户访谈识别问题，推动产品体验优化；\n3. 维护运营流程与知识库，协同产品和算法团队完成活动复盘。\n岗位要求：\n1. 对 AI Agent 产品有持续体验和观察；\n2. 具备数据分析、内容表达和跨团队沟通能力；\n3. 有 AI 产品、社区或增长运营实践者优先。",
   },
   {
@@ -231,7 +231,7 @@ export const sampleJobs: JobRecord[] = [
     city: "北京",
     source: "智联招聘",
     link: "https://job.meituan.com/",
-    deadline: "2026-09-28",
+    deadline: "2026-11-28",
     jd: "岗位职责：\n1. 参与到店业务后端服务和数据接口开发；\n2. 完成服务监控、故障定位与性能优化；\n3. 与产品和测试协作，保障需求按期交付。\n岗位要求：\n1. 熟悉 Java、Spring、MySQL 和常用数据结构；\n2. 了解缓存、消息队列、高并发和接口设计；\n3. 有完整后端项目或实习经历者优先。",
   },
 ];
@@ -244,7 +244,7 @@ export const sampleApplications: ApplicationRecord[] = [
     interviewRound: "FIRST",
     resumeVersionId: null,
     appliedAt: "2026-09-03",
-    stageDate: "2026-09-12",
+    stageDate: "2026-11-12",
     nextFollowUpAt: null,
     notes: "已加入投递跟进。",
   },
@@ -255,7 +255,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: sampleTailoredResumeVersion.id,
     appliedAt: "2026-09-02",
     stageDate: "2026-09-08",
-    nextFollowUpAt: "2026-09-10",
+    nextFollowUpAt: "2026-11-10",
     notes: "已加入投递跟进。",
   },
   {
@@ -285,7 +285,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: null,
     appliedAt: "2026-09-05",
     stageDate: "2026-09-05",
-    nextFollowUpAt: "2026-09-09",
+    nextFollowUpAt: "2026-11-09",
     notes: "已加入投递跟进。",
   },
   {

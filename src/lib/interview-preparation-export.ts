@@ -178,14 +178,23 @@ export function printInterviewPreparation(
   preparation: InterviewPreparation,
   labels: InterviewPreparationExportLabels,
 ) {
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) throw new Error("PRINT_WINDOW_BLOCKED");
-  printWindow.document.write(buildInterviewPreparationPrintHtml(preparation, labels));
-  printWindow.document.close();
-  printWindow.addEventListener("load", () => {
+  // A same-origin frame works in browsers and desktop WebViews without a popup window.
+  document.getElementById("interview-print-frame")?.remove();
+  const frame = document.createElement("iframe");
+  frame.id = "interview-print-frame";
+  frame.title = labels.documentTitle;
+  frame.tabIndex = -1;
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed;left:-10000px;top:0;width:210mm;height:297mm;border:0";
+  frame.addEventListener("load", () => {
+    const printWindow = frame.contentWindow;
+    if (!printWindow) { frame.remove(); return; }
+    printWindow.addEventListener("afterprint", () => frame.remove(), { once: true });
     printWindow.focus();
     printWindow.print();
   }, { once: true });
+  frame.srcdoc = buildInterviewPreparationPrintHtml(preparation, labels);
+  document.body.appendChild(frame);
 }
 
 export function buildInterviewPreparationPrintHtml(

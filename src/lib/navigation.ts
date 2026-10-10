@@ -1,7 +1,8 @@
-export type NavKey = "dashboard" | "resume" | "match" | "pipeline" | "interview" | "library" | "settings";
+export type NavKey = "dashboard" | "campus" | "resume" | "match" | "pipeline" | "interview" | "library" | "settings";
 
 const NAV_PATHS: Record<NavKey, string> = {
   dashboard: "/dashboard",
+  campus: "/campus",
   resume: "/resume",
   match: "/match",
   pipeline: "/pipeline",

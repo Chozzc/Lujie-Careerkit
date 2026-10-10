@@ -7,6 +7,7 @@
       "en": "English"
     },
     "nav": {
+      "campus": "Campus recruitment",
       "dashboard": "Dashboard",
       "resume": "Resume Editor",
       "match": "JD Matching",
@@ -14,6 +15,88 @@
       "pipeline": "Application Tracking",
       "library": "Career Library",
       "settings": "Settings"
+    },
+    "campus": {
+      "any": "Any",
+      "popularCities": "Popular cities",
+      "pageNumber": "Enter a page number and press Enter",
+      "closeDetails": "Close recruitment details",
+      "sortLabel": "Change sort order",
+      "sort": {
+        "updated_desc": "Updated: newest first",
+        "updated_asc": "Updated: oldest first",
+        "deadline_asc": "Deadline: earliest first",
+        "deadline_desc": "Deadline: latest first",
+        "company_asc": "Company name: A–Z"
+      },
+      "title": "Campus recruitment",
+      "subtitle": "Find companies and explore recruitment opportunities.",
+      "catalogCount": "{count, number} listings",
+      "searchPlaceholder": "Search companies, roles or majors; separate keywords with spaces",
+      "clearSearch": "Clear search",
+      "locationPlaceholder": "Location, e.g. 北京",
+      "moreFilters": "More filters",
+      "resetAdvanced": "Reset these filters",
+      "clearFilters": "Clear filters",
+      "removeFilter": "Remove {filter}: {value}",
+      "filters": {
+        "q": "Search recruitment listings",
+        "recruitmentType": "Recruitment type",
+        "target": "Graduation year",
+        "location": "Location",
+        "companyType": "Any company type",
+        "industry": "Any industry",
+        "exam": "Any assessment"
+      },
+      "fields": {
+        "q": "Keyword",
+        "company": "Company / Program",
+        "recruitmentType": "Recruitment type",
+        "target": "Eligible graduates",
+        "location": "Location",
+        "companyType": "Company type",
+        "industry": "Industry",
+        "exam": "Assessment",
+        "positions": "Roles and majors",
+        "deadline": "Deadline",
+        "updatedAt": "Source updated"
+      },
+      "deadline": {
+        "dated": "Before listed deadline",
+        "expired": "Past listed deadline",
+        "unspecified": "No specific date",
+        "invalid": "Date needs review",
+        "byDate": "Check the announcement"
+      },
+      "loading": "Loading recruitment listings…",
+      "loadFailed": "Recruitment listings are unavailable",
+      "loadFailedHint": "We couldn't read the recruitment data. Please try again.",
+      "retry": "Reload",
+      "resultCount": "Found {count, number} listings",
+      "sortUpdated": "Latest source updates first",
+      "details": "Details",
+      "viewCompany": "View recruitment details for {company}",
+      "notProvided": "Not provided",
+      "updated": "Updated {date}",
+      "pagination": "Recruitment pagination",
+      "page": "Page {page} / {pages}",
+      "previous": "Previous",
+      "next": "Next",
+      "noResults": "No matching listings",
+      "noResultsHint": "Try shorter keywords or remove some filters.",
+      "noDataset": "No campus data yet",
+      "noDatasetHint": "This installation has no recruitment dataset available.",
+      "recordNotFound": "This recruitment record is no longer available. Search the campus catalog again to find relevant records.",
+      "source": "Data is collected, cleaned and organized from publicly available online information.",
+      "referenceNote": "Information is provided for job-search reference and may contain errors, omissions or delayed updates.",
+      "officialNote": "Refer to the recruiter's official announcement for requirements, deadlines and application methods.",
+      "freshnessNote": "Information is provided for job-search reference and may contain errors, omissions or delayed updates. Refer to the recruiter's official announcement for requirements, deadlines and application methods.",
+      "rightsNote": "If you find an error or believe any content infringes your rights, please <contact>contact the project maintainer</contact>. We will review it and make corrections or remove the content as appropriate.",
+      "originalDeadline": "Original: {value}",
+      "reviewNote": "Source fields to verify: {note}",
+      "openApplication": "Open application link",
+      "openNotice": "View announcement",
+      "noLinks": "No application or announcement links are available."
     },
     "navGroups": {
       "workflow": "Career Flow",
@@ -1116,6 +1199,10 @@
         "title": "Prepare a base resume",
         "description": "Import an existing resume or create one from scratch. Your original stays intact, while AI review and job matching create separate versions instead of overwriting it."
       },
+      "campus": {
+        "title": "Explore campus recruitment opportunities",
+        "description": "Filter listings by company, role keywords, graduation year, and location. Open the details for requirements and application links, and confirm information with the recruiter's official announcement. This page is empty if no recruitment dataset is configured."
+      },
       "match": {
         "title": "Tailor it to a specific JD",
         "description": "Choose a resume and paste the full job description. LuJie creates a tailored version, preserves the before-and-after content, and starts a job archive."
@@ -1256,10 +1343,17 @@
     },
     "welcome": {
       "title": "I can help with the career information saved in LuJie",
-      "description": "Search resumes and jobs, then select parameters and confirm resumes, JD-tailored versions, interview materials, mock interviews, template changes, or application-card updates.",
-      "prompt1": "Which applications am I currently tracking?",
+      "description": "Find campus opportunities by your criteria and read recruitment details. Search resumes and saved jobs, then select parameters and confirm career-material generation or application-card updates.",
+      "prompt1": "Find software development campus opportunities in Hangzhou for 2027 graduates",
       "prompt2": "I applied to a role today. Help me record it.",
       "prompt3": "Which resume versions do I have?"
+    },
+    "campus": {
+      "searching": "Searching campus recruitment records",
+      "results": "Found {total} recruitment records · Page {page}/{pages}",
+      "more": "More results are available. Ask for the next page or narrow the filters.",
+      "detailHint": "Select a company name to view the full recruitment record and related links.",
+      "error": "The campus catalog could not be read. Try again later; this does not mean there are no matching records."
     },
     "tools": {
       "searchingPipeline": "Checking saved roles and application records",

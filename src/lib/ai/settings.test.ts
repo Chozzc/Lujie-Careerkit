@@ -39,7 +39,7 @@ describe("AI settings helpers", () => {
     });
 
     expect(patch.aiProvider).toBe("deepseek");
-    expect(patch.aiModel).toBe("deepseek-v4-flash");
+    expect(patch.aiModel).toBe("deepseek-flash");
     expect(patch.aiBaseUrl).toBe("https://api.deepseek.com/v1");
   });
 

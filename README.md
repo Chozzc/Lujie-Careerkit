@@ -21,7 +21,9 @@
 </p>
 
 <p align="center">
-  <img src="public/brand/lujie-cover_16x9.png" alt="LuJie CareerKit cover" width="900" />
+  <a href="public/brand/lujie-promo.en.mp4">
+    <img src="public/brand/lujie-video-poster.en.png" alt="LuJie CareerKit product video" width="900" />
+  </a>
 </p>
 
 ## Overview
@@ -30,25 +32,64 @@ LuJie CareerKit is built for internships, campus recruiting, and career job sear
 
 ## Online Preview
 
-Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
+Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev). Personal data in the online preview stays in the current browser and does not automatically synchronize with local source or Docker installations.
 
-## Preview
+## Feature Demos
 
-| **Control Center**                                                 | **Resume Library**                                               |
-| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| ![Control Center](public/images/01-dashboard.png?v=0.3.0)          | ![Resume Library](public/images/02-resume-library.png?v=0.3.0)   |
-| **Resume Editor**                                                  | **JD Matching**                                                  |
-| ![Resume Editor](public/images/03-resume-editor.png)               | ![JD Matching](public/images/04-jd-match.png?v=0.3.0)            |
-| **JD-Optimized Resume**                                            | **Interview Assistant**                                          |
-| ![JD-Optimized Resume](public/images/05-jd-optimized-resume.png)   | ![Interview Assistant](public/images/06-interview-assistant.png) |
-| **Mock Interview**                                                 | **AI Review**                                                    |
-| ![Mock Interview](public/images/07-mock-interview.png)             | ![AI Review](public/images/08-ai-review.png)                     |
-| **Application Tracking**                                           | **Pipeline Status**                                              |
-| ![Application Tracking](public/images/09-application-pipeline.png) | ![Pipeline Status](public/images/10-pipeline-status.png)         |
+<table width="100%">
+  <tr>
+    <th width="50%">Control Center</th>
+    <th width="50%">LuJie Agent · Can invoke built-in career tools</th>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="public/images/08-dashboard-workflow.gif" alt="Control Center: workflow totals, application links, and quick actions" width="100%" />
+    </td>
+    <td width="50%" valign="top">
+      <img src="public/images/01-agent-workflow.gif" alt="LuJie Agent: interview preparation demonstrates search, parameter selection, approval, and saving" width="100%" />
+    </td>
+  </tr>
+  <tr>
+    <th width="50%">Campus Recruitment</th>
+    <th width="50%">Resume Editor</th>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="public/images/07-campus-workflow.gif" alt="Campus recruitment: keyword search, cohort filters, and details" width="100%" />
+    </td>
+    <td width="50%" valign="top">
+      <img src="public/images/02-resume-workflow.gif" alt="Resume editor: versions, editing, and template preview" width="100%" />
+    </td>
+  </tr>
+  <tr>
+    <th width="50%">JD Matching</th>
+    <th width="50%">Interview Assistant</th>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="public/images/03-jd-workflow.gif" alt="JD matching: preferences and tailored results" width="100%" />
+    </td>
+    <td width="50%" valign="top">
+      <img src="public/images/04-interview-workflow.gif" alt="Interview assistant: preparation, practice, and review" width="100%" />
+    </td>
+  </tr>
+  <tr>
+    <th width="50%">Career Materials</th>
+    <th width="50%">Application Tracking</th>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="public/images/05-library-workflow.gif" alt="Career materials: role archives and saved artifacts" width="100%" />
+    </td>
+    <td width="50%" valign="top">
+      <img src="public/images/06-tracking-workflow.gif" alt="Application tracking: board, follow-up dates, and notes" width="100%" />
+    </td>
+  </tr>
+</table>
 
 ## Highlights
 
-- **Structured resume editing**: maintain multiple resume versions, create an independent copy of any resume for experimental edits, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
+- **Structured resume editing**: maintain multiple resume versions, create an independent copy of any resume to try different edits, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
 - **AI resume analysis**: diagnose action-result structure, evidence, clarity, and organization first; let the user choose which issues and directions to address; then create an independent optimized version while preserving the original.
 - **Cover letters and recruiter greetings**: combine the current resume, a complete JD, and user-provided availability details to generate a formal cover letter or a concise recruiter-chat opener, then edit, copy, or regenerate the result.
 - **JD matching**: paste a complete JD with the company, full role title, requirements, and responsibilities, then let AI diagnose evidence, reorder emphasis, improve wording, and save a role-specific version without inventing experience.
@@ -56,16 +97,32 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev).
 - **Application tracking**: record companies, roles, sources, stages, deadlines, follow-up dates, notes, JD text, and linked resume versions.
 - **Mock interviews and review**: generate interview questions from a resume and JD, save answer drafts, and create an AI review report you can revisit.
 - **Career materials library**: organize original JDs, tailored resumes, interview prep guides, mock answers, and AI reviews by role or material type, with per-artifact viewing, editing, and deletion.
-- **Experimental in-app agent**: search jobs and privacy-filtered resumes, then select parameters and confirm creating independent resumes, JD-tailored versions, interview guides, mock interviews, resume-template changes, or application-card updates.
+- **Campus recruitment library**: filter recruitment records by keywords, recruitment type, graduation cohort, location, and more; view positions or eligible majors, deadline information, and recruitment links.
+- **In-app agent**: search campus opportunities, saved jobs and privacy-filtered resumes, open specific recruitment details, then select parameters and confirm creating independent resumes, JD-tailored versions, interview guides, mock interviews, resume-template changes, or application-card updates.
 - **Job-search Agent Skills**: reuse LuJie's refined workflows for resume improvement, interview preparation, mock interviews, and job application writing in coding agents such as Codex and Claude Code.
 - **Data and privacy controls**: resumes, jobs, applications, generated materials, agent conversations, and settings are stored in a local SQLite database for long-term personal use.
 
-## Experimental In-App Agent
+## In-App Agent
 
-v0.3.0 adds a career agent that opens inside the workspace. It uses the model already configured and tested in Settings, so it does not require a second API key. Conversation threads are stored locally as `AgentThread` records in SQLite.
+Click the assistant in the bottom-right corner to open the agent. Drag it to reposition it, expand the conversation, create a thread, or revisit history. It reuses the model and API key configured in Settings; configure AI and test the connection before use. Conversations are stored locally in SQLite.
 
-The current experimental version can:
+The workflow is **describe the task → resolve the target → select parameters when needed → review and approve the write → open the result**. Searches do not require approval. Creating or updating business data shows an approval card with the exact target and action, which you can confirm or cancel. JD tailoring first collects optimization preferences; interview preparation and simulation first collect the mode, then still require write approval.
 
+For example:
+
+| Goal | Example request |
+| --- | --- |
+| Discover opportunities | Find software-related campus recruitment in Hangzhou for the 2027 graduation cohort, and open one record's details. |
+| Schedule a follow-up | Find my Baidu application, set the next follow-up to 2026-10-09, and append “Send a follow-up email.” |
+| Create a resume | Create an independent backend engineering resume from these real experiences: … |
+| Tailor a version | Use my backend resume with this complete JD and create a new tailored version: … |
+| Prepare for interviews | Generate project-focused interview preparation for my Baidu role and its tailored resume. |
+| Start practice | Create a comprehensive mock interview using the same role and resume. |
+| Change appearance | Find my base resume and switch it to the classic template. |
+
+Referenced roles and resumes must exist in your library. Clarify ambiguous targets and supply a complete JD when needed. The current source can:
+
+- filter campus recruitment records from natural-language requests, paginate results, read full records, and open their details from the conversation; records are not automatically added to personal jobs or application tracking, and an unknown deadline does not mean recruitment is still open;
 - search existing jobs and application cards from natural-language requests;
 - search resumes by name, role, skill, school, company, or project, then read one complete privacy-filtered version by ID;
 - propose creating or updating an application card, then execute only after explicit confirmation;
@@ -76,7 +133,9 @@ The current experimental version can:
 - change a saved resume's template while preserving its facts and sections;
 - provide contextual guidance about resumes, JDs, interviews, and job-search planning.
 
-It does not overwrite existing resume content, delete business data, or operate external recruitment sites. Every business-data write requires confirmation. It remains experimental while context handling and approval flows continue to evolve.
+It does not overwrite existing resume content, delete business data, or operate external recruitment sites. Every business-data write requires confirmation.
+
+Full conversation history stays on your machine. The model receives recent complete turns within a context budget, preserving pending tools and approvals. History summaries and cross-conversation memory are not implemented, so earlier conditions in long conversations may need to be restated. If required context is too large or saving history conflicts with another update, the agent shows an error; check any generated artifacts before continuing.
 
 ## Agent Skills
 
@@ -101,8 +160,10 @@ For company- or role-specific tasks, the skills proactively research current inf
 ## Data and Privacy
 
 - Resume content, resume versions, jobs, applications, interview prep guides, mock sessions, agent conversations, and settings are stored in `prisma/dev.db`.
+- Docker stores personal data in its mounted volume. Local source runs, Docker and the online preview do not automatically synchronize personal data.
 - API keys are configured from the in-app Settings page. They are encrypted before being saved to SQLite.
 - `LUJIE_SETTINGS_SECRET` is the local encryption secret for saved AI keys. Use a long random value in `.env.local`.
+- AI tasks send the required resume, JD, or conversation content to your configured model provider. Local storage does not make AI requests fully offline. Agent resume reads filter contact information such as email addresses and phone numbers.
 
 ## Quick Start
 
@@ -126,7 +187,7 @@ Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in th
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the newest `main` build. After v0.3.0 is published, use `v0.3.0` to pin that release.
+Use `latest` to follow the public `main` image build. To pin a version, choose a [published GHCR tag](https://github.com/Chozzc/Lujie-Careerkit/pkgs/container/lujie-careerkit). Source changes that have not been pushed are not automatically included in the image.
 
 ### Local Development
 
@@ -164,7 +225,7 @@ Open [http://localhost:3000](http://localhost:3000). The app creates the local s
 DATABASE_URL="file:./dev.db"
 LUJIE_SETTINGS_SECRET="change-me-to-a-long-random-string"
 OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-OPENAI_MODEL="qwen3.6-flash"
+OPENAI_MODEL="qwen3.8-flash"
 ```
 
 `OPENAI_BASE_URL` and `OPENAI_MODEL` only set first-run defaults. Configure the actual API key from the in-app Settings page.
@@ -172,15 +233,45 @@ OPENAI_MODEL="qwen3.6-flash"
 ## AI Provider Setup
 
 1. Open the Settings page in the app.
-2. Choose an OpenAI-compatible provider.
+2. Choose a model provider.
 3. Enter the Base URL, model name, and API key.
 4. Save and run the connection test.
 
-AI features stay disabled until the settings are saved and the connection test succeeds.
+AI is available after saving a valid configuration; test the connection first. A failed connection test requires correcting the configuration and testing again.
 
 ## Release Notes
 
-### v0.3.0 (Experimental features in active development)
+### v0.4.0
+
+Campus recruitment and expanded in-app agent workflows, with stronger saving and operation-confirmation safeguards.
+
+#### Campus recruitment and opportunity search
+
+- Added search, seven independent filters, sorting and recruitment details. Source and Docker distributions include a recruitment snapshot; official recruitment announcements take precedence.
+- Added agent catalog search and detail access, and expanded first-use guidance from eight to nine steps to include the campus library.
+
+#### Agent workflows and operation safeguards
+
+- Expanded approved actions to independent resume creation, JD tailoring, interview preparation, mock interviews, template changes and application tracking, with parameter-selection cards where needed.
+- Model context uses recent complete turns within a budget while preserving pending tools and approvals.
+- Strengthened confirmation and history-save checks to prevent replaying the same approval and report concurrent history-update conflicts.
+
+#### Saving, materials management and exports
+
+- Serialized resume saves, protected against late results from previous editing sessions, and waited for saving before navigation. Browsers warn before closing with unsaved edits.
+- Fixed invalid library deletion actions and preserved user-created records when removing sample data.
+- Fixed popup-dependent interview-guide printing and resume preview/export font differences.
+
+#### Model configuration and runtime support
+
+- Refreshed the model catalog and added MiniMax support.
+- Fixed Docker migration-runtime and recruitment-data packaging.
+
+#### Feature demos and documentation
+
+- Updated bilingual documentation, workflow GIFs and product videos.
+
+### v0.3.0
 
 #### Career materials library and role archives
 
@@ -188,16 +279,16 @@ AI features stay disabled until the settings are saved and the connection test s
 - Every role now has its own archive page with a structured directory, role overview, preparation path, artifact list, and material-composition summary.
 - Original JDs, interview preparation guides, and mock answers can be edited and saved. Role names and artifact titles can be corrected manually, while long titles are safely truncated in the directory.
 
-#### Experimental in-app career agent
+#### In-app career agent
 
 - Added a draggable in-app career agent that reuses the OpenAI-compatible model already configured and tested in Settings, with local multi-turn conversation threads.
 - The agent can search existing roles and application records from natural language and read resume overviews after email addresses, phone numbers, and other contact details are filtered out.
 - It can propose creating or updating an application card, but the user must explicitly confirm the write to prevent natural-language misunderstandings from changing business data directly.
-- This remains experimental: it cannot yet directly edit resumes, run complete JD optimization, generate interview materials, delete library content, or automatically complete the full job-search workflow.
+- The v0.3.0 agent did not yet support JD tailoring or interview generation; these are added in the v0.4.0 source updates above. Direct resume-content replacement, business-data deletion and automatic application submission remain unsupported.
 
 #### First-use guidance and sample-data updates
 
-- Added a first-use tour: Dashboard → Connect AI → Meet the experimental agent → Resume editing → JD matching → Interview assistant → Career materials library → Application tracking.
+- The initial eight-step tour covered Dashboard → Connect AI → Meet the agent → Resume editing → JD matching → Interview assistant → Career materials library → Application tracking.
 - Added six structured sample roles and one complete Baidu workflow covering a base resume, tailored resume, professional interview preparation, eight complete mock answers, per-question feedback, and an AI review.
 - Added “Remove sample data” in Settings. It removes built-in sample roles, the sample resume, and generated sample materials while preserving user-created data and AI settings. “Reset and restore sample data” remains the full local reset action.
 
@@ -208,18 +299,6 @@ AI features stay disabled until the settings are saved and the connection test s
 - Packaged LuJie's refined workflows for resume improvement, interview preparation, mock interviews, and job application writing as four Agent Skills.
 - The skills live under `.agents/skills`, where Codex can discover them inside the repository and other coding agents such as Claude Code can read and reuse the same workflows.
 
-### v0.2.4
-
-#### Interview preparation export
-
-- Added an “Export guide” action to generated interview preparation materials, with Word and PDF export options.
-
-#### Review and selectively accept AI resume changes
-
-- AI resume optimization now opens a step-by-step review screen. Changes are grouped by resume section and show the original text beside an editable AI suggestion.
-- Each change can be accepted, rejected, or edited independently. The live preview follows the current choices, and only accepted content is saved to a new general-optimization version while the original resume remains unchanged.
-- The resume library distinguishes general-optimization versions from JD-optimized versions. GPA, dates, missing facts, and other information that AI should not infer are directed back to the editor for confirmation or completion.
-
 ## FAQ
 
 ### 1. Do I need an API key to use it?
@@ -228,7 +307,7 @@ No. Resume editing, materials browsing, and application tracking work locally. T
 
 ### 2. Where is my data stored?
 
-By default, data is stored on your machine in `prisma/dev.db`. This is local runtime data and should not be committed to GitHub.
+Source-based local runs default to `prisma/dev.db`; Docker uses its mounted volume. The online preview stores personal data in the current browser. Back up the database together with its encryption secret. Neither should be committed to GitHub.
 
 ### 3. How are Dashboard metrics calculated?
 
@@ -252,6 +331,8 @@ Yes. Any OpenAI-compatible provider can be configured by entering its Base URL, 
 Dockerfile              Production container image definition
 docker-compose.yml      Local Docker startup with persistent SQLite volume
 prisma/                 Prisma schema and local SQLite runtime data
+scripts/                Database migration scripts
+data/campus/            Published recruitment snapshot; local intake and archives ignored
 src/app/                Next.js pages and API routes
 src/components/         Workspace, resume, interview, and shared UI
 src/hooks/              Browser hooks such as speech recognition
@@ -259,7 +340,7 @@ src/lib/                Repository, AI, export, parsing, and domain logic
 src/stores/             Resume editor state
 src/types/              Shared TypeScript declarations
 public/brand/           Brand mark and cover assets
-public/images/          README screenshots
+public/images/          README feature GIFs and screenshots
 third-party/            Third-party license notices
 ```
 

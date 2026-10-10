@@ -49,7 +49,7 @@ describe("sample resume versions", () => {
       sampleApplications.every((application) =>
         [application.appliedAt, application.stageDate, application.nextFollowUpAt]
           .filter(Boolean)
-          .every((date) => date?.startsWith("2026-09")),
+          .every((date) => /^2026-(09|11)-\d{2}$/.test(date ?? "")),
       ),
     ).toBe(true);
     expect(

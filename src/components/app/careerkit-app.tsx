@@ -30,6 +30,7 @@ import {
   buildOptimizationSummary,
 } from "@/components/resume/resume-optimization-result";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
+import { CampusWorkspace } from "@/components/campus/campus-workspace";
 import { InterviewWorkspace } from "@/components/interview/interview-workspace";
 import { SettingsView } from "@/components/settings/settings-view";
 import { buildDashboardSummary, getDashboardDueDate } from "@/lib/dashboard";
@@ -69,6 +70,8 @@ import {
   type CareerLibraryTarget,
 } from "@/lib/career-library";
 import { hasSeenFirstUseTour, markFirstUseTourSeen } from "@/lib/first-use-tour";
+import { installSaveCloseGuard } from "@/lib/save-close-guard";
+import { useResumeStore } from "@/stores/resume-store";
 
 type ResumeMode = "library" | "editor";
 const AGENT_ASSISTANT_VISIBILITY_KEY = "lujie-careerkit:agent-assistant-visible:v1";
@@ -183,6 +186,7 @@ export function CareerKitApp({
     () => true,
   );
 
+  useEffect(installSaveCloseGuard, []);
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
   const storedResumeOptimizationResult = useMemo<ResumeOptimizationView | null>(() => {
     if (active !== "resume" || !resumeOptimizationVersionId) return null;
@@ -282,7 +286,12 @@ export function CareerKitApp({
     }
   }, [active]);
 
-  const navigateTo = useCallback((key: NavKey) => {
+  const navigateTo = useCallback(function navigate(key: NavKey) {
+    const editor = useResumeStore.getState();
+    if (editor.isDirty || editor.isSaving) {
+      void editor.save("auto").then((saved) => { if (saved) navigate(key); });
+      return;
+    }
     setToast("");
     setActive(key);
     setResumeMode("library");
@@ -1150,7 +1159,7 @@ export function CareerKitApp({
                 : "mx-auto max-w-7xl px-4 py-8 lg:px-10",
           )}
         >
-          {active !== "library" ? <AppPageHeader
+          {active !== "library" && active !== "campus" ? <AppPageHeader
             active={active}
             pageTitle={pageTitle}
             pageSubtitle={pageSubtitle}
@@ -1160,6 +1169,7 @@ export function CareerKitApp({
             onAddApplication={() => setPipelineAddOpen(true)}
           /> : null}
 
+          {active === "campus" && <CampusWorkspace />}
           {active === "dashboard" && (
             <DashboardWorkspace
               summary={dashboard}

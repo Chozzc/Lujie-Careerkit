@@ -25,6 +25,20 @@ type AiSettingsMaintenancePatch = {
 export function getAiSettingsMaintenancePatch(
   settings: StoredAiSettingsForMaintenance,
 ): AiSettingsMaintenancePatch | null {
+  if (
+    settings.aiProvider === "deepseek" &&
+    settings.aiModel === "deepseek-v4-flash" &&
+    !settings.aiEnabled &&
+    !settings.aiApiKey
+  ) {
+    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
+    return {
+      aiProvider: defaultProvider.id,
+      aiModel: getDefaultAiModel(defaultProvider.id),
+      aiBaseUrl: defaultProvider.baseUrl,
+      aiLastTestStatus: "untested",
+    };
+  }
   const currentModel = getCurrentAiModel(settings.aiProvider, settings.aiModel);
   if (currentModel !== settings.aiModel) {
     return {
@@ -45,22 +59,6 @@ export function getAiSettingsMaintenancePatch(
     const openAiDefaultModel = getDefaultAiModel("openai");
     return {
       aiModel: openAiDefaultModel,
-      aiLastTestStatus: "untested",
-    };
-  }
-
-  if (
-    settings.aiProvider === "deepseek" &&
-    settings.aiModel === "deepseek-v4-flash" &&
-    !settings.aiEnabled &&
-    !settings.aiApiKey
-  ) {
-    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
-    const defaultModel = getDefaultAiModel(defaultProvider.id);
-    return {
-      aiProvider: defaultProvider.id,
-      aiModel: defaultModel,
-      aiBaseUrl: defaultProvider.baseUrl,
       aiLastTestStatus: "untested",
     };
   }

@@ -42,20 +42,29 @@ export async function getAgentThread(threadId: string) {
   };
 }
 
-export async function saveAgentThreadMessages(threadId: string, messages: UIMessage[]) {
+export class AgentThreadConflictError extends Error {
+  constructor() {
+    super("对话已在另一窗口更新或删除，请重新打开对话，并核对已执行的操作后再继续。");
+  }
+}
+
+export async function saveAgentThreadMessages(threadId: string, messages: UIMessage[], expectedUpdatedAt: string) {
   const thread = await prisma.agentThread.findUnique({
     where: { id: threadId },
     select: { title: true },
   });
-  if (!thread) throw new Error("对话不存在。");
+  if (!thread) throw new AgentThreadConflictError();
 
   const title = thread.title === "新对话" ? deriveThreadTitle(messages) : thread.title;
-  const updated = await prisma.agentThread.update({
-    where: { id: threadId },
-    data: { messages: JSON.stringify(messages), title },
-    select: { id: true, title: true, createdAt: true, updatedAt: true },
+  const expectedDate = new Date(expectedUpdatedAt);
+  if (!Number.isFinite(expectedDate.getTime())) throw new AgentThreadConflictError();
+  const updatedAt = new Date(Math.max(Date.now(), expectedDate.getTime() + 1));
+  const result = await prisma.agentThread.updateMany({
+    where: { id: threadId, updatedAt: expectedDate },
+    data: { messages: JSON.stringify(messages), title, updatedAt },
   });
-  return toThreadSummary(updated);
+  if (result.count !== 1) throw new AgentThreadConflictError();
+  return updatedAt.toISOString();
 }
 
 export async function deleteAgentThread(threadId: string) {

@@ -10,9 +10,11 @@ import {
 describe("first use tour", () => {
   it("introduces the Agent immediately after AI setup", () => {
     expect(buildFirstUseTourSteps().map((step) => step.id)).toEqual([
-      "welcome", "dashboard", "settings", "agent", "resume", "match", "interview", "library", "pipeline",
+      "welcome", "dashboard", "settings", "agent", "resume", "campus", "match", "interview", "library", "pipeline",
     ]);
     expect(buildFirstUseTourSteps()[3]).toEqual({ id: "agent", target: "agent" });
+    expect(buildFirstUseTourSteps()[5]).toEqual({ id: "campus", nav: "campus" });
+    expect(buildFirstUseTourSteps().filter((step) => step.id !== "welcome")).toHaveLength(9);
   });
 
   it("records completion or skipping as seen", () => {

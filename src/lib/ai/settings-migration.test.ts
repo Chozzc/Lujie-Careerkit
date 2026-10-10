@@ -3,6 +3,19 @@ import { describe, expect, it } from "vitest";
 import { getAiSettingsMaintenancePatch } from "./settings-migration";
 
 describe("AI settings maintenance migration", () => {
+  it("repairs the invalid Gemini text model without changing account credentials", () => {
+    const patch = getAiSettingsMaintenancePatch({
+      aiProvider: "gemini-via-openrouter",
+      aiModel: "google/gemini-3.8-flash-lite",
+      aiBaseUrl: "https://openrouter.ai/api/v1",
+      aiApiKey: "encrypted-key",
+      aiEnabled: true,
+    });
+    expect(patch).toMatchObject({ aiModel: "google/gemini-3.5-flash-lite", aiLastTestStatus: "untested" });
+    expect(patch).not.toHaveProperty("aiApiKey");
+    expect(patch).not.toHaveProperty("aiProvider");
+  });
+
   it("moves an untouched DeepSeek default to the Qwen default", () => {
     expect(
       getAiSettingsMaintenancePatch({
@@ -14,13 +27,13 @@ describe("AI settings maintenance migration", () => {
       }),
     ).toMatchObject({
       aiProvider: "qwen",
-      aiModel: "qwen3.6-flash",
+      aiModel: "qwen3.8-flash",
       aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       aiLastTestStatus: "untested",
     });
   });
 
-  it("does not rewrite a configured DeepSeek account", () => {
+  it("updates a configured DeepSeek account to its supported Flash model", () => {
     expect(
       getAiSettingsMaintenancePatch({
         aiProvider: "deepseek",
@@ -29,7 +42,7 @@ describe("AI settings maintenance migration", () => {
         aiApiKey: "encrypted-key",
         aiEnabled: true,
       }),
-    ).toBeNull();
+    ).toMatchObject({ aiModel: "deepseek-flash", aiLastTestStatus: "untested" });
   });
 
   it("repairs a Qwen default accidentally paired with the DeepSeek URL", () => {
@@ -43,7 +56,7 @@ describe("AI settings maintenance migration", () => {
       }),
     ).toMatchObject({
       aiProvider: "qwen",
-      aiModel: "qwen3.6-flash",
+      aiModel: "qwen3.8-flash",
       aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       aiLastTestStatus: "untested",
     });
@@ -59,7 +72,7 @@ describe("AI settings maintenance migration", () => {
         aiEnabled: false,
       }),
     ).toMatchObject({
-      aiModel: "gpt-5.6",
+      aiModel: "gpt-6-luna",
       aiLastTestStatus: "untested",
     });
   });
