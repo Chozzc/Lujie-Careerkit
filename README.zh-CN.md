@@ -8,7 +8,7 @@
   <strong>从简历编辑到 Offer 录用的 求职 Agent 工作台，覆盖简历编辑、JD 匹配、投递跟进、模拟面试和复盘等。</strong>
 </p>
 <p align="center">
-  <a href="README.md">English</a> · 简体中文
+  <a href="README.en.md">English</a> · 简体中文
 </p>
 <p align="center">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs" />
@@ -19,11 +19,7 @@
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
-<p align="center">
-  <a href="public/brand/lujie-promo.zh-CN.mp4">
-    <img src="public/brand/lujie-video-poster.png" alt="录阶产品演示视频" width="900" />
-  </a>
-</p>
+https://github.com/user-attachments/assets/87b60f61-447b-4397-9b23-078008142f75
 
 ## 项目简介
 
