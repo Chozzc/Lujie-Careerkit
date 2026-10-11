@@ -40,6 +40,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libdbus-1-dev patchelf xdg-utils libfuse2
+          # Hosted runners also carry OpenSSL 1.1; Prisma prefers it over Ubuntu's OpenSSL 3.
+          # Remove that compatibility package only on this disposable build runner.
+          sudo apt-get remove -y libssl1.1
       - uses: actions/setup-node@v4
         with:
           node-version: 22

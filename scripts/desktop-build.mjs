@@ -11,7 +11,7 @@ const target = desktopTarget(process.platform, process.arch, process.env.TAURI_E
 const { getBinaryTargetForCurrentPlatform } = createRequire(import.meta.url)("@prisma/get-platform");
 const prismaTarget = await getBinaryTargetForCurrentPlatform();
 if (process.platform === "linux" && prismaTarget !== "debian-openssl-3.0.x") {
-  throw new Error("Build Linux desktop packages on Ubuntu 22.04/24.04 x64 with OpenSSL 3 (glibc).");
+  throw new Error(`Build Linux desktop packages on Ubuntu 22.04/24.04 x64 with OpenSSL 3 (glibc); Prisma detected ${prismaTarget}.`);
 }
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const backend = path.join(root, "src-tauri", "backend");
