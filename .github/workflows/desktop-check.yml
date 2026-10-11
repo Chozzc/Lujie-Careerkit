@@ -74,7 +74,8 @@ jobs:
           mount="$RUNNER_TEMP/lujie-dmg"
           mkdir -p "$mount"
           hdiutil attach -nobrowse -readonly -mountpoint "$mount" "${installers[0]}"
-          trap 'hdiutil detach "$mount"' EXIT
+          # The tested processes have exited; macOS may still briefly hold this read-only image.
+          trap 'hdiutil detach "$mount" || hdiutil detach -force "$mount"' EXIT
           apps=("$mount"/*.app)
           test "${#apps[@]}" -eq 1
           codesign --verify --deep --strict "${apps[0]}"
