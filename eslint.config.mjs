@@ -38,6 +38,7 @@ const eslintConfig = defineConfig([
     ".vercel/**",
     "out/**",
     "build/**",
+    "src-tauri/**",
     "brand/promo-videos/**",
     "data/campus/**",
     "outputs/**",

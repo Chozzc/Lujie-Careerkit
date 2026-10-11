@@ -1,0 +1,108 @@
+name: Desktop Build Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/desktop-*']
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            platform: windows-x64
+            arch: x64
+          - os: macos-15
+            platform: macos-arm64
+            arch: arm64
+          - os: macos-15-intel
+            platform: macos-x64
+            arch: x64
+          - os: ubuntu-22.04
+            platform: linux-x64
+            arch: x64
+    env:
+      CARGO_BUILD_JOBS: 2
+      NEXT_TELEMETRY_DISABLED: 1
+      NODE_OPTIONS: --max-old-space-size=2048
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev libdbus-1-dev patchelf xdg-utils libfuse2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          architecture: ${{ matrix.arch }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: node node_modules/vitest/vitest.mjs run --maxWorkers=2
+      - run: npm run desktop:check
+      - run: node node_modules/@tauri-apps/cli/tauri.js build -- --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --release --locked
+      - name: Install and check Windows resources
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
+          $installDir = Join-Path $env:RUNNER_TEMP 'LuJie Desktop Test'
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -WindowStyle Hidden -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
+          node scripts/desktop-smoke.mjs "$installDir/backend"
+          if ($LASTEXITCODE -ne 0) { throw 'Installed backend smoke test failed' }
+      - name: Mount and check macOS installer resources
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          installers=(src-tauri/target/release/bundle/dmg/*.dmg)
+          test "${#installers[@]}" -eq 1
+          mount="$RUNNER_TEMP/lujie-dmg"
+          mkdir -p "$mount"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount" "${installers[0]}"
+          trap 'hdiutil detach "$mount"' EXIT
+          apps=("$mount"/*.app)
+          test "${#apps[@]}" -eq 1
+          codesign --verify --deep --strict "${apps[0]}"
+          node scripts/desktop-smoke.mjs "${apps[0]}/Contents/Resources/backend"
+      - name: Extract and check Linux installer resources
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          debs=(src-tauri/target/release/bundle/deb/*.deb)
+          images=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          test "${#debs[@]}" -eq 1
+          test "${#images[@]}" -eq 1
+          dpkg-deb -x "${debs[0]}" "$RUNNER_TEMP/lujie-deb"
+          mapfile -t runtimes < <(find "$RUNNER_TEMP/lujie-deb" -name desktop-runtime.mjs -type f)
+          test "${#runtimes[@]}" -eq 1
+          node scripts/desktop-smoke.mjs "$(dirname "${runtimes[0]}")"
+          image="$(realpath "${images[0]}")"
+          chmod +x "$image"
+          mkdir -p "$RUNNER_TEMP/lujie-appimage"
+          (cd "$RUNNER_TEMP/lujie-appimage" && "$image" --appimage-extract > /dev/null)
+          mapfile -t runtimes < <(find "$RUNNER_TEMP/lujie-appimage" -name desktop-runtime.mjs -type f)
+          test "${#runtimes[@]}" -eq 1
+          node scripts/desktop-smoke.mjs "$(dirname "${runtimes[0]}")"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-preview
+          path: |
+            src-tauri/target/release/bundle/nsis/*-setup.exe
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+          retention-days: 14
