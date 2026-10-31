@@ -44,7 +44,8 @@
     "word-extractor": "^1.0.4",
     "zod": "^4.4.3",
     "zustand": "^5.0.14",
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "@openrouter/ai-sdk-provider": "2.10.0"
   },
   "overrides": {
     "postcss": "8.5.15"

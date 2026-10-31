@@ -66,12 +66,33 @@ describe("AI provider registry", () => {
 
   it("offers MiniMax pay-as-you-go models without advertising the plan-only preview", () => {
     const minimax = getAiProvider("minimax");
-    expect(minimax).toMatchObject({ group: "domestic", baseUrl: "https://api.minimax.cn/v1", defaultModel: "MiniMax-M3" });
-    expect(minimax.models).toEqual(["MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed"]);
+    expect(minimax).toMatchObject({ group: "domestic", baseUrl: "https://api.minimax.cn/v1", defaultModel: "MiniMax-M3.1-Flash" });
+    expect(minimax.models).toEqual(["MiniMax-M3.1-Flash", "MiniMax-M3", "MiniMax-M2.7", "MiniMax-M2.7-highspeed"]);
     expect(getAiProvider("openrouter").models).toContain("minimax/minimax-m3");
     expect(getAiProvider("openrouter").models).toContain("minimax/minimax-m2.7");
     expect(getAiProvider("siliconflow").models).toContain("Qwen/Qwen3.8-27B");
     expect(getAiProvider("siliconflow").models).toContain("zai-org/GLM-5.3");
+  });
+
+  it("offers verified October releases without replacing working saved model choices", () => {
+    const additions: Record<string, string[]> = {
+      moonshot: ["kimi-k3.1-pro", "kimi-k3.1-pro-highspeed"],
+      openai: ["gpt-6.1-terra"],
+      siliconflow: ["deepseek-ai/DeepSeek-V4.1-Flash", "zai-org/GLM-5.3-Flash"],
+      "anthropic-via-openrouter": ["anthropic/claude-haiku-5.5"],
+      "gemini-via-openrouter": ["google/gemini-4-argon"],
+      mistral: ["mistral-large-4"],
+      openrouter: ["openai/gpt-6.1-terra", "anthropic/claude-haiku-5.5", "google/gemini-4-argon", "moonshotai/kimi-k3.1-pro", "minimax/minimax-m3.1-flash", "mistralai/mistral-large-4-0", "deepseek/deepseek-v4.1-flash-1017"],
+    };
+    for (const [id, models] of Object.entries(additions)) {
+      expect(getAiProvider(id).models).toEqual(expect.arrayContaining(models));
+      expect(new Set(getAiProvider(id).models).size).toBe(getAiProvider(id).models.length);
+    }
+    expect(getDefaultAiModel("moonshot")).toBe("kimi-k3.1-pro");
+    expect(getCurrentAiModel("moonshot", "kimi-k2.5")).toBe("kimi-k3.1-pro");
+    expect(getCurrentAiModel("moonshot", "kimi-k2.6")).toBe("kimi-k2.6");
+    expect(getCurrentAiModel("minimax", "MiniMax-M3")).toBe("MiniMax-M3");
+    expect(getCurrentAiModel("custom-openai-compatible", "kimi-k2.5")).toBe("kimi-k2.5");
   });
 
   it("renames only known stale model ids for their provider", () => {

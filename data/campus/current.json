@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceName": "27届实习校招投递表与招聘公告增补",
-  "preparedAt": "2026-10-09",
+  "preparedAt": "2026-10-31",
   "records": [
     {
       "id": "fs-fdb9a3ef69f0e039",
@@ -18838,14 +18838,14 @@
       "location": "桂林深圳 常州南京威海广州珠海北京晋中武汉天津青岛 淄博上海海口重庆贵阳济南保定福州石家庄成都全国其他",
       "positions": "运动部门经理全渠道运动主管线上运营主管供应链计划主管生产供应链主管供应商质量和新产品导入主管物流部门经理",
       "updatedAt": "2026-09-01",
-      "deadlineRaw": "尽快投递",
-      "deadlineDate": null,
+      "deadlineRaw": "2026年9月1日—11月30日",
+      "deadlineDate": "2026-11-30",
       "applyUrl": "https://wecruit.hotjob.cn/SU64631fe6bef57c0907f133c4/pb/school.html",
-      "noticeUrl": "https://mp.weixin.qq.com/s/gE6wqz9nTjf_OSO-pkY7Hw",
+      "noticeUrl": "https://recruitment.decathlon.com.cn/p/campus.html",
       "exams": [
         "未明确"
       ],
-      "reviewNote": "",
+      "reviewNote": "2026-10-31核验：招聘方官网FAQ明确2027秋招所有岗位投递期为2026年9月1日至11月30日，原先尽快投递更新为明确截止；面向2026年2月至2027年12月毕业者。各岗位仍以具体职位实际接受申请情况为准。原岗位及投递入口保留。",
       "sourceRows": "779"
     },
     {
@@ -67066,14 +67066,14 @@
       "location": "中国大陆，具体以职位地点为准",
       "positions": "西门子2027届校园招聘；招聘专题含不同业务/实体岗位",
       "updatedAt": "2026-09-14",
-      "deadlineRaw": "官网建议尽早投递/建议10月底前关注；未确认正式统一截止日。",
+      "deadlineRaw": "官网建议在10月下旬前完成投递；未公布统一硬性截止日",
       "deadlineDate": null,
       "applyUrl": "https://jobs.siemens.com.cn/",
       "noticeUrl": "https://www.siemens.com/zh-cn/company/jobs/campus-recruiting/",
       "exams": [
         "未明确"
       ],
-      "reviewNote": "官网以不同业务线/岗位展示，未找到可确认的统一截止日期；招聘品牌覆盖的具体签约公司及岗位截止应分别核对。",
+      "reviewNote": "2026-10-31复核招聘方官网：2027秋招于9月14日启动，FAQ建议10月下旬前完成投递；这不是统一硬性截止日期，未据此标为全项目关闭。具体岗位是否可投需在官网职位页核对。",
       "sourceRows": ""
     },
     {
@@ -67511,7 +67511,7 @@
       "exams": [
         "需要笔试"
       ],
-      "reviewNote": "2026-10-09核验：招聘方原站部分核验；来源：江西裕民银行官网。招聘对象为2026年1月至2027年7月毕业的学生；学历、院校和专业要求见公告。公告正文未明确岗位工作地点，未用银行总部地址替代。 招聘启动证据不保证当前所有岗位仍可投。",
+      "reviewNote": "2026-10-31招聘方原站复核：公告仍明确2026年10月24日24:00截止，并说明逾期系统自动关闭、不再受理；截至核验日已过公告报名期限。原2026/2027届资格、岗位、入口和截止日期保留，不把公告仍可访问解释为仍可报名。",
       "sourceRows": ""
     },
     {
@@ -67873,6 +67873,300 @@
       ],
       "reviewNote": "2026-10-09核验：高校转载部分核验，未完成招聘方原站核验；来源：武汉科技大学就业平台2027届岗位页面。页面用人主体为森松（江苏）重工有限公司；仅按可读岗位列表收录类别与南通地点，未扩展为全部集团岗位。页面2026-11-10为过期字段，非已确认企业截止日。网申入口由同一页面检索全文提供，当前招聘方岗位内容仍待核。 招聘启动证据不保证当前所有岗位仍可投。",
       "sourceRows": ""
+    },
+    {
+      "id": "research-809554a4df294f6aef04",
+      "company": "首都机场集团",
+      "companyType": "央国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "北京、天津、河北、江西、吉林、黑龙江等；按所属单位岗位",
+      "positions": "机场运行、技术支持、环境生态、工程建设、综合管理、财经管理、人文社科类",
+      "updatedAt": "2026-10-29",
+      "deadlineRaw": "2026年11月22日24:00",
+      "deadlineDate": "2026-11-22",
+      "applyUrl": "https://www.zhipin.com/dz/cah2027",
+      "noticeUrl": "https://job.tiangong.edu.cn/correcruit/content/id/56929.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：天津工业大学就业网转载招聘简章。2027届国内外本科、硕士、博士；仅京外单位可接收2026-2027届。集团官网可见标题线索，正文以高校转载核验，未完成招聘方原站正文核验。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-651650939adcea8dc891",
+      "company": "山东省港口集团",
+      "companyType": "央国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按所属单位岗位",
+      "positions": "集团及权属单位2027届校园招聘；具体招聘单位、岗位及要求见官方报名网站",
+      "updatedAt": "2026-10-28",
+      "deadlineRaw": "2026年11月6日18:00（北京时间）",
+      "deadlineDate": "2026-11-06",
+      "applyUrl": "https://campus.51job.com/spgcampus2027",
+      "noticeUrl": "https://www.sd-port.com/talentDemandPage/2026-10-28/1300141704573091840.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：招聘方原站部分核验；来源：山东省港口集团官网招聘简章。2027届本科及以上，部分岗位要求硕士及以上；须于2027年7月31日前取得学历学位。每人限报1岗，完成性格测评后才视为投递成功。岗位附件未逐项转录。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-93822bc79594433977ef",
+      "company": "中国旅游集团",
+      "companyType": "央国企",
+      "industry": "文旅/酒店/零售",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "北京、廊坊、香港、澳门、深圳、广州、珠海、海口、三亚、上海、南京、杭州、宁波、武汉等全国30多个城市",
+      "positions": "集团管培生；产品、科技、数字化与人工智能、营销、财务、法务、人力资源、审计、运营、工程及一线服务方向",
+      "updatedAt": "2026-10-10",
+      "deadlineRaw": "未列统一截止时间，按具体岗位",
+      "deadlineDate": null,
+      "applyUrl": "https://ctgjob.iguopin.com/",
+      "noticeUrl": "https://career.nankai.edu.cn/correcruit/content/id/119655.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：南开大学就业网转载招聘简章。面向2026年9月至2027年8月毕业的2027届；2026届未就业者亦可投，最高学历毕业后须无全职工作经验。招聘方动态门户未取得完整正文，不将高校顶部海南标签当作全部工作地点。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-b8c3010ed5a0d3b310ba",
+      "company": "国家开发投资集团",
+      "companyType": "央国企",
+      "industry": "综合/投资",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "全国各主要城市",
+      "positions": "集团管培生（能源电力、港口工程、生物制造、生物育种、人工智能、医疗健康、人力资源、财务审计、安全环保、法律合规、党建研究）；子企业生产运行、工程、科技、金融科技、检验检测、养老照护、职能管理等",
+      "updatedAt": "2026-09-21",
+      "deadlineRaw": "以各招聘单位发布的岗位截止时间为准",
+      "deadlineDate": null,
+      "applyUrl": "https://sdic.iguopin.com/",
+      "noticeUrl": "https://career.nankai.edu.cn/correcruit/content/id/119192.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：南开大学就业网转载招聘公告。国内2027届及2026年尚未落实就业的毕业生，境外2026/2027年毕业归国者；正文落款9月21日，高校转载9月22日。集团总项目与已收录国投电力子公司项目分别保留，不共享截止日期。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-6c7956ad0bf4285cce92",
+      "company": "中国电气装备集团",
+      "companyType": "央国企",
+      "industry": "电气装备/制造",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "上海、北京、郑州、西安、济南、许昌、平顶山、保定、天津、重庆、杭州、成都、合肥、广州等",
+      "positions": "研发技术、产品设计、工程设计、产品调试、产品工艺、技术支持；国内外营销、市场管理；生产、供应链、法务、审计、财务、行政、人力资源及党群管理",
+      "updatedAt": null,
+      "deadlineRaw": "线上投递简历：2026年9月—2027年6月",
+      "deadlineDate": null,
+      "applyUrl": "https://ideal.51job.com/CEE2027",
+      "noticeUrl": "https://job.tju.edu.cn/recruitment/content/type/2/id/6539.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：天津大学就业网转载集团2027校招简章。正文面向国内外本科、硕士、博士应届毕业生。页面9月21日15:25是宣讲时间，未当作公告发布日期；仅列月份，不补精确截止日。页面发布主体为储能科技有限公司，正文明确集团总项目。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-107cf60b809162c00ead",
+      "company": "南京市城市建设投资控股集团",
+      "companyType": "央国企",
+      "industry": "城市建设/公用事业",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按具体岗位",
+      "positions": "集团及所属单位2027届校园招聘；具体岗位见《南京市城建集团2027届校园招聘岗位计划表》",
+      "updatedAt": "2026-10-20",
+      "deadlineRaw": "不设置固定截止时间，岗位招满即止、招满即关闭报名通道",
+      "deadlineDate": null,
+      "applyUrl": "https://app.mokahr.com/campus-recruitment/njcjjt/167944?locale=zh-CN",
+      "noticeUrl": "https://zjzx.91job.org.cn/index.php?a=show&c=article&id=11155&site=1",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：江苏省高校招生就业指导服务中心转载招聘公告。招聘对象明确2027届，岗位附件仅二维码，未从单位业务介绍推断具体岗位或工作地点；保留正文报名门户。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-5d2f5befdd7449ba2bbf",
+      "company": "宁波市水务环境集团",
+      "companyType": "央国企",
+      "industry": "水务/环保",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按具体岗位",
+      "positions": "2027应届博士岗（市政/给排水）、管培生（工程/财务/投资/给排水方向）",
+      "updatedAt": "2026-10-29",
+      "deadlineRaw": "报名时间：2026年11月6日9:00—11月12日17:00；系统仅在报名期间开放",
+      "deadlineDate": "2026-11-12",
+      "applyUrl": null,
+      "noticeUrl": "https://www.nbzhaokao.com/article/20261029/01a1886e60ee71fd864fecaa717b7085",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：宁波招考网转载宁波国资委公告。公告为混合社招/应届招聘，正式表本条仅收明确2027届的博士及管培生方向，排除有工作经验要求岗位；其余仅写应届者未推定2027资格。10月31日尚未开放报名，不能称当前可投。原国资委页读取超时，二维码投递入口未提取。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-598a0964e2e381538e05",
+      "company": "中国农业发展集团",
+      "companyType": "央国企",
+      "industry": "农/林/牧/渔",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按具体岗位",
+      "positions": "2027届校园招聘，具体岗位职责及任职条件以报名平台和职位表为准",
+      "updatedAt": null,
+      "deadlineRaw": "2026年10月23日至11月16日",
+      "deadlineDate": "2026-11-16",
+      "applyUrl": null,
+      "noticeUrl": "https://www.fenbi.com/page/fenxiaozhaokaodetail/9/4012/470110984233984",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：粉笔资讯转载招聘公告。已读取完整转载正文，面向国内2027届及2026年7月1日至2027年9月30日取得学位、归国初次就业者。正文报名按钮未暴露可核验URL，岗位附件未逐条核验，不伪造入口。尚未完成招聘方原站核验。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-5a4a47e031b6e7b116cf",
+      "company": "中国进出口银行",
+      "companyType": "银行",
+      "industry": "银行/金融",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按总行、境内分行及境内直派机构岗位",
+      "positions": "金融经济、重点产业、理工及金融经济复合、财务会计、法律合规、信息科技、纪检监察、管理综合、外语等类别",
+      "updatedAt": "2026-10-30",
+      "deadlineRaw": "11月15日24:00（原文未在该字段列年份）",
+      "deadlineDate": null,
+      "applyUrl": "https://eximbank2027.iguopin.com/",
+      "noticeUrl": "https://www.njgwy.cn/index.php/Home/Index/recruitShow/e_id/11331.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：转载正文部分核验，未完成招聘方原站核验；来源：南京福久教育转载银行招聘公告。已读完整转载，正文落款2026年10月30日，面向2027应届（境内毕业不晚于2027年7月31日；境外2026年1月1日至2027年7月31日且初次就业）。官网招聘栏目超时，招聘门户仅页面壳，未称官方全文核验。截止年份未补齐，保留原文。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-a419782d50ff349aaa9c",
+      "company": "山东健康集团枣庄医院",
+      "companyType": "央国企",
+      "industry": "医疗/健康",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届",
+        "2025届"
+      ],
+      "location": "枣庄",
+      "positions": "2027年度校园招聘卫生专业技术人员；具体岗位及专业条件见原站岗位表图片",
+      "updatedAt": "2026-10-08",
+      "deadlineRaw": "2026年11月30日17:00止（北京时间）",
+      "deadlineDate": "2026-11-30",
+      "applyUrl": null,
+      "noticeUrl": "https://www.sdjkzzyy.com/yiyuandongtai/879.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：招聘方原站部分核验；来源：山东健康集团枣庄医院官网招聘公告。国内外2025年（含）以来毕业者，须于2027年7月31日前取得学历学位。扫码后进入集团2027秋招并搜索枣庄医院；二维码与岗位图片未转录，不伪造直接投递链接。该医院项目不冒充山东健康集团全部563人项目。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-dcba0c05451ea853b62f",
+      "company": "中国农业发展银行",
+      "companyType": "银行",
+      "industry": "银行/金融",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "按总行、省级分行、二级分行及县级支行岗位",
+      "positions": "总行本部、省级及二级分行本级、县级支行校招；专业含经济金融、财会、法律、信息技术、人工智能、数据分析、数理统计及涉农工程等",
+      "updatedAt": "2026-09-15",
+      "deadlineRaw": "2026年9月15日至10月11日24时",
+      "deadlineDate": "2026-10-11",
+      "applyUrl": "https://campus.chinahr.com/pages/adbc2027/",
+      "noticeUrl": "https://www.adbc.com.cn/n354735/n355043/c722284/content.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：招聘方原站部分核验；来源：中国农业发展银行官网2027招聘公告。补录已截止的历史项目：截至2026年10月31日已过公告报名日期，不计作新开可投机会。面向2026年8月1日至2027年7月31日毕业的境内外2027应届。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-dd8543d2e2c6df053e44",
+      "company": "浙商银行",
+      "companyType": "银行",
+      "industry": "银行/金融",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "按具体机构岗位",
+      "positions": "总行及分支机构校园招聘，具体岗位以招聘官网为准",
+      "updatedAt": "2026-09-11",
+      "deadlineRaw": "报名截止日期：2026-10-25",
+      "deadlineDate": "2026-10-25",
+      "applyUrl": "https://zp.czbank.com.cn/",
+      "noticeUrl": "https://zp.czbank.com.cn/zpweb/zpPostController/planDetailPage.mvc?planId=8a8340e9a033d10501a06502133f0014",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-10-31核验：招聘方原站部分核验；来源：浙商银行招聘官网计划详情。补录已截止的历史项目：截至2026年10月31日已过官网报名日期，不计作新开可投机会。境内2026年1月至2027年7月毕业、境外2025年1月至2027年7月毕业，且最高学历毕业后首次就业。 公告存在或未到截止不保证每个岗位当前仍可投。"
     }
   ]
 }
