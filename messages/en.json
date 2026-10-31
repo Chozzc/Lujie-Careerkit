@@ -1152,6 +1152,8 @@
       "qrUrlInvalid": "Invalid URL",
       "qrAdd": "Add QR code",
       "addItem": "Add item",
+      "moveItemUp": "Move {label} item {index} up",
+      "moveItemDown": "Move {label} item {index} down",
       "clear": "Clear",
       "dateDisplay": "{year}-{month}",
       "months": {

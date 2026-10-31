@@ -1152,6 +1152,8 @@
       "qrUrlInvalid": "链接格式不正确",
       "qrAdd": "添加二维码",
       "addItem": "添加一项",
+      "moveItemUp": "上移{label}第 {index} 项",
+      "moveItemDown": "下移{label}第 {index} 项",
       "clear": "清空",
       "dateDisplay": "{year}-{month}",
       "months": {

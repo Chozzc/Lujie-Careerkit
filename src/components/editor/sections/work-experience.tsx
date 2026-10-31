@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ItemOrderButtons } from '../fields/item-order-buttons';
 import { EditableText } from '../fields/editable-text';
 import { EditableDate } from '../fields/editable-date';
 import { EditableRichText } from '../fields/editable-rich-text';
@@ -56,16 +57,19 @@ export function WorkExperienceSection({ section, onUpdate }: Props) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">#{index + 1}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
-                aria-label={`删除工作经历第${index + 1}项`}
-                title={`删除工作经历第${index + 1}项`}
-                onClick={() => removeItem(index)}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <ItemOrderButtons label={section.title} items={items} index={index} onChange={(items) => onUpdate({ items })} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
+                  aria-label={`删除工作经历第${index + 1}项`}
+                  title={`删除工作经历第${index + 1}项`}
+                  onClick={() => removeItem(index)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <FieldWrapper>
               <EditableText label={t('company')} value={item.company} onChange={(v) => updateItem(index, { company: v })} />

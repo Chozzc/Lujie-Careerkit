@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EditableText } from '../fields/editable-text';
 import { EditableList } from '../fields/editable-list';
+import { ItemOrderButtons } from '../fields/item-order-buttons';
 import { generateId } from '@/lib/utils';
 import type { ResumeSection, SkillsContent, SkillCategory } from '@/types/resume';
 
@@ -43,18 +44,23 @@ export function SkillsSection({ section, onUpdate }: Props) {
         <div key={cat.id || `cat-${index}-${cat.name}`}>
           {index > 0 && <Separator className="mb-4" />}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <EditableText label={t('skillCategory')} value={cat.name} onChange={(v) => updateCategory(index, { name: v })} />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-5 h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
-                aria-label={`删除技能分类第${index + 1}项`}
-                title={`删除技能分类第${index + 1}项`}
-                onClick={() => removeCategory(index)}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <EditableText label={t('skillCategory')} value={cat.name} onChange={(v) => updateCategory(index, { name: v })} />
+              </div>
+              <div className="mt-5 flex shrink-0 items-center gap-1">
+                <ItemOrderButtons label={section.title} items={categories} index={index} onChange={(categories) => onUpdate({ categories })} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
+                  aria-label={`删除技能分类第${index + 1}项`}
+                  title={`删除技能分类第${index + 1}项`}
+                  onClick={() => removeCategory(index)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <EditableList label={t('technologies')} items={cat.skills} onChange={(v) => updateCategory(index, { skills: v })} />
           </div>

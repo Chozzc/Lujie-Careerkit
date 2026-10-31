@@ -105,9 +105,7 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
   });
 
   const savedSections = hydrateEditorSections(editor.sections, resumeId, now);
-  const sections = savedSections ? mergeEditorSections(savedSections, generatedSections) : generatedSections;
-
-  return {
+  const resume: Resume = {
     id: resumeId,
     userId: "local-user",
     title: content.editor?.displayName?.trim() || (content.basics.name ? `${content.basics.name}的简历` : "未命名简历"),
@@ -117,8 +115,18 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
     createdAt: now,
     updatedAt: now,
     themeConfig: normalizeResumeTheme(editor.themeConfig),
-    sections,
+    sections: savedSections ?? generatedSections,
   };
+
+  if (savedSections) {
+    const savedContent = normalizeResumeContent(jadeResumeToContent(resume));
+    const unchanged = Object.entries(savedContent).every(([key, value]) =>
+      key === "editor" || JSON.stringify(value) === JSON.stringify(content[key as keyof ResumeContent]),
+    );
+    // Keep unfinished entries and empty lines; only merge content changed outside the editor.
+    if (!unchanged) resume.sections = mergeEditorSections(savedSections, generatedSections);
+  }
+  return resume;
 }
 
 export function jadeResumeToContent(resume: Resume): ResumeContent {

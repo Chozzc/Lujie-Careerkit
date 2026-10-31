@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, X, RefreshCw, Star, Code2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { ItemOrderButtons } from '../fields/item-order-buttons';
 import { EditableText } from '../fields/editable-text';
 import { EditableRichText } from '../fields/editable-rich-text';
 import { generateId } from '@/lib/utils';
@@ -40,9 +41,10 @@ export function GitHubSection({ section, onUpdate }: Props) {
     onUpdate({ items: [...items, newItem] } as any);
   };
 
-  const updateItem = (index: number, data: Partial<GitHubRepoItem>) => {
+  const updateItem = (itemId: string, data: Partial<GitHubRepoItem>) => {
     const latest = itemsRef.current;
-    const updated = latest.map((item, i) => (i === index ? { ...item, ...data } : item));
+    const updated = latest.map((item) => (item.id === itemId ? { ...item, ...data } : item));
+    itemsRef.current = updated;
     onUpdate({ items: updated } as any);
   };
 
@@ -71,9 +73,9 @@ export function GitHubSection({ section, onUpdate }: Props) {
     });
   };
 
-  const fetchRepo = async (index: number, url: string) => {
+  const fetchRepo = async (itemId: string, url: string) => {
     const latest = itemsRef.current;
-    const item = latest[index];
+    const item = latest.find((item) => item.id === itemId);
     if (!item) return;
     if (!GITHUB_REPO_RE.test(url)) {
       setRepoError(item.id, '请填写有效的 GitHub 仓库链接，例如 https://github.com/vercel/next.js。');
@@ -88,7 +90,9 @@ export function GitHubSection({ section, onUpdate }: Props) {
       if (!res.ok) {
         throw new Error(data?.message ?? 'GitHub 仓库信息读取失败。');
       }
-      updateItem(index, {
+      // A pending request must follow its entry when the user reorders the list.
+      if (itemsRef.current.find((entry) => entry.id === itemId)?.repoUrl !== url) return;
+      updateItem(itemId, {
         name: data.name,
         stars: data.stars,
         language: data.language,
@@ -107,7 +111,7 @@ export function GitHubSection({ section, onUpdate }: Props) {
 
   const handleUrlChange = (index: number, value: string) => {
     const item = items[index];
-    updateItem(index, { repoUrl: value });
+    updateItem(item.id, { repoUrl: value });
     setRepoError(item.id, '');
 
     const prev = debounceTimers.current.get(item.id);
@@ -116,7 +120,7 @@ export function GitHubSection({ section, onUpdate }: Props) {
     if (GITHUB_REPO_RE.test(value)) {
       const timer = setTimeout(() => {
         debounceTimers.current.delete(item.id);
-        fetchRepo(index, value);
+        fetchRepo(item.id, value);
       }, 600);
       debounceTimers.current.set(item.id, timer);
     }
@@ -128,9 +132,9 @@ export function GitHubSection({ section, onUpdate }: Props) {
     if (didAutoRefresh.current) return;
     didAutoRefresh.current = true;
     const current = itemsRef.current;
-    current.forEach((item, index) => {
+    current.forEach((item) => {
       if (item.repoUrl && GITHUB_REPO_RE.test(item.repoUrl)) {
-        fetchRepo(index, item.repoUrl);
+        fetchRepo(item.id, item.repoUrl);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,16 +148,22 @@ export function GitHubSection({ section, onUpdate }: Props) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-zinc-400">#{index + 1}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
-                aria-label={`删除 GitHub 项目第${index + 1}项`}
-                title={`删除 GitHub 项目第${index + 1}项`}
-                onClick={() => removeItem(index)}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <ItemOrderButtons label={section.title} items={items} index={index} onChange={(items) => {
+                  itemsRef.current = items;
+                  onUpdate({ items });
+                }} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 cursor-pointer p-1 text-zinc-400 hover:text-red-500"
+                  aria-label={`删除 GitHub 项目第${index + 1}项`}
+                  title={`删除 GitHub 项目第${index + 1}项`}
+                  onClick={() => removeItem(index)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
             <div className="relative">
               <EditableText
@@ -190,14 +200,14 @@ export function GitHubSection({ section, onUpdate }: Props) {
                   className="inline-flex cursor-pointer items-center gap-0.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
                   aria-label={`刷新${item.name}仓库信息`}
                   title={`刷新${item.name}仓库信息`}
-                  onClick={() => fetchRepo(index, item.repoUrl)}
+                  onClick={() => fetchRepo(item.id, item.repoUrl)}
                   disabled={loadingIds.has(item.id)}
                 >
                   <RefreshCw className={`h-3 w-3 ${loadingIds.has(item.id) ? 'animate-spin' : ''}`} />
                 </button>
               </div>
             )}
-            <EditableRichText label={t('description')} value={item.description} onChange={(v) => updateItem(index, { description: v })} />
+            <EditableRichText label={t('description')} value={item.description} onChange={(v) => updateItem(item.id, { description: v })} />
           </div>
         </div>
       ))}

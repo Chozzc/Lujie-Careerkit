@@ -3,6 +3,7 @@
 import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ItemOrderButtons } from './item-order-buttons';
 
 interface EditableListProps {
   label: string;
@@ -35,8 +36,9 @@ export function EditableList({ label, items, onChange, placeholder }: EditableLi
               onChange={(e) => updateItem(index, e.target.value)}
               placeholder={placeholder}
               rows={1}
-              className="max-h-40 min-h-8 resize-none overflow-y-auto py-1.5 text-sm leading-5"
+              className="max-h-40 min-h-8 min-w-0 flex-1 resize-none overflow-y-auto py-1.5 text-sm leading-5"
             />
+            <ItemOrderButtons label={label} items={items} index={index} onChange={onChange} />
             <Button
               variant="ghost"
               size="sm"

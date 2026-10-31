@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { EditableText } from '../fields/editable-text';
 import { FieldWrapper } from '../fields/field-wrapper';
+import { ItemOrderButtons } from '../fields/item-order-buttons';
 import { generateId } from '@/lib/utils';
 import type { ResumeSection, LanguagesContent, LanguageItem } from '@/types/resume';
 
@@ -39,23 +40,22 @@ export function LanguagesSection({ section, onUpdate }: Props) {
         <div key={item.id || `lang-${index}`}>
           {index > 0 && <Separator className="mb-4" />}
           <div className="space-y-3">
+            <div className="flex items-center justify-end gap-1">
+              <ItemOrderButtons label={section.title} items={items} index={index} onChange={(items) => onUpdate({ items })} />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 cursor-pointer p-0 text-zinc-400 hover:text-red-500"
+                aria-label={`删除语言能力第${index + 1}项`}
+                title={`删除语言能力第${index + 1}项`}
+                onClick={() => removeItem(index)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <FieldWrapper>
               <EditableText label={t('language')} value={item.language} onChange={(v) => updateItem(index, { language: v })} />
-              <div className="flex items-end gap-1">
-                <div className="flex-1">
-                  <EditableText label={t('proficiency')} value={item.proficiency} onChange={(v) => updateItem(index, { proficiency: v })} />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 cursor-pointer p-0 text-zinc-400 hover:text-red-500"
-                  aria-label={`删除语言能力第${index + 1}项`}
-                  title={`删除语言能力第${index + 1}项`}
-                  onClick={() => removeItem(index)}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <EditableText label={t('proficiency')} value={item.proficiency} onChange={(v) => updateItem(index, { proficiency: v })} />
             </FieldWrapper>
             <EditableText label={t('description')} value={(item as any).description || ''} onChange={(v) => updateItem(index, { description: v } as any)} />
           </div>

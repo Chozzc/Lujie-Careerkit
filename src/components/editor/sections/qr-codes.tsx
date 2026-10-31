@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { X, Sparkles, Plus } from 'lucide-react';
 import { useResumeStore } from '@/stores/resume-store';
 import { extractUrlsFromResume } from '@/lib/qrcode';
+import { ItemOrderButtons } from '../fields/item-order-buttons';
 import type { ResumeSection, QrCodesContent, QrCodeItem } from '@/types/resume';
 
 function isValidUrl(str: string): boolean {
@@ -93,6 +94,7 @@ export function QrCodesSection({ section, onUpdate }: Props) {
             }}
             className={`h-7 min-w-0 flex-1 rounded border bg-transparent px-2 text-xs outline-none ${invalidIds.has(qr.id) ? 'border-red-400 text-red-500 placeholder:text-red-300 focus:border-red-500' : 'border-zinc-200 focus:border-zinc-400 dark:border-zinc-700 dark:focus:border-zinc-500'}`}
           />
+          <ItemOrderButtons label={section.title} items={items} index={idx} onChange={(items) => onUpdate({ items })} />
           <button
             type="button"
             onClick={() => {
