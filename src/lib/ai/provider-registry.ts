@@ -11,8 +11,8 @@ export type AiProviderDefinition = {
   apiKeyOptional?: boolean;
 };
 
-export const DEFAULT_AI_PROVIDER_ID = "qwen";
-export const DEFAULT_AI_MODEL = "qwen3.8-flash";
+export const DEFAULT_AI_PROVIDER_ID = "deepseek";
+export const DEFAULT_AI_MODEL = "deepseek-flash";
 export const LEGACY_DEFAULT_AI_MODELS = ["gpt-4o-mini", "gpt-5.4-mini", "deepseek-v4-flash", "qwen3.6-flash"] as const;
 
 export const AI_PROVIDER_GROUPS: Array<{ id: AiProviderGroupId; label: string }> = [

@@ -266,7 +266,7 @@ export function AiSettingsPanel({
                     <SelectItem value={CUSTOM_MODEL_VALUE}>{t("customModel")}</SelectItem>
                     {provider.models.map((item) => (
                       <SelectItem key={item} value={item}>
-                        {provider.id === "deepseek" && item === "deepseek-flash" ? "DeepSeek V4.1 Flash · deepseek-flash" : item}
+                        {item}
                       </SelectItem>
                     ))}
                   </SelectContent>

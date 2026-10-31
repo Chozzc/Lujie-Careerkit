@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEFAULT_AI_PROVIDER_ID,
+  DEFAULT_AI_MODEL,
   AI_PROVIDER_GROUPS,
   AI_PROVIDERS,
   getAiProvider,
@@ -22,6 +24,9 @@ describe("AI provider registry", () => {
   });
 
   it("returns stable defaults for known providers", () => {
+    expect(DEFAULT_AI_PROVIDER_ID).toBe("deepseek");
+    expect(DEFAULT_AI_MODEL).toBe("deepseek-flash");
+    expect(getAiProvider(DEFAULT_AI_PROVIDER_ID).defaultModel).toBe(DEFAULT_AI_MODEL);
     expect(getDefaultAiModel("deepseek")).toBe("deepseek-flash");
     expect(getDefaultAiModel("openai")).toBe("gpt-6-luna");
     expect(getDefaultAiModel("qwen")).toBe("qwen3.8-flash");

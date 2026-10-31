@@ -64,12 +64,12 @@ export function getAiSettingsMaintenancePatch(
   }
 
   if (
-    settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
+    settings.aiProvider === "qwen" &&
     oldQwenDefaultModels.has(settings.aiModel) &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
-    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
+    const defaultProvider = getAiProvider("qwen");
     const defaultModel = getDefaultAiModel(defaultProvider.id);
     return {
       aiProvider: defaultProvider.id,
@@ -80,12 +80,12 @@ export function getAiSettingsMaintenancePatch(
   }
 
   if (
-    settings.aiProvider === DEFAULT_AI_PROVIDER_ID &&
+    settings.aiProvider === "qwen" &&
     settings.aiBaseUrl === getAiProvider("deepseek").baseUrl &&
     !settings.aiEnabled &&
     !settings.aiApiKey
   ) {
-    const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
+    const defaultProvider = getAiProvider("qwen");
     const defaultModel = getDefaultAiModel(defaultProvider.id);
     return {
       aiProvider: defaultProvider.id,

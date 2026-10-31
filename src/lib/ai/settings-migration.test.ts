@@ -16,7 +16,7 @@ describe("AI settings maintenance migration", () => {
     expect(patch).not.toHaveProperty("aiProvider");
   });
 
-  it("moves an untouched DeepSeek default to the Qwen default", () => {
+  it("updates an untouched DeepSeek default without switching providers", () => {
     expect(
       getAiSettingsMaintenancePatch({
         aiProvider: "deepseek",
@@ -26,9 +26,9 @@ describe("AI settings maintenance migration", () => {
         aiEnabled: false,
       }),
     ).toMatchObject({
-      aiProvider: "qwen",
-      aiModel: "qwen3.8-flash",
-      aiBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      aiProvider: "deepseek",
+      aiModel: "deepseek-flash",
+      aiBaseUrl: "https://api.deepseek.com/v1",
       aiLastTestStatus: "untested",
     });
   });
