@@ -1,14 +1,15 @@
 import { Buffer } from "node:buffer";
 
-import { parseResumeTextWithAi, parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
+import { parseResumeImagesWithAi, parseResumeTextWithAi, parseResumeWithQwenDoc } from "@/lib/ai/resume-import";
 import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
-import { extractPdfText, extractWordText } from "@/lib/resume-file-parsers";
+import { extractPdfText, extractWordText, renderScannedResumePages } from "@/lib/resume-file-parsers";
 import { normalizeResumeContent, resumeContentFromText, isResumeContentLike } from "@/lib/resume-content";
 import { getResumeUploadKind } from "@/lib/resume-upload";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const VISION_SETUP_MESSAGE = "图片或扫描 PDF 需要能识别图片的模型。请在设置中选择视觉模型，或上传带文本层的文件。";
 
 export async function POST(request: Request) {
   try {
@@ -54,14 +55,14 @@ export async function POST(request: Request) {
     if (preferLocalFallback) {
       const local = await localFallback(file, kind, plainText, "已使用本地规则解析，字段归类效果可能不佳。");
       if (local) return local;
-      return Response.json({ error: "图片简历需要先配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
+      return Response.json({ error: VISION_SETUP_MESSAGE }, { status: 422 });
     }
 
-    if (settings.providerId !== "qwen" && kind !== "image") {
-      const text = await extractLocalText(file, kind, plainText);
-      if (!text) {
-        return Response.json({ error: "未能从该 PDF 或 Word 文件提取到文本；扫描件需要配置阿里百炼 / Qwen 后才能解析。" }, { status: 422 });
-      }
+    const text = await extractLocalText(file, kind, plainText, settings.enabled).catch((error) => {
+      if (settings.providerId !== "qwen") throw error;
+      return "";
+    });
+    if (text) {
       const result = await parseResumeTextWithAi({ fileName: file.name, text, settings });
       return ok(
         file.name,
@@ -71,17 +72,42 @@ export async function POST(request: Request) {
       );
     }
 
-    let aiError: unknown = null;
+    if (!settings.enabled) return Response.json({ error: VISION_SETUP_MESSAGE }, { status: 422 });
+    const mayUseQwenDocument = settings.providerId === "qwen";
+    if (kind === "image" || kind === "pdf") {
+      const model = settings.model.split("/").at(-1) ?? settings.model;
+      if (/^(?:deepseek-v4-pro|gpt-oss[-:](?:20b|120b))$/i.test(model)) {
+        return Response.json({
+          error: `当前模型（${settings.model}）不支持图片输入。请切换到支持图片的模型，例如 DeepSeek Flash，或上传 Word、带文本层的 PDF。`,
+        }, { status: 422 });
+      }
+      try {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const images = kind === "pdf" ? await renderScannedResumePages(buffer) : [buffer];
+        try {
+          const content = await parseResumeImagesWithAi({ fileName: file.name, images, settings });
+          return ok(file.name, content, "ai-vision");
+        } catch {
+          if (!mayUseQwenDocument) {
+            return Response.json({
+              error: "当前模型未能可靠读取图片。请检查模型是否支持图片输入，或换用清晰的文件重试。",
+            }, { status: 502 });
+          }
+        }
+      } catch (error) {
+        if (!mayUseQwenDocument) {
+          return Response.json({ error: formatError(error) || "无法读取扫描 PDF。" }, { status: 422 });
+        }
+      }
+    }
+    if (!mayUseQwenDocument) {
+      return Response.json({ error: "未能从文件提取到简历文本。" }, { status: 422 });
+    }
     try {
       return ok(file.name, await parseResumeWithQwenDoc({ file, settings }), "qwen-doc-turbo");
-    } catch (error) {
-      aiError = error;
+    } catch {
+      return Response.json({ error: "百炼文档解析失败，请检查模型连接或文件内容。" }, { status: 502 });
     }
-
-    const local = await localFallback(file, kind, plainText, `AI 解析失败，已使用本地文本兜底。${formatError(aiError)}`);
-    if (local) return local;
-
-    return Response.json({ error: `AI 简历解析失败。${formatError(aiError) || "请确认已在设置中启用阿里百炼 / Qwen。"}` }, { status: 502 });
   } catch (error) {
     return Response.json({ error: formatError(error) || "简历导入失败，请稍后重试。" }, { status: 500 });
   }
@@ -108,12 +134,13 @@ async function extractLocalText(
   file: File,
   kind: NonNullable<ReturnType<typeof getResumeUploadKind>>,
   plainText: string,
+  requireTextOnEveryPage = false,
 ) {
   if (kind === "text" || kind === "json") return plainText;
   if (kind !== "pdf" && kind !== "word") return "";
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const text = kind === "pdf" ? await extractPdfText(buffer) : await extractWordText(buffer);
+  const text = kind === "pdf" ? await extractPdfText(buffer, { requireTextOnEveryPage }) : await extractWordText(buffer);
   return text.replace(/\s/g, "").length >= 10 ? text : "";
 }
 

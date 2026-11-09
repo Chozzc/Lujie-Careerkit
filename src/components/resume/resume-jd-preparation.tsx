@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 type ResumePickerProps = Omit<ComponentProps<typeof ResumeSourcePicker>, "className">;
 
 export const RESUME_IMPORT_AI_SETUP_MESSAGE =
-  "AI 功能当前未启用，请在设置页开启并测试连接。导入简历建议配置阿里百炼API Key：可解析复杂文件，否则使用其他解析方式(图片及复杂文件无法解析，且效果可能不佳)。";
+  "可以继续使用本地规则导入带文字的简历。图片或扫描 PDF 请在设置中选择支持图片输入的模型。";
 
 export function ResumeJdPreparation({
   resumePicker,

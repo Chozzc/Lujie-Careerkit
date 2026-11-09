@@ -1,3 +1,7 @@
+import { randomBytes } from "node:crypto";
+import { generateText, Output } from "ai";
+
+import { createAiModel } from "./client";
 import { parseAiJsonResponse, runAiObjectTask, type AiObjectExecutor, type AiTaskResult } from "./tasks";
 import type { EffectiveAiSettings } from "./settings";
 import { coerceResumeContent, normalizeResumeContent, resumeContentFromText, resumeContentSchema } from "../resume-content";
@@ -54,6 +58,61 @@ export async function parseResumeTextWithAi(
     ...result,
     data: normalizeResumeContent(result.data, input.fileName.replace(/\.[^.]+$/, "")),
   };
+}
+
+export async function parseResumeImagesWithAi(input: {
+  fileName: string;
+  images: Uint8Array[];
+  settings: EffectiveAiSettings;
+}): Promise<ResumeContent> {
+  // Some text-only endpoints silently discard image parts. Require evidence that pixels reached the model.
+  const code = randomBytes(3).toString("hex").toUpperCase();
+  const { CanvasFactory } = await import("pdf-parse/worker");
+  const { canvas, context } = new CanvasFactory().create(384, 128);
+  if (!canvas || !context) throw new Error("无法创建图片识别校验。");
+  context.fillStyle = "white";
+  context.fillRect(0, 0, 384, 128);
+  context.fillStyle = "black";
+  context.font = "bold 68px monospace";
+  context.fillText(code, 40, 88);
+
+  const result = await generateText({
+    model: createAiModel(input.settings),
+    ...(input.settings.providerId === "deepseek" ? { output: Output.json() } : {}),
+    maxRetries: 0,
+    abortSignal: AbortSignal.timeout(90_000),
+    messages: [{
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: [
+            "第一张图片是校验图，请逐字读出其中的六位字符。其余图片才是简历，按原文件页序排列。",
+            buildResumeImportPrompt(input.fileName),
+            '把上述简历对象放在 resume 字段，最终只返回 {"imageCode":"校验图上的六位字符","resume":{...}}。图片无法辨认时请留空，禁止猜测或将校验码写入简历。',
+          ].join("\n"),
+        },
+        { type: "image", image: canvas.toBuffer("image/png") },
+        ...input.images.map((image) => ({ type: "image" as const, image })),
+      ],
+    }],
+  });
+  if (result.finishReason !== "stop") throw new Error("模型未完整返回简历解析结果。");
+  const output = parseAiJsonResponse(result.text);
+  if (!output || typeof output !== "object" || !("imageCode" in output) ||
+      typeof output.imageCode !== "string" || output.imageCode.trim().toUpperCase() !== code ||
+      !("resume" in output)) {
+    throw new Error("未能确认模型读到了图片。");
+  }
+
+  const content = normalizeResumeContent(resumeContentSchema.parse(output.resume), "");
+  const { basics, profile, education, experiences, internships, projects, skills, awards, customSections, selfReview } = content;
+  if (!Object.values(basics).some((value) => value.length) && !profile.title && !profile.summary &&
+      !education.length && !experiences.length && !internships.length && !projects.length &&
+      !skills.length && !awards.length && !customSections?.length && !selfReview) {
+    throw new Error("未能从图片中识别简历内容，请上传更清晰的文件。");
+  }
+  return normalizeResumeContent(content, input.fileName.replace(/\.[^.]+$/, ""));
 }
 
 async function uploadQwenFile(file: File, settings: EffectiveAiSettings) {
