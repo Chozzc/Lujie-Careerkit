@@ -144,7 +144,7 @@ export interface GitHubContent {
   items: GitHubRepoItem[];
 }
 
-export type SectionContent =
+export type SectionContent = (
   | PersonalInfoContent
   | SummaryContent
   | WorkExperienceContent
@@ -156,7 +156,8 @@ export type SectionContent =
   | LanguagesContent
   | CustomContent
   | GitHubContent
-  | QrCodesContent;
+  | QrCodesContent
+) & { inlineLayout?: boolean; inlineBoldFields?: string[] };
 
 export interface ResumeSection {
   id: string;

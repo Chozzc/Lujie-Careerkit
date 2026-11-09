@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -14,7 +16,8 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const PRIMARY = '#37352f';
@@ -98,7 +101,7 @@ function BlocksSectionContent({ section, resume }: { section: any; resume: Resum
         {items.map((item: any) => (
           <div key={item.id} className="rounded-md border p-3" style={{ borderColor: '#e3e2de' }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{item.position}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</h3>
               <span className="shrink-0 text-xs" style={{ color: '#9b9a97' }}>
                 {item.startDate} - {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}
               </span>
@@ -130,19 +133,19 @@ function BlocksSectionContent({ section, resume }: { section: any; resume: Resum
   if (section.type === 'education') {
     const items = (content as EducationContent).items || [];
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {items.map((item: any) => (
           <div key={item.id} className="rounded-md border p-3" style={{ borderColor: '#e3e2de' }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{item.institution}</h3>
-              <span className="text-xs" style={{ color: '#9b9a97' }}>{item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+              {resumeEducationHeading(item, content.inlineLayout === true, <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{resumeField(section, "institution", item.institution)}</h3>, <p className="text-sm" style={{ color: '#787774' }}>{resumeDegree(section, item.degree, item.field)}{resumeField(section, "location", item.location ? ` , ${item.location}` : '')}</p>, resumeEducationGpa(section, item.gpa, true, { className: "text-xs", style: { color: '#9b9a97' } }), true)}
+              <span className="text-xs" style={{ color: '#9b9a97' }}>{resumeEducationDates(section, item.startDate, item.endDate, " - ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            <p className="text-sm" style={{ color: '#787774' }}>{degreeField(item.degree, item.field)}{item.location ? ` , ${item.location}` : ''}</p>
-            {item.gpa && <p className="text-xs" style={{ color: '#9b9a97' }}>GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && <p className="text-sm" style={{ color: '#787774' }}>{resumeDegree(section, item.degree, item.field)}{resumeField(section, "location", item.location ? ` , ${item.location}` : '')}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-xs" style={{ color: '#9b9a97' }}>{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
                 {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm" style={{ color: '#787774' }} dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  <li key={i} className="text-sm" style={{ color: '#787774' }} data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
             )}
@@ -187,7 +190,7 @@ function BlocksSectionContent({ section, resume }: { section: any; resume: Resum
         {items.map((item: any) => (
           <div key={item.id} className="rounded-md border p-3" style={{ borderColor: '#e3e2de' }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: ACCENT }}>{item.name}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: ACCENT }}><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</h3>
               {item.startDate && (
                 <span className="text-xs" style={{ color: '#9b9a97' }}>
                   {item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}
@@ -238,11 +241,11 @@ function BlocksSectionContent({ section, resume }: { section: any; resume: Resum
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="overflow-hidden rounded-md border" style={{ borderColor: '#e3e2de' }}>
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="overflow-hidden rounded-md border" style={{ borderColor: '#e3e2de' }}>
         {items.map((item: any, idx: number) => (
           <div key={item.id} className="flex items-baseline justify-between px-3 py-2" style={{ borderBottom: idx < items.length - 1 ? '1px solid #e3e2de' : 'none' }}>
-            <span className="text-sm font-medium" style={{ color: PRIMARY }}>{item.name}</span>
-            {(item.issuer || item.date) && <span className="text-xs" style={{ color: '#9b9a97' }}>{item.issuer}{item.issuer && item.date ? ' | ' : ''}{item.date}</span>}
+            <span className="text-sm font-medium" style={{ color: PRIMARY }}>{resumeField(section, "name", item.name)}</span>
+            {(item.issuer || item.date) && <span className="text-xs" style={{ color: '#9b9a97' }}>{resumeField(section, "issuer", item.issuer)}{item.issuer && item.date ? ' | ' : ''}{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

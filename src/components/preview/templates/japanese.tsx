@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -14,7 +16,8 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const PRIMARY = '#1c1917';
@@ -83,7 +86,7 @@ function JapaneseSectionContent({ section, lang }: { section: any; lang?: string
         {((content as WorkExperienceContent).items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-normal" style={{ color: PRIMARY }}>{item.position}</h3>
+              <h3 className="text-sm font-normal" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</h3>
               <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{item.startDate} &ndash; {item.endDate || (item.current ? (lang === 'zh' ? '至今' : 'Present') : '')}</span>
             </div>
             {item.company && <p className="mt-0.5 text-xs font-light" style={{ color: ACCENT }}>{item.company}{item.location ? `, ${item.location}` : ''}</p>}
@@ -110,21 +113,21 @@ function JapaneseSectionContent({ section, lang }: { section: any; lang?: string
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-5">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-5">
         {((content as EducationContent).items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-normal" style={{ color: PRIMARY }}>{degreeField(item.degree, item.field)}</h3>
-              <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{item.startDate} &ndash; {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</span>
+              {resumeEducationHeading(item, content.inlineLayout === true, <h3 className="text-sm font-normal" style={{ color: PRIMARY }}>{resumeDegree(section, item.degree, item.field)}</h3>, (item.institution && <p className="mt-0.5 text-xs font-light" style={{ color: ACCENT }}>{resumeField(section, "institution", item.institution)}{resumeField(section, "location", item.location ? `, ${item.location}` : '')}</p>), resumeEducationGpa(section, item.gpa, true, { className: "mt-1 text-xs font-light", style: { color: ACCENT } }))}
+              <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{resumeEducationDates(section, item.startDate, item.endDate, " – ", lang === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.institution && <p className="mt-0.5 text-xs font-light" style={{ color: ACCENT }}>{item.institution}{item.location ? `, ${item.location}` : ''}</p>}
-            {item.gpa && <p className="mt-1 text-xs font-light" style={{ color: ACCENT }}>GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && (item.institution && <p className="mt-0.5 text-xs font-light" style={{ color: ACCENT }}>{resumeField(section, "institution", item.institution)}{resumeField(section, "location", item.location ? `, ${item.location}` : '')}</p>)}
+            {content.inlineLayout !== true && item.gpa && <p className="mt-1 text-xs font-light" style={{ color: ACCENT }}>{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-2 space-y-1">
                 {item.highlights.map((h: string, i: number) => (
                   <li key={i} className="flex items-start gap-3 text-sm font-light" style={{ color: PRIMARY }}>
                     <span className="mt-2 inline-block h-px w-3 shrink-0" style={{ backgroundColor: ACCENT }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    <span data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                   </li>
                 ))}
               </ul>
@@ -154,7 +157,7 @@ function JapaneseSectionContent({ section, lang }: { section: any; lang?: string
         {((content as ProjectsContent).items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-normal" style={{ color: PRIMARY }}>{item.name}</h3>
+              <h3 className="text-sm font-normal" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</h3>
               {item.startDate && (
                 <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{item.startDate} {'\u2013'} {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</span>
               )}
@@ -181,14 +184,14 @@ function JapaneseSectionContent({ section, lang }: { section: any; lang?: string
 
   if (section.type === 'certifications') {
     return (
-      <div className="space-y-2">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-2">
         {((content as CertificationsContent).items || []).map((item: any) => (
           <div key={item.id} className="flex items-baseline justify-between">
             <div>
-              <span className="text-sm font-normal" style={{ color: PRIMARY }}>{item.name}</span>
-              {item.issuer && <span className="text-xs font-light" style={{ color: ACCENT }}> &mdash; {item.issuer}</span>}
+              <span className="text-sm font-normal" style={{ color: PRIMARY }}>{resumeField(section, "name", item.name)}</span>
+              {item.issuer && <span className="text-xs font-light" style={{ color: ACCENT }}> &mdash; {resumeField(section, "issuer", item.issuer)}</span>}
             </div>
-            {item.date && <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{item.date}</span>}
+            {item.date && <span className="shrink-0 text-[10px] font-light" style={{ color: ACCENT }}>{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

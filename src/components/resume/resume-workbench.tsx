@@ -39,6 +39,7 @@ import {
   collectResumePageBreakCandidates,
   getCombinedPageImageLayout,
 } from "@/lib/resume-export-layout";
+import { isResumeFieldBold } from "@/lib/resume-inline-layout";
 import { contentToJadeResume, jadeResumeToContent } from "@/lib/resume-adapter";
 import { preserveResumeInternalMetadata } from "@/lib/resume-content";
 import { buildDocxThemeConfig, type DocxThemeConfig } from "@/lib/resume-docx-style";
@@ -1275,9 +1276,42 @@ function appendSectionToDocx(
   docxTheme: DocxThemeConfig,
 ) {
   const content = getRecord(section.content);
+  const items = getArray(content.items).map(getRecord);
+  if (section.type === "certifications") {
+    const compact = content.inlineLayout === true;
+    const rows = items.map((item) => {
+      const name = getString(item.name);
+      const issuer = getString(item.issuer);
+      const date = getString(item.date);
+      return [
+        { field: "name", text: name },
+        { field: "issuer", text: issuer ? (name ? " | " : "") + issuer : "" },
+        { field: "date", text: date ? (compact ? (name || issuer ? " " : "") + "(" + date + ")" : "\t" + date) : "" },
+      ].filter(({ text }) => text).map(({ field, text }) => {
+        const bold = isResumeFieldBold(section, field);
+        return new docx.TextRun({
+          text, bold, color: bold ? "000000" : field === "date" ? "64748B" : "0F172A",
+          size: field === "date" ? docxTheme.sizes.meta : docxTheme.sizes.h3, font: docxTheme.font,
+          italics: field === "date",
+        });
+      });
+    }).filter((row) => row.length);
+    const paragraphs = compact
+      ? [rows.flatMap((row, index) => index ? [new docx.TextRun({ text: "　·　", size: docxTheme.sizes.h3, font: docxTheme.font }), ...row] : row)]
+      : rows;
+    for (const row of paragraphs.filter((parts) => parts.length)) {
+      children.push(new docx.Paragraph({
+        spacing: { before: 90, after: 55 },
+        tabStops: [{ type: docx.TabStopType.RIGHT, position: docx.TabStopPosition.MAX }],
+        children: row,
+      }));
+    }
+    return;
+  }
 
   if (section.type === "summary" || section.type === "self_evaluation") {
-    pushDocxParagraph(children, docx, docxTheme, getString(content.text));
+    const text = getString(content.text);
+    pushDocxParagraph(children, docx, docxTheme, section.type === "self_evaluation" ? text.replace(/^[\t \u00a0\u3000]+/gm, "") : text);
     return;
   }
 
@@ -1299,8 +1333,12 @@ function appendSectionToDocx(
     return;
   }
 
-  getArray(content.items).forEach((rawItem) => {
-    const item = getRecord(rawItem);
+  const education = section.type === "education";
+  const textStyle = (field: string, color: string) => {
+    const bold = isResumeFieldBold(section, field);
+    return { bold, color: education && bold ? "000000" : color, font: docxTheme.font };
+  };
+  items.forEach((item) => {
     const title =
       getString(item.company) ||
       getString(item.institution) ||
@@ -1308,37 +1346,71 @@ function appendSectionToDocx(
       getString(item.title);
     const subtitle =
       getString(item.position) ||
-      getString(item.degree) ||
-      getString(item.field) ||
+      [getString(item.degree), getString(item.field)].filter(Boolean).join(" | ") ||
       getString(item.subtitle) ||
       getString(item.issuer);
-    const dates = [getString(item.startDate), getString(item.endDate), getString(item.date)]
+    const dates = [
+      getString(item.startDate),
+      getString(item.endDate),
+      getString(item.date),
+    ]
       .filter(Boolean)
       .join(" - ");
 
+    const educationFields = [
+      { key: "degree", text: getString(item.degree) },
+      { key: "field", text: getString(item.field) },
+      { key: "institution", text: getString(item.institution) },
+    ];
+    if (education && content.inlineLayout !== true) educationFields.unshift(educationFields.pop()!);
+    const gpa = education && getString(item.gpa) ? `GPA: ${getString(item.gpa)}` : "";
+    const compact = content.inlineLayout === true;
+    const gpaRun = gpa ? new docx.TextRun({
+      text: compact ? `   ${gpa}` : gpa,
+      ...textStyle("gpa", "334155"),
+      size: docxTheme.sizes.meta,
+    }) : null;
+    const dateStyle = textStyle("date", "64748B");
     const heading = [title, subtitle].filter(Boolean).join(" | ");
-    if (heading || dates) {
+    if (heading || dates || (gpa && content.inlineLayout === true)) {
       children.push(new docx.Paragraph({
         spacing: { before: 90, after: 55 },
         tabStops: [{ type: docx.TabStopType.RIGHT, position: docx.TabStopPosition.MAX }],
         children: [
-          new docx.TextRun({ text: heading, bold: true, color: "0F172A", size: docxTheme.sizes.h3, font: docxTheme.font }),
-          ...(dates ? [new docx.TextRun({ text: `\t${dates}`, italics: true, color: "64748B", size: docxTheme.sizes.meta, font: docxTheme.font })] : []),
+          ...(education
+            ? educationFields.filter(({ text }) => text).flatMap(({ key, text }, index) => [
+              ...(index ? [new docx.TextRun({
+                text: content.inlineLayout !== true ? " | " : " - ",
+                size: docxTheme.sizes.h3, font: docxTheme.font,
+              })] : []),
+              new docx.TextRun({ text, ...textStyle(key, "0F172A"), size: docxTheme.sizes.h3 }),
+            ])
+            : [new docx.TextRun({ text: heading, bold: true, color: "0F172A", size: docxTheme.sizes.h3, font: docxTheme.font })]),
+          ...(gpaRun && compact ? [gpaRun] : []),
+          ...(dates ? [new docx.TextRun({ text: `\t${dates}`, ...dateStyle, italics: true, size: docxTheme.sizes.meta })] : []),
         ],
       }));
     }
+    if (gpaRun && !compact) children.push(new docx.Paragraph({ spacing: { after: 90 }, children: [gpaRun] }));
     pushDocxParagraph(children, docx, docxTheme, getString(item.description));
-    getArray(item.highlights)
-      .map(getString)
-      .filter(Boolean)
-      .forEach((highlight) => {
-        children.push(new docx.Paragraph({
-          bullet: { level: 0 },
-          spacing: { after: 55 },
-          children: [new docx.TextRun({ text: highlight, color: "334155", size: docxTheme.sizes.meta, font: docxTheme.font })],
-        }));
-      });
+    appendDocxHighlights(children, docx, docxTheme, getArray(item.highlights), textStyle("highlights", "334155"));
   });
+}
+
+function appendDocxHighlights(
+  children: Array<InstanceType<typeof import("docx").Paragraph>>,
+  docx: Pick<typeof import("docx"), "Paragraph" | "TextRun">,
+  docxTheme: DocxThemeConfig,
+  highlights: unknown[],
+  style: { bold: boolean; color: string; font: string },
+) {
+  for (const highlight of highlights.map(getString).filter(Boolean)) {
+    children.push(new docx.Paragraph({
+      bullet: { level: 0 },
+      spacing: { after: 55 },
+      children: docxTextRuns(docx, highlight, style.font, docxTheme.sizes.meta, style.bold, style.color),
+    }));
+  }
 }
 
 function pushDocxParagraph(
@@ -1351,8 +1423,14 @@ function pushDocxParagraph(
   if (!text) return;
   children.push(new docx.Paragraph({
     spacing: { after: 90 },
-    children: [new docx.TextRun({ text, bold, color: "334155", size: docxTheme.sizes.body, font: docxTheme.font })],
+    children: docxTextRuns(docx, text, docxTheme.font, docxTheme.sizes.body, bold),
   }));
+}
+
+function docxTextRuns(docx: Pick<typeof import("docx"), "TextRun">, text: string, font: string, size: number, bold = false, color = "334155") {
+  return text.split(/\*\*(.+?)\*\*/g).flatMap((part, index) =>
+    part ? [new docx.TextRun({ text: part, bold: bold || index % 2 === 1 || undefined, color, size, font })] : [],
+  );
 }
 
 function getRecord(value: unknown): Record<string, unknown> {

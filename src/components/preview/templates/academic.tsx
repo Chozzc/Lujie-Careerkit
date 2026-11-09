@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -78,7 +80,7 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
   if (!content) return null;
 
   if (section.type === 'summary') {
-    return <p className="text-sm leading-relaxed text-zinc-600 indent-8" dangerouslySetInnerHTML={{ __html: md((content as SummaryContent).text) }} />;
+    return <p className={`text-sm leading-relaxed text-zinc-600${section.isSelfEvaluation ? '' : ' indent-8'}`} dangerouslySetInnerHTML={{ __html: md((content as SummaryContent).text) }} />;
   }
 
   if (section.type === 'work_experience') {
@@ -118,22 +120,22 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
   if (section.type === 'education') {
     const items = (content as EducationContent).items || [];
     return (
-      <div className="space-y-2.5">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-2.5">
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <div>
-                <span className="text-sm font-bold text-zinc-800">{item.degree}</span>
-                {item.field && <span className="text-sm text-zinc-600"> - {item.field}</span>}
-              </div>
-              <span className="shrink-0 text-xs text-zinc-500">{item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+              {resumeEducationHeading(item, content.inlineLayout === true, <div>
+                <span className="text-sm font-bold text-zinc-800">{resumeField(section, "degree", item.degree)}</span>
+                {item.field && <span className="text-sm text-zinc-600"> - {resumeField(section, "field", item.field)}</span>}
+              </div>, <p className="text-sm text-zinc-600">{resumeField(section, "institution", item.institution)}{resumeField(section, "location", item.location ? `, ${item.location}` : '')}</p>, resumeEducationGpa(section, item.gpa, true, { className: "text-xs text-zinc-500" }))}
+              <span className="shrink-0 text-xs text-zinc-500">{resumeEducationDates(section, item.startDate, item.endDate, " – ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            <p className="text-sm text-zinc-600">{item.institution}{item.location ? `, ${item.location}` : ''}</p>
-            {item.gpa && <p className="text-xs text-zinc-500">GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && <p className="text-sm text-zinc-600">{resumeField(section, "institution", item.institution)}{resumeField(section, "location", item.location ? `, ${item.location}` : '')}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-xs text-zinc-500">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-0.5 list-disc pl-5">
                 {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  <li key={i} className="text-sm text-zinc-600" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
             )}
@@ -197,12 +199,12 @@ function AcademicSectionContent({ section, resume }: { section: any; resume: Res
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1">
         {items.map((item: any) => (
           <p key={item.id} className="text-sm text-zinc-600">
-            <span className="font-bold text-zinc-700">{item.name}</span>
-            {item.issuer && <span>, {item.issuer}</span>}
-            {item.date && <span className="text-zinc-500"> ({item.date})</span>}
+            <span className="font-bold text-zinc-700">{resumeField(section, "name", item.name)}</span>
+            {item.issuer && <span>, {resumeField(section, "issuer", item.issuer)}</span>}
+            {item.date && <span className="text-zinc-500"> ({resumeField(section, "date", item.date)})</span>}
           </p>
         ))}
       </div>

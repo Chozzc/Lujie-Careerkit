@@ -202,6 +202,25 @@ function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): s
     ${s} a, ${s} strong {
       color: ${theme.accentColor} !important;
     }
+    ${s} [data-resume-field-bold], ${s} b { font-weight: 700; }
+    ${s} [data-education-regular] { font-weight: 400; font-size: inherit !important; line-height: inherit !important; }
+    ${s} [data-education-section] { overflow-wrap: anywhere; }
+    ${s} [data-education-gpa-inline] {
+      display: inline-block !important; margin-block: 0; padding-inline-start: 0.85em; max-width: 100%;
+    }
+    ${s} [data-education-section] b,
+    ${s} [data-certifications-section] b,
+    ${s} [data-education-section] [data-resume-field-bold],
+    ${s} [data-education-section] [data-resume-field-bold] strong {
+      color: #000 !important;
+      font-weight: 700;
+    }
+    ${s} [data-resume-dark-surface] [data-certifications-section] b { color: #fff !important; }
+    ${s} [data-education-merged], ${s} [data-education-merged] > * { display: inline; }
+    ${s} [data-resume-compact-spacing] { row-gap: 0.35em; }
+    ${s} [data-resume-compact-spacing][class*="space-y-"] > :not(:last-child) { margin-block-end: 0.35em !important; }
+    ${s} [data-resume-compact-list] { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25em 1em; }
+    ${s} [data-resume-compact-list] > * { margin-block: 0 !important; max-width: 100%; overflow-wrap: anywhere; }
     ${s} [class*="border-b-2"],
     ${s} [class*="border-b-"],
     ${s} [style*="border"] {
@@ -264,7 +283,13 @@ function normalizePreviewSections(sections: Resume["sections"]) {
       return { ...section, type: 'work_experience' };
     }
     if (section.type === 'self_evaluation') {
-      return { ...section, type: 'summary' };
+      const content = section.content as import('@/types/resume').SummaryContent;
+      return {
+        ...section,
+        type: 'summary',
+        isSelfEvaluation: true,
+        content: { ...content, text: typeof content?.text === 'string' ? content.text.replace(/^[\t \u00a0\u3000]+/gm, '').trimStart() : '' },
+      };
     }
     return section;
   });

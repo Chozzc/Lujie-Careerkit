@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -14,7 +16,8 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const PRIMARY = '#881337';
@@ -96,7 +99,7 @@ function RoseSectionContent({ section, resume }: { section: any; resume: Resume 
         {((content as WorkExperienceContent).items || []).map((item: any) => (
           <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: ROSE_100 }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{item.position}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</h3>
               <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ backgroundColor: ROSE_50, color: ACCENT }}>
                 {item.startDate} &ndash; {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}
               </span>
@@ -128,21 +131,21 @@ function RoseSectionContent({ section, resume }: { section: any; resume: Resume 
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {((content as EducationContent).items || []).map((item: any) => (
           <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: ROSE_100 }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{degreeField(item.degree, item.field)}</h3>
-              <span className="shrink-0 text-xs" style={{ color: ACCENT }}>{item.startDate} &ndash; {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+              {resumeEducationHeading(item, content.inlineLayout === true, <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{resumeDegree(section, item.degree, item.field)}</h3>, (item.institution && <p className="text-sm" style={{ color: ACCENT }}>{resumeField(section, "institution", item.institution)}</p>), resumeEducationGpa(section, item.gpa, true, { className: "text-xs", style: { color: '#a8a29e' } }))}
+              <span className="shrink-0 text-xs" style={{ color: ACCENT }}>{resumeEducationDates(section, item.startDate, item.endDate, " – ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.institution && <p className="text-sm" style={{ color: ACCENT }}>{item.institution}</p>}
-            {item.gpa && <p className="text-xs" style={{ color: '#a8a29e' }}>GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && (item.institution && <p className="text-sm" style={{ color: ACCENT }}>{resumeField(section, "institution", item.institution)}</p>)}
+            {content.inlineLayout !== true && item.gpa && <p className="text-xs" style={{ color: '#a8a29e' }}>{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 space-y-0.5">
                 {item.highlights.map((h: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-zinc-600">
                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: ACCENT }} />
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    <span data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                   </li>
                 ))}
               </ul>
@@ -182,7 +185,7 @@ function RoseSectionContent({ section, resume }: { section: any; resume: Resume 
         {((content as ProjectsContent).items || []).map((item: any) => (
           <div key={item.id} className="rounded-xl border p-4" style={{ borderColor: ROSE_100 }}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}>{item.name}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</h3>
               {item.startDate && (
                 <span className="shrink-0 text-xs" style={{ color: ACCENT }}>{item.startDate} {'\u2013'} {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
               )}
@@ -213,11 +216,11 @@ function RoseSectionContent({ section, resume }: { section: any; resume: Resume 
 
   if (section.type === 'certifications') {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="flex flex-wrap gap-2">
         {((content as CertificationsContent).items || []).map((item: any) => (
           <div key={item.id} className="rounded-xl border px-4 py-2" style={{ borderColor: ROSE_100 }}>
-            <p className="text-sm font-semibold" style={{ color: PRIMARY }}>{item.name}</p>
-            {(item.issuer || item.date) && <p className="text-xs" style={{ color: ACCENT }}>{item.issuer}{item.issuer && item.date ? ' | ' : ''}{item.date}</p>}
+            <p className="text-sm font-semibold" style={{ color: PRIMARY }}>{resumeField(section, "name", item.name)}</p>
+            {(item.issuer || item.date) && <p className="text-xs" style={{ color: ACCENT }}>{resumeField(section, "issuer", item.issuer)}{item.issuer && item.date ? ' | ' : ''}{resumeField(section, "date", item.date)}</p>}
           </div>
         ))}
       </div>

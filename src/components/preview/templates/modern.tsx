@@ -1,7 +1,9 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type { Resume, PersonalInfoContent, SummaryContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { EntryLogo } from '../entry-logo';
 import { QrCodesPreview } from '../qr-codes-preview';
@@ -117,16 +119,16 @@ function ModernSectionContent({ section, lang }: { section: any; lang?: string }
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {(content.items || []).map((item: any) => (
           <div key={item.id} className="border-l-2 pl-4" style={{ borderColor: '#0f3460' }}>
-            <h3 className="text-sm font-semibold text-zinc-800">{item.institution}</h3>
-            <p className="text-sm text-zinc-600">{degreeField(item.degree, item.field)}</p>
-            <span className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</span>
-            {item.gpa && <p className="mt-0.5 text-xs text-zinc-500">GPA: {item.gpa}</p>}
+            {resumeEducationHeading(item, content.inlineLayout === true, <h3 className="text-sm font-semibold text-zinc-800">{resumeField(section, "institution", item.institution)}</h3>, <p className="text-sm text-zinc-600">{resumeDegree(section, item.degree, item.field)}</p>, resumeEducationGpa(section, item.gpa, true, { className: "mt-0.5 text-xs text-zinc-500" }), true)}
+            {content.inlineLayout !== true && <p className="text-sm text-zinc-600">{resumeDegree(section, item.degree, item.field)}</p>}
+            <span className="text-xs text-zinc-400">{resumeEducationDates(section, item.startDate, item.endDate, " - ", lang === 'zh' ? '至今' : 'Present')}</span>
+            {content.inlineLayout !== true && item.gpa && <p className="mt-0.5 text-xs text-zinc-500">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
-                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />)}
+                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />)}
               </ul>
             )}
           </div>
@@ -209,14 +211,14 @@ function ModernSectionContent({ section, lang }: { section: any; lang?: string }
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1.5">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1.5">
         {items.map((item: any) => (
           <div key={item.id} className="flex items-baseline justify-between border-l-2 pl-4" style={{ borderColor: '#0f3460' }}>
             <div>
-              <span className="text-sm font-semibold text-zinc-800">{item.name}</span>
-              {item.issuer && <span className="text-sm text-zinc-500"> — {item.issuer}</span>}
+              <span className="text-sm font-semibold text-zinc-800">{resumeField(section, "name", item.name)}</span>
+              {item.issuer && <span className="text-sm text-zinc-500"> — {resumeField(section, "issuer", item.issuer)}</span>}
             </div>
-            {item.date && <span className="shrink-0 text-xs text-zinc-400">{item.date}</span>}
+            {item.date && <span className="shrink-0 text-xs text-zinc-400">{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

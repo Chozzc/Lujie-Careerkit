@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -14,7 +16,8 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const PRIMARY = '#78350f';
@@ -104,7 +107,7 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-bold" style={{ color: PRIMARY }}>{item.position}</h3>
+              <h3 className="text-sm font-bold" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</h3>
               <span className="shrink-0 text-xs" style={{ color: ACCENT, fontFamily: "'Courier New', monospace" }}>
                 {item.startDate} - {item.endDate || (item.current ? (resume.language === 'zh' ? '至今' : 'Present') : '')}
               </span>
@@ -135,21 +138,21 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
   if (section.type === 'education') {
     const items = (content as EducationContent).items || [];
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-bold" style={{ color: PRIMARY }}>{item.institution}</h3>
-              <span className="text-xs" style={{ color: ACCENT, fontFamily: "'Courier New', monospace" }}>{item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+              {resumeEducationHeading(item, content.inlineLayout === true, <h3 className="text-sm font-bold" style={{ color: PRIMARY }}>{resumeField(section, "institution", item.institution)}</h3>, <p className="text-sm" style={{ color: '#57534e' }}>{resumeDegree(section, item.degree, item.field)}</p>, resumeEducationGpa(section, item.gpa, true, { className: "text-xs", style: { color: ACCENT } }), true)}
+              <span className="text-xs" style={{ color: ACCENT, fontFamily: "'Courier New', monospace" }}>{resumeEducationDates(section, item.startDate, item.endDate, " - ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            <p className="text-sm" style={{ color: '#57534e' }}>{degreeField(item.degree, item.field)}</p>
-            {item.gpa && <p className="text-xs" style={{ color: ACCENT }}>GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && <p className="text-sm" style={{ color: '#57534e' }}>{resumeDegree(section, item.degree, item.field)}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-xs" style={{ color: ACCENT }}>{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 space-y-0.5">
                 {item.highlights.map((h: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#57534e' }}>
                     <span className="mt-1 shrink-0 text-xs" style={{ color: PRIMARY }}>{'\u2022'}</span>
-                    <span dangerouslySetInnerHTML={{ __html: md(h) }} />
+                    <span data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                   </li>
                 ))}
               </ul>
@@ -181,7 +184,7 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <h3 className="text-sm font-bold" style={{ color: PRIMARY }}>{item.name}</h3>
+              <h3 className="text-sm font-bold" style={{ color: PRIMARY }}><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</h3>
               {item.startDate && (
                 <span className="text-xs" style={{ color: ACCENT, fontFamily: "'Courier New', monospace" }}>
                   {item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}
@@ -213,12 +216,12 @@ function RetroSectionContent({ section, resume }: { section: any; resume: Resume
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1.5">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1.5">
         {items.map((item: any) => (
           <div key={item.id} className="flex items-baseline gap-2">
             <span className="shrink-0 text-xs" style={{ color: PRIMARY }}>{'\u2666'}</span>
-            <span className="text-sm font-bold" style={{ color: PRIMARY }}>{item.name}</span>
-            {(item.issuer || item.date) && <span className="text-xs" style={{ color: ACCENT }}>{item.issuer}{item.issuer && item.date ? ' ' : ''}{item.date && `(${item.date})`}</span>}
+            <span className="text-sm font-bold" style={{ color: PRIMARY }}>{resumeField(section, "name", item.name)}</span>
+            {(item.issuer || item.date) && <span className="text-xs" style={{ color: ACCENT }}>{resumeField(section, "issuer", item.issuer)}{item.issuer && item.date ? ' ' : ''}{resumeField(section, "date", item.date && `(${item.date})`)}</span>}
           </div>
         ))}
       </div>

@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -11,7 +13,8 @@ import type {
   GitHubContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function BoldTemplate({ resume }: { resume: Resume }) {
@@ -79,7 +82,7 @@ function BoldSectionContent({ section, resume }: { section: any; resume: Resume 
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-base font-bold text-black">{item.position}</span>
+                <span className="text-base font-bold text-black"><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</span>
                 {item.company && <span className="text-sm text-zinc-500"> | {item.company}</span>}
                 {item.location && <span className="text-sm text-zinc-400"> , {item.location}</span>}
               </div>
@@ -110,21 +113,21 @@ function BoldSectionContent({ section, resume }: { section: any; resume: Resume 
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {(content.items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-base font-bold text-black">{degreeField(item.degree, item.field)}</span>
-                {item.institution && <span className="text-sm text-zinc-500"> — {item.institution}</span>}
-                {item.location && <span className="text-sm text-zinc-400"> , {item.location}</span>}
-              </div>
-              <span className="shrink-0 text-xs text-zinc-400">{item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+                <span className="text-base font-bold text-black">{resumeDegree(section, item.degree, item.field)}</span>
+                {item.institution && <span className="text-sm text-zinc-500">{content.inlineLayout === true ? (item.degree || item.field ? " - " : "") : "— "}{resumeField(section, "institution", item.institution)}</span>}
+                {item.location && <span className="text-sm text-zinc-400"> , {resumeField(section, "location", item.location)}</span>}
+              {content.inlineLayout === true && resumeEducationGpa(section, item.gpa, true, { className: "text-sm text-zinc-500" })}</div>
+              <span className="shrink-0 text-xs text-zinc-400">{resumeEducationDates(section, item.startDate, item.endDate, " – ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.gpa && <p className="text-sm text-zinc-500">GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-sm text-zinc-500">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-5">
-                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />)}
+                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />)}
               </ul>
             )}
           </div>
@@ -154,7 +157,7 @@ function BoldSectionContent({ section, resume }: { section: any; resume: Resume 
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <span className="text-base font-bold text-black">{item.name}</span>
+              <span className="text-base font-bold text-black"><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</span>
               {item.startDate && (
                 <span className="shrink-0 text-xs text-zinc-400">
                   {item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}
@@ -187,14 +190,14 @@ function BoldSectionContent({ section, resume }: { section: any; resume: Resume 
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-2">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-2">
         {items.map((item: any) => (
           <div key={item.id} className="flex items-baseline justify-between">
             <div>
-              <span className="text-sm font-bold text-black">{item.name}</span>
-              {item.issuer && <span className="text-sm text-zinc-500"> — {item.issuer}</span>}
+              <span className="text-sm font-bold text-black">{resumeField(section, "name", item.name)}</span>
+              {item.issuer && <span className="text-sm text-zinc-500"> — {resumeField(section, "issuer", item.issuer)}</span>}
             </div>
-            {item.date && <span className="shrink-0 bg-black px-2 py-0.5 text-xs font-medium text-white">{item.date}</span>}
+            {item.date && <span className="shrink-0 bg-black px-2 py-0.5 text-xs font-medium text-white">{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

@@ -1,7 +1,9 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeEducationHeading, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type { Resume, PersonalInfoContent, SummaryContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { isSectionEmpty, md } from '../utils';
 import { AvatarImage } from '../avatar-image';
 import { EntryLogo } from '../entry-logo';
 import { QrCodesPreview } from '../qr-codes-preview';
@@ -94,17 +96,17 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-3">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-3">
         {(content.items || []).map((item: any) => (
           <div key={item.id}>
-            <p className="text-sm"><span className="font-medium text-zinc-800">{item.institution}</span></p>
-            <p className="text-sm text-zinc-600">{degreeField(item.degree, item.field)}</p>
-            <p className="text-xs text-zinc-400">{item.startDate} - {item.endDate || (lang === 'zh' ? '至今' : 'Present')}</p>
-            {item.gpa && <p className="text-xs text-zinc-400">GPA: {item.gpa}</p>}
+            <p className="text-sm">{resumeEducationHeading(item, content.inlineLayout === true, <span className="font-medium text-zinc-800">{resumeField(section, "institution", item.institution)}</span>, <p className="text-sm text-zinc-600">{resumeDegree(section, item.degree, item.field)}</p>, resumeEducationGpa(section, item.gpa, true, { className: "text-xs text-zinc-400" }), true)}</p>
+            {content.inlineLayout !== true && <p className="text-sm text-zinc-600">{resumeDegree(section, item.degree, item.field)}</p>}
+            <p className="text-xs text-zinc-400">{resumeEducationDates(section, item.startDate, item.endDate, " - ", lang === 'zh' ? '至今' : 'Present')}</p>
+            {content.inlineLayout !== true && item.gpa && <p className="text-xs text-zinc-400">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
                 {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm text-zinc-500" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  <li key={i} className="text-sm text-zinc-500" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
             )}
@@ -175,14 +177,14 @@ function MinimalSectionContent({ section, lang }: { section: any; lang?: string 
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1.5">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1.5">
         {items.map((item: any) => (
           <div key={item.id} className="flex items-baseline justify-between">
             <div className="text-sm">
-              <span className="font-medium text-zinc-800">{item.name}</span>
-              {item.issuer && <span className="text-zinc-500"> — {item.issuer}</span>}
+              <span className="font-medium text-zinc-800">{resumeField(section, "name", item.name)}</span>
+              {item.issuer && <span className="text-zinc-500"> — {resumeField(section, "issuer", item.issuer)}</span>}
             </div>
-            {item.date && <span className="text-xs text-zinc-400">{item.date}</span>}
+            {item.date && <span className="text-xs text-zinc-400">{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

@@ -1,8 +1,11 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type { Resume, PersonalInfoContent, SummaryContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const BLUE_GRAY = '#475569';
@@ -72,7 +75,7 @@ function TimelineSectionContent({ section, resume }: { section: any; resume: Res
             <div className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 bg-white" style={{ borderColor: ACCENT }} />
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}>{item.position}</span>
+                <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</span>
                 {item.company && <span className="text-sm text-zinc-500"> | {item.company}</span>}
               </div>
               <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: '#eff6ff', color: ACCENT }}>
@@ -102,21 +105,21 @@ function TimelineSectionContent({ section, resume }: { section: any; resume: Res
 
   if (section.type === 'education') {
     return (
-      <div className="relative border-l-2 pl-6 ml-2" style={{ borderColor: '#e2e8f0' }}>
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="relative border-l-2 pl-6 ml-2" style={{ borderColor: '#e2e8f0' }}>
         {(content.items || []).map((item: any, idx: number) => (
           <div key={item.id} className={`relative ${idx < (content.items || []).length - 1 ? 'pb-4' : ''}`}>
             <div className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 bg-white" style={{ borderColor: ACCENT }} />
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}>{degreeField(item.degree, item.field)}</span>
-                {item.institution && <span className="text-sm text-zinc-500"> — {item.institution}</span>}
-              </div>
-              <span className="shrink-0 text-xs text-zinc-400">{item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+                <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}>{resumeDegree(section, item.degree, item.field)}</span>
+                {item.institution && <span className="text-sm text-zinc-500">{content.inlineLayout === true ? (item.degree || item.field ? " - " : "") : "— "}{resumeField(section, "institution", item.institution)}</span>}
+              {content.inlineLayout === true && resumeEducationGpa(section, item.gpa, true, { className: "text-sm text-zinc-500" })}</div>
+              <span className="shrink-0 text-xs text-zinc-400">{resumeEducationDates(section, item.startDate, item.endDate, " – ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.gpa && <p className="text-sm text-zinc-500">GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-sm text-zinc-500">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-4">
-                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />)}
+                {item.highlights.map((h: string, i: number) => <li key={i} className="text-sm text-zinc-600" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />)}
               </ul>
             )}
           </div>
@@ -146,7 +149,7 @@ function TimelineSectionContent({ section, resume }: { section: any; resume: Res
           <div key={item.id} className={`relative ${idx < items.length - 1 ? 'pb-5' : ''}`}>
             <div className="absolute -left-[31px] top-1 h-4 w-4 rounded-full border-2 bg-white" style={{ borderColor: ACCENT }} />
             <div className="flex items-baseline justify-between">
-              <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}>{item.name}</span>
+              <span className="text-sm font-bold" style={{ color: BLUE_GRAY }}><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</span>
               {item.startDate && (
                 <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" style={{ background: '#eff6ff', color: ACCENT }}>
                   {item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}
@@ -177,14 +180,14 @@ function TimelineSectionContent({ section, resume }: { section: any; resume: Res
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1.5">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1.5">
         {items.map((item: any) => (
           <div key={item.id} className="flex items-baseline justify-between text-sm">
             <div>
-              <span className="font-semibold" style={{ color: BLUE_GRAY }}>{item.name}</span>
-              {item.issuer && <span className="text-zinc-500"> — {item.issuer}</span>}
+              <span className="font-semibold" style={{ color: BLUE_GRAY }}>{resumeField(section, "name", item.name)}</span>
+              {item.issuer && <span className="text-zinc-500"> — {resumeField(section, "issuer", item.issuer)}</span>}
             </div>
-            {item.date && <span className="shrink-0 text-xs text-zinc-400">{item.date}</span>}
+            {item.date && <span className="shrink-0 text-xs text-zinc-400">{resumeField(section, "date", item.date)}</span>}
           </div>
         ))}
       </div>

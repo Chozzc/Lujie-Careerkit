@@ -6,6 +6,7 @@ import { GripVertical, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditorStore } from '@/stores/editor-store';
 import { useResumeStore } from '@/stores/resume-store';
+import { supportsInlineLayout } from '@/lib/resume-inline-layout';
 import { useDragHandle } from './dnd/sortable-section';
 import type { ResumeSection, SectionContent } from '@/types/resume';
 import { PersonalInfoSection } from './sections/personal-info';
@@ -19,6 +20,7 @@ import { LanguagesSection } from './sections/languages';
 import { CustomSection } from './sections/custom-section';
 import { GitHubSection } from './sections/github';
 import { QrCodesSection } from './sections/qr-codes';
+import { SectionLayoutPopover } from './section-layout-popover';
 
 interface SectionWrapperProps {
   section: ResumeSection;
@@ -80,9 +82,9 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
       onClick={() => selectSection(section.id)}
     >
       <div className="flex flex-row items-center justify-between border-b border-zinc-100 px-3 py-2.5 md:px-4 dark:border-zinc-800">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <GripVertical
-            className="h-4 w-4 cursor-grab text-zinc-300 active:cursor-grabbing"
+            className="h-4 w-4 shrink-0 cursor-grab text-zinc-300 active:cursor-grabbing"
             aria-label={`${section.title} 拖拽排序`}
             {...attributes}
             {...listeners}
@@ -97,19 +99,21 @@ export function SectionWrapper({ section, onUpdate, onRemove }: SectionWrapperPr
                 if (e.key === 'Enter') commitRename();
                 if (e.key === 'Escape') { setRenameValue(section.title); setIsRenaming(false); }
               }}
-              className="h-6 w-32 rounded border border-brand bg-transparent px-1 text-sm font-semibold text-zinc-700 outline-none dark:text-zinc-200"
+              className="h-6 w-32 min-w-0 rounded border border-brand bg-transparent px-1 text-sm font-semibold text-zinc-700 outline-none dark:text-zinc-200"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <h3
-              className={`text-sm font-semibold text-zinc-700 dark:text-zinc-200 ${isRenamable ? 'cursor-text rounded px-1 -mx-1 hover:bg-zinc-100 dark:hover:bg-zinc-700' : ''}`}
+              title={section.title}
+              className={`truncate text-sm font-semibold text-zinc-700 dark:text-zinc-200 ${isRenamable ? 'cursor-text rounded px-1 -mx-1 hover:bg-zinc-100 dark:hover:bg-zinc-700' : ''}`}
               onDoubleClick={isRenamable ? (e) => { e.stopPropagation(); setRenameValue(section.title); setIsRenaming(true); } : undefined}
             >
               {section.title}
             </h3>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
+          {section.content && supportsInlineLayout(section.type) && <SectionLayoutPopover section={section} onUpdate={onUpdate} />}
           <Button
             variant="ghost"
             size="sm"

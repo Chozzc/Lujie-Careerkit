@@ -1,4 +1,6 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type {
   Resume,
@@ -14,7 +16,8 @@ import type {
   CustomContent,
 } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { degreeField, isSectionEmpty, md } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 export function AtsTemplate({ resume }: { resume: Resume }) {
@@ -84,7 +87,7 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-sm font-bold text-black">{item.position}</span>
+                <span className="text-sm font-bold text-black"><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</span>
                 {item.company && <span className="text-sm text-zinc-700">, {item.company}</span>}
                 {item.location && <span className="text-sm text-zinc-500">, {item.location}</span>}
               </div>
@@ -110,22 +113,22 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
   if (section.type === 'education') {
     const items = (content as EducationContent).items || [];
     return (
-      <div className="space-y-2">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-2">
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-sm font-bold text-black">{degreeField(item.degree, item.field)}</span>
-                {item.institution && <span className="text-sm text-zinc-700">, {item.institution}</span>}
-                {item.location && <span className="text-sm text-zinc-500">, {item.location}</span>}
-              </div>
-              <span className="shrink-0 text-sm text-zinc-600">{item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+                <span className="text-sm font-bold text-black">{resumeDegree(section, item.degree, item.field)}</span>
+                {item.institution && <span className="text-sm text-zinc-700">{content.inlineLayout === true ? (item.degree || item.field ? " - " : "") : ", "}{resumeField(section, "institution", item.institution)}</span>}
+                {item.location && <span className="text-sm text-zinc-500">, {resumeField(section, "location", item.location)}</span>}
+              {content.inlineLayout === true && resumeEducationGpa(section, item.gpa, true, { className: "text-sm text-zinc-600" })}</div>
+              <span className="shrink-0 text-sm text-zinc-600">{resumeEducationDates(section, item.startDate, item.endDate, " - ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.gpa && <p className="text-sm text-zinc-600">GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-sm text-zinc-600">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-1 list-disc pl-5">
                 {item.highlights.map((h: string, i: number) => (
-                  <li key={i} className="text-sm text-zinc-700" dangerouslySetInnerHTML={{ __html: md(h) }} />
+                  <li key={i} className="text-sm text-zinc-700" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />
                 ))}
               </ul>
             )}
@@ -156,7 +159,7 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
         {items.map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <span className="text-sm font-bold text-black">{item.name}</span>
+              <span className="text-sm font-bold text-black"><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</span>
               {item.startDate && (
                 <span className="shrink-0 text-sm text-zinc-600">
                   {item.startDate} - {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}
@@ -183,12 +186,12 @@ function AtsSectionContent({ section, resume }: { section: any; resume: Resume }
   if (section.type === 'certifications') {
     const items = (content as CertificationsContent).items || [];
     return (
-      <div className="space-y-1">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1">
         {items.map((item: any) => (
           <p key={item.id} className="text-sm text-zinc-700">
-            <span className="font-bold text-black">{item.name}</span>
-            {item.issuer && <span> - {item.issuer}</span>}
-            {item.date && <span> ({item.date})</span>}
+            <span className="font-bold text-black">{resumeField(section, "name", item.name)}</span>
+            {item.issuer && <span> - {resumeField(section, "issuer", item.issuer)}</span>}
+            {item.date && <span> ({resumeField(section, "date", item.date)})</span>}
           </p>
         ))}
       </div>

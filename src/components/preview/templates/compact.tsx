@@ -1,8 +1,11 @@
 'use client';
+import { resumeEducationDates, resumeEducationGpa, resumeDegree, resumeField } from '../resume-field';
+import { isResumeFieldBold } from '@/lib/resume-inline-layout';
 
 import type { Resume, PersonalInfoContent, SummaryContent, WorkExperienceContent, EducationContent, SkillsContent, ProjectsContent, CertificationsContent, LanguagesContent, CustomContent, GitHubContent } from '@/types/resume';
 import { AvatarImage } from '../avatar-image';
-import { isSectionEmpty, md, degreeField } from '../utils';
+import { EntryLogo } from '../entry-logo';
+import { isSectionEmpty, md } from '../utils';
 import { QrCodesPreview } from '../qr-codes-preview';
 
 const LEFT_TYPES = new Set(['skills', 'languages', 'certifications', 'custom']);
@@ -102,11 +105,11 @@ function CompactLeftContent({ section }: { section: any }) {
 
   if (section.type === 'certifications') {
     return (
-      <div className="space-y-1">
+      <div data-certifications-section data-resume-compact-list={content.inlineLayout === true || undefined} className="space-y-1">
         {((content as CertificationsContent).items || []).map((item: any) => (
           <div key={item.id}>
-            <p className="text-[10px] font-semibold text-zinc-700">{item.name}</p>
-            {(item.issuer || item.date) && <p className="text-[9px] text-zinc-400">{item.issuer}{item.date ? ` (${item.date})` : ''}</p>}
+            <p className="text-[10px] font-semibold text-zinc-700">{resumeField(section, "name", item.name)}</p>
+            {(item.issuer || item.date) && <p className="text-[9px] text-zinc-400">{resumeField(section, "issuer", item.issuer)}{resumeField(section, "date", item.date ? ` (${item.date})` : '')}</p>}
           </div>
         ))}
       </div>
@@ -163,7 +166,7 @@ function CompactRightContent({ section, resume }: { section: any; resume: Resume
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-xs font-bold text-zinc-800">{item.position}</span>
+                <span className="text-xs font-bold text-zinc-800"><EntryLogo src={item.logo} alt={item.company || item.position} className="me-1 align-middle" />{item.position}</span>
                 {item.company && <span className="text-xs text-zinc-500"> | {item.company}</span>}
                 {item.location && <span className="text-xs text-zinc-400">, {item.location}</span>}
               </div>
@@ -186,21 +189,21 @@ function CompactRightContent({ section, resume }: { section: any; resume: Resume
 
   if (section.type === 'education') {
     return (
-      <div className="space-y-2">
+      <div data-education-section data-resume-compact-spacing={content.inlineLayout === true || undefined} className="space-y-2">
         {((content as EducationContent).items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-xs font-bold text-zinc-800">{degreeField(item.degree, item.field)}</span>
-                {item.institution && <span className="text-xs text-zinc-500"> — {item.institution}</span>}
-                {item.location && <span className="text-xs text-zinc-400">, {item.location}</span>}
-              </div>
-              <span className="shrink-0 text-[10px] text-zinc-400">{item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>
+                <span className="text-xs font-bold text-zinc-800">{resumeDegree(section, item.degree, item.field)}</span>
+                {item.institution && <span className="text-xs text-zinc-500">{content.inlineLayout === true ? (item.degree || item.field ? " - " : "") : "— "}{resumeField(section, "institution", item.institution)}</span>}
+                {item.location && <span className="text-xs text-zinc-400">, {resumeField(section, "location", item.location)}</span>}
+              {content.inlineLayout === true && resumeEducationGpa(section, item.gpa, true, { className: "text-[10px] text-zinc-500" })}</div>
+              <span className="shrink-0 text-[10px] text-zinc-400">{resumeEducationDates(section, item.startDate, item.endDate, " – ", resume.language === 'zh' ? '至今' : 'Present')}</span>
             </div>
-            {item.gpa && <p className="text-[10px] text-zinc-500">GPA: {item.gpa}</p>}
+            {content.inlineLayout !== true && item.gpa && <p className="text-[10px] text-zinc-500">{resumeEducationGpa(section, item.gpa)}</p>}
             {item.highlights?.length > 0 && (
               <ul className="mt-0.5 list-disc pl-3.5">
-                {item.highlights.map((h: string, i: number) => <li key={i} className="text-xs text-zinc-600" dangerouslySetInnerHTML={{ __html: md(h) }} />)}
+                {item.highlights.map((h: string, i: number) => <li key={i} className="text-xs text-zinc-600" data-resume-field-bold={isResumeFieldBold(section, "highlights") || undefined} dangerouslySetInnerHTML={{ __html: md(h) }} />)}
               </ul>
             )}
           </div>
@@ -215,7 +218,7 @@ function CompactRightContent({ section, resume }: { section: any; resume: Resume
         {((content as ProjectsContent).items || []).map((item: any) => (
           <div key={item.id}>
             <div className="flex items-baseline justify-between">
-              <span className="text-xs font-bold text-zinc-800">{item.name}</span>
+              <span className="text-xs font-bold text-zinc-800"><EntryLogo src={item.logo} alt={item.name} className="me-1 align-middle" />{item.name}</span>
               {item.startDate && <span className="shrink-0 text-[10px] text-zinc-400">{item.startDate} – {item.endDate || (resume.language === 'zh' ? '至今' : 'Present')}</span>}
             </div>
             {item.description && <p className="mt-0.5 text-xs text-zinc-600" dangerouslySetInnerHTML={{ __html: md(item.description) }} />}
