@@ -25,6 +25,7 @@ export type ResumeContent = {
     school: string;
     degree: string;
     major: string;
+    gpa?: string;
     start: string;
     end: string;
     highlights: string[];
