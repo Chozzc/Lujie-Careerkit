@@ -46,7 +46,6 @@ describe("ResumePreview", () => {
     for (const section of original.sections) {
       if (section.type === "education") {
         expect(getResumeBoldFields(section)).toEqual(["degree"]);
-        (section.content as EducationContent).items[0].gpa = "3.9/4.0";
         section.content.inlineLayout = true;
         section.content.inlineBoldFields = ["field", "gpa", "highlights"];
       }
@@ -82,10 +81,10 @@ describe("ResumePreview", () => {
       education.content.inlineLayout = false;
       const originalMarkup = renderToStaticMarkup(<ResumePreview resume={{ ...reopened, template }} mode="export" />);
       education.content.inlineLayout = true;
-      const gpaStyle = originalMarkup.match(/<p([^>]+)><span><b>GPA: 3\.9\/4\.0<\/b>/)?.[1];
+      const gpaStyle = originalMarkup.match(/<p([^>]+)><span><b>GPA: 3\.8\/4\.0<\/b>/)?.[1];
       expect(gpaStyle, template).toBeTruthy();
-      expect(markup, template).toContain('<span' + gpaStyle + ' data-education-gpa-inline="true"><b>GPA: 3.9/4.0</b>');
-      expect(markup.match(/GPA: 3\.9\/4\.0/g), template).toHaveLength(1);
+      expect(markup, template).toContain('<span' + gpaStyle + ' data-education-gpa-inline="true"><b>GPA: 3.8/4.0</b>');
+      expect(markup.match(/GPA: 3\.8\/4\.0/g), template).toHaveLength(1);
       expect(markup, template).toMatch(/人工智能<\/b>[\s\S]{0,450} - [\s\S]{0,250}北京邮电大学/);
     }
   });

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { contentToJadeResume, jadeResumeToContent } from "./resume-adapter";
+import { normalizeResumeContent } from "./resume-content";
 import { interviewReportSchema } from "./interview";
 import { interviewPreparationSchema } from "./interview-preparation";
 import {
@@ -32,6 +34,13 @@ describe("sample resume versions", () => {
     }
   });
 
+  it("keeps the sample GPA in its education field after saving and reopening", () => {
+    const source = sampleResumeVersions.find((version) => version.id === "rv-baidu-ai-original")!.content;
+    const saved = jadeResumeToContent(contentToJadeResume(normalizeResumeContent(source)));
+    expect(saved.education[0].gpa).toBe("3.8/4.0");
+    expect(saved.education[0].highlights).toEqual(["核心课程：数据结构、数据库、机器学习、软件工程"]);
+  });
+
   it("spreads sample job sources across common channels", () => {
     expect(new Set(sampleJobs.map((job) => job.source)).size).toBeGreaterThanOrEqual(5);
   });
@@ -49,7 +58,7 @@ describe("sample resume versions", () => {
       sampleApplications.every((application) =>
         [application.appliedAt, application.stageDate, application.nextFollowUpAt]
           .filter(Boolean)
-          .every((date) => /^2026-(09|11)-\d{2}$/.test(date ?? "")),
+          .every((date) => /^2026-(09|11|12)-\d{2}$/.test(date ?? "")),
       ),
     ).toBe(true);
     expect(

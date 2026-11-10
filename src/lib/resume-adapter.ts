@@ -39,6 +39,7 @@ export function contentToJadeResume(rawContent: ResumeContent): Resume {
       items: content.education.map((item) => ({
         id: generateId("edu"),
         institution: item.school,
+        gpa: item.gpa,
         degree: item.degree,
         field: item.major,
         startDate: item.start,
@@ -169,6 +170,7 @@ export function jadeResumeToContent(resume: Resume): ResumeContent {
     education:
       education?.items.map((item) => ({
         school: item.institution,
+        gpa: item.gpa,
         degree: item.degree,
         major: item.field,
         start: item.startDate,
@@ -314,6 +316,7 @@ function mergeEditorSection(saved: ResumeSection, generated?: ResumeSection): Re
             (previous, next) => ({
               ...previous,
               institution: next.institution,
+              gpa: next.gpa ?? previous.gpa,
               degree: next.degree,
               field: next.field,
               startDate: next.startDate,

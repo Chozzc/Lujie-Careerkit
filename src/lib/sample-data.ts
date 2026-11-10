@@ -73,10 +73,10 @@ const jiangHeResume: ResumeContent = {
       school: "北京邮电大学",
       degree: "本科",
       major: "人工智能",
+      gpa: "3.8/4.0",
       start: "2023",
       end: "2027",
       highlights: [
-        "GPA 3.8/4.0",
         "核心课程：数据结构、数据库、机器学习、软件工程",
       ],
     },
@@ -181,7 +181,7 @@ export const sampleJobs: JobRecord[] = [
     city: "杭州",
     source: "实习僧",
     link: "https://campus.163.com/",
-    deadline: "2026-11-18",
+    deadline: "2026-12-18",
     jd: "岗位职责：\n1. 参与内容与社区业务后端服务的设计、开发和维护；\n2. 使用 Java / Go 完成接口开发、数据处理和性能优化；\n3. 与产品、前端和测试协作，定位线上问题并完善监控。\n岗位要求：\n1. 计算机相关专业，熟悉数据结构、网络和操作系统基础；\n2. 熟悉 MySQL、Redis，了解常见 Web 框架；\n3. 有课程项目、开源贡献或实习经验者优先。",
   },
   {
@@ -191,7 +191,7 @@ export const sampleJobs: JobRecord[] = [
     city: "北京",
     source: "BOSS直聘",
     link: "https://talent.baidu.com/jobs/list?recruitType=INTERN",
-    deadline: "2026-11-20",
+    deadline: "2026-12-20",
     jd: "岗位职责：\n1. 参与大模型数据产品的需求分析、方案设计和效果评估；\n2. 协助建设数据生产与质量评估流程，整理用户反馈并形成迭代建议；\n3. 联动算法、工程和运营团队推进功能上线与复盘。\n岗位要求：\n1. 计算机、人工智能或相关专业在读；\n2. 熟悉 SQL / Python，具备数据分析和结构化表达能力；\n3. 关注大模型应用，有模型评测、数据治理或 AI 产品项目经验者优先。",
   },
   {
@@ -221,7 +221,7 @@ export const sampleJobs: JobRecord[] = [
     city: "上海",
     source: "内推",
     link: "https://hr.xiaohongshu.com/",
-    deadline: "2026-11-15",
+    deadline: "2026-12-15",
     jd: "岗位职责：\n1. 参与 Agent 产品的用户运营、内容策划与反馈收集；\n2. 结合使用数据和用户访谈识别问题，推动产品体验优化；\n3. 维护运营流程与知识库，协同产品和算法团队完成活动复盘。\n岗位要求：\n1. 对 AI Agent 产品有持续体验和观察；\n2. 具备数据分析、内容表达和跨团队沟通能力；\n3. 有 AI 产品、社区或增长运营实践者优先。",
   },
   {
@@ -244,7 +244,7 @@ export const sampleApplications: ApplicationRecord[] = [
     interviewRound: "FIRST",
     resumeVersionId: null,
     appliedAt: "2026-09-03",
-    stageDate: "2026-11-12",
+    stageDate: "2026-12-12",
     nextFollowUpAt: null,
     notes: "已加入投递跟进。",
   },
@@ -255,7 +255,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: sampleTailoredResumeVersion.id,
     appliedAt: "2026-09-02",
     stageDate: "2026-09-08",
-    nextFollowUpAt: "2026-11-10",
+    nextFollowUpAt: "2026-12-10",
     notes: "已加入投递跟进。",
   },
   {
@@ -285,7 +285,7 @@ export const sampleApplications: ApplicationRecord[] = [
     resumeVersionId: null,
     appliedAt: "2026-09-05",
     stageDate: "2026-09-05",
-    nextFollowUpAt: "2026-11-09",
+    nextFollowUpAt: "2026-12-09",
     notes: "已加入投递跟进。",
   },
   {
