@@ -1,4 +1,4 @@
-﻿import type { ApplicationStatus } from "@prisma/client";
+import type { ApplicationStatus } from "@prisma/client";
 
 import { Prisma } from "@prisma/client";
 
@@ -42,25 +42,25 @@ import {
 } from "./sample-data";
 import type { InterviewRound, JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
 
-export async function ensureSeedData() {
-  const existingResume = await prisma.resume.findFirst();
+export async function ensureSeedData(db: Prisma.TransactionClient = prisma) {
+  const existingResume = await db.resume.findFirst();
   if (existingResume) {
-    await ensureSettings();
+    await ensureSettings(db);
     return;
   }
-  const settings = await prisma.settings.findUnique({
+  const settings = await db.settings.findUnique({
     where: { id: "singleton" },
     select: { sampleDataCleared: true },
   });
   if (settings?.sampleDataCleared) {
-    await ensureSettings();
+    await ensureSettings(db);
     return;
   }
 
   const sampleVersion = sampleResumeVersions[0];
-  const resume = await prisma.resume.create({ data: { name: sampleVersion?.name ?? "示例简历" } });
+  const resume = await db.resume.create({ data: { name: sampleVersion?.name ?? "示例简历" } });
   if (sampleVersion) {
-    await prisma.resumeVersion.create({
+    await db.resumeVersion.create({
       data: {
         id: sampleVersion.id,
         resumeId: resume.id,
@@ -73,7 +73,7 @@ export async function ensureSeedData() {
   }
 
   for (const job of sampleJobs) {
-    await prisma.job.create({
+    await db.job.create({
       data: {
         id: job.id,
         company: job.company,
@@ -88,7 +88,7 @@ export async function ensureSeedData() {
     });
   }
 
-  await prisma.resumeVersion.create({
+  await db.resumeVersion.create({
     data: {
       id: sampleTailoredResumeVersion.id,
       resumeId: resume.id,
@@ -100,7 +100,7 @@ export async function ensureSeedData() {
   });
 
   for (const application of sampleApplications) {
-    await prisma.application.create({
+    await db.application.create({
       data: {
         id: application.id,
         jobId: application.jobId,
@@ -115,7 +115,7 @@ export async function ensureSeedData() {
     });
   }
 
-  await prisma.interviewPreparation.create({
+  await db.interviewPreparation.create({
     data: {
       id: sampleInterviewPreparation.id,
       jobId: sampleInterviewPreparation.jobId,
@@ -125,7 +125,7 @@ export async function ensureSeedData() {
       content: toJsonInput(sampleInterviewPreparation.content),
     },
   });
-  await prisma.interviewSession.create({
+  await db.interviewSession.create({
     data: {
       id: sampleInterviewSession.id,
       jobId: sampleInterviewSession.jobId,
@@ -141,45 +141,62 @@ export async function ensureSeedData() {
     },
   });
 
-  await ensureSettings();
+  await ensureSettings(db);
 }
 export async function resetAppDataToSample() {
-  await prisma.$transaction([
-    prisma.agentThread.deleteMany(),
-    prisma.interviewPreparation.deleteMany(),
-    prisma.interviewSession.deleteMany(),
-    prisma.application.deleteMany(),
-    prisma.resumeVersion.deleteMany(),
-    prisma.job.deleteMany(),
-    prisma.resume.deleteMany(),
-    prisma.settings.deleteMany(),
-  ]);
-  await ensureSeedData();
+  await prisma.$transaction(async (db) => {
+    await db.agentThread.deleteMany();
+    await db.interviewPreparation.deleteMany();
+    await db.interviewSession.deleteMany();
+    await db.application.deleteMany();
+    await db.resumeVersion.deleteMany();
+    await db.job.deleteMany();
+    await db.resume.deleteMany();
+    await db.settings.deleteMany();
+    await ensureSeedData(db);
+  });
   return getAppData();
 }
 
 export async function clearSampleData() {
   await ensureSettings();
-  const sampleApplicationIds = sampleApplications.map((application) => application.id);
-  const sampleJobIds = sampleJobs.map((job) => job.id);
-  const resumeVersionIds = [
-    ...sampleResumeVersions.map((version) => version.id),
-    sampleTailoredResumeVersion.id,
-  ];
-  const resumeRoots = await prisma.resumeVersion.findMany({
-    where: { id: { in: resumeVersionIds } },
-    select: { resumeId: true },
-  });
-
   await prisma.$transaction(async (transaction) => {
+    // An edited example is user data, even though its original seed ID has not changed.
+    const [applications, jobs, versions, preparation, session] = await Promise.all([
+      transaction.application.findMany({
+        where: { id: { in: sampleApplications.map(({ id }) => id) }, updatedAt: { equals: transaction.application.fields.createdAt } },
+        select: { id: true },
+      }),
+      transaction.job.findMany({
+        where: { id: { in: sampleJobs.map(({ id }) => id) }, updatedAt: { equals: transaction.job.fields.createdAt } },
+        select: { id: true },
+      }),
+      transaction.resumeVersion.findMany({
+        where: { id: { in: [...sampleResumeVersions.map(({ id }) => id), sampleTailoredResumeVersion.id] }, updatedAt: { equals: transaction.resumeVersion.fields.createdAt } },
+        select: { id: true, resumeId: true },
+      }),
+      transaction.interviewPreparation.findFirst({
+        where: { id: sampleInterviewPreparation.id, updatedAt: { equals: transaction.interviewPreparation.fields.createdAt } },
+        select: { id: true },
+      }),
+      transaction.interviewSession.findFirst({
+        where: { id: sampleInterviewSession.id, updatedAt: { equals: transaction.interviewSession.fields.createdAt } },
+        select: { id: true },
+      }),
+    ]);
+    const sampleApplicationIds = applications.map(({ id }) => id);
+    const sampleJobIds = jobs.map(({ id }) => id);
+    const resumeVersionIds = versions.map(({ id }) => id);
+    const samplePreparationIds = preparation ? [preparation.id] : [];
+    const sampleSessionIds = session ? [session.id] : [];
     const jobsWithUserData = await transaction.job.findMany({
       where: {
         id: { in: sampleJobIds },
         OR: [
           { applications: { some: { id: { notIn: sampleApplicationIds } } } },
           { versions: { some: { id: { notIn: resumeVersionIds } } } },
-          { interviewPreparations: { some: { id: { not: sampleInterviewPreparation.id } } } },
-          { interviews: { some: { id: { not: sampleInterviewSession.id } } } },
+          { interviewPreparations: { some: { id: { notIn: samplePreparationIds } } } },
+          { interviews: { some: { id: { notIn: sampleSessionIds } } } },
         ],
       },
     });
@@ -205,22 +222,22 @@ export async function clearSampleData() {
         data: { jobId: replacementJob.id },
       });
       await transaction.interviewPreparation.updateMany({
-        where: { jobId: job.id, id: { not: sampleInterviewPreparation.id } },
+        where: { jobId: job.id, id: { notIn: samplePreparationIds } },
         data: { jobId: replacementJob.id },
       });
       await transaction.interviewSession.updateMany({
-        where: { jobId: job.id, id: { not: sampleInterviewSession.id } },
+        where: { jobId: job.id, id: { notIn: sampleSessionIds } },
         data: { jobId: replacementJob.id },
       });
     }
-    await transaction.interviewPreparation.deleteMany({ where: { id: sampleInterviewPreparation.id } });
-    await transaction.interviewSession.deleteMany({ where: { id: sampleInterviewSession.id } });
+    await transaction.interviewPreparation.deleteMany({ where: { id: { in: samplePreparationIds } } });
+    await transaction.interviewSession.deleteMany({ where: { id: { in: sampleSessionIds } } });
     await transaction.application.deleteMany({
       where: { id: { in: sampleApplicationIds } },
     });
     await transaction.resumeVersion.deleteMany({ where: { id: { in: resumeVersionIds } } });
     await transaction.job.deleteMany({ where: { id: { in: sampleJobIds } } });
-    for (const { resumeId } of resumeRoots) {
+    for (const { resumeId } of versions) {
       await transaction.resume.deleteMany({ where: { id: resumeId, versions: { none: {} } } });
     }
     await transaction.settings.update({
@@ -232,14 +249,14 @@ export async function clearSampleData() {
   return getAppData();
 }
 
-async function ensureSettings() {
+async function ensureSettings(db: Prisma.TransactionClient = prisma) {
   const legacyDefaultModels = new Set<string>(LEGACY_DEFAULT_AI_MODELS);
   const defaultModel = process.env.OPENAI_MODEL && !legacyDefaultModels.has(process.env.OPENAI_MODEL)
     ? process.env.OPENAI_MODEL
     : DEFAULT_AI_MODEL;
   const defaultProvider = getAiProvider(DEFAULT_AI_PROVIDER_ID);
   const defaultBaseUrl = defaultProvider.baseUrl;
-  const settings = await prisma.settings.upsert({
+  const settings = await db.settings.upsert({
     where: { id: "singleton" },
     create: {
       id: "singleton",
@@ -263,7 +280,7 @@ async function ensureSettings() {
   });
 
   if (maintenancePatch) {
-    await prisma.settings.update({
+    await db.settings.update({
       where: { id: "singleton" },
       data: maintenancePatch,
     });
@@ -316,7 +333,7 @@ export async function getAppData() {
     })),
     jobs: jobs.map((job) => ({
       id: job.id,
-      isSample: sampleJobs.some((sampleJob) => sampleJob.id === job.id),
+      isSample: job.updatedAt.getTime() === job.createdAt.getTime() && sampleJobs.some((sampleJob) => sampleJob.id === job.id),
       company: job.company,
       title: job.title,
       city: job.city,

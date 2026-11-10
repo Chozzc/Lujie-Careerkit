@@ -154,6 +154,8 @@ export function CareerKitApp({
   const [libraryTarget, setLibraryTarget] = useState<CareerLibraryTarget | null>(initialLibraryTarget);
   const [libraryGroup, setLibraryGroup] = useState<CareerLibraryGroup>(initialLibraryGroup);
   const [resume, setResume] = useState<ResumeContent>(initialData.resume?.content ?? emptyResume());
+  const [mainResumeTitle, setMainResumeTitle] = useState(initialData.resume?.name);
+  const mainResumeName = mainResumeTitle ?? buildResumeDisplayName(resume, "原简历");
   const [resumeUpdatedAt, setResumeUpdatedAt] = useState(initialData.resume?.updatedAt ?? new Date().toISOString());
   const [mainResumeVersionId, setMainResumeVersionId] = useState(initialData.resume?.id ?? "");
   const [mainResumeRootId, setMainResumeRootId] = useState(initialData.resume?.resumeId ?? "");
@@ -179,6 +181,7 @@ export function CareerKitApp({
   const [resumeDiagnosisDialogOpen, setResumeDiagnosisDialogOpen] = useState(false);
   const [resumeOptimizationPreviousStage, setResumeOptimizationPreviousStage] = useState<0 | 1 | 2>(2);
   const [matchResetKey, setMatchResetKey] = useState(0);
+  const [agentResetKey, setAgentResetKey] = useState(0);
   const [isPending, startTransition] = useTransition();
   const agentAssistantVisible = useSyncExternalStore(
     subscribeAgentAssistantVisibility,
@@ -449,6 +452,7 @@ export function CareerKitApp({
 
   function replaceLocalData(nextData: InitialData) {
     setResume(nextData.resume?.content ?? emptyResume());
+    setMainResumeTitle(nextData.resume?.name);
     setResumeUpdatedAt(nextData.resume?.updatedAt ?? new Date().toISOString());
     setMainResumeVersionId(nextData.resume?.id ?? "");
     setMainResumeRootId(nextData.resume?.resumeId ?? "");
@@ -476,6 +480,7 @@ export function CareerKitApp({
   async function resetLocalDataToSample() {
     const result = (await postJson("/api/settings/reset-data", {})) as { data: InitialData };
     replaceLocalData(result.data);
+    setAgentResetKey((key) => key + 1);
     setToast("本地数据已清空，并恢复示例数据。");
     navigateTo("dashboard");
   }
@@ -546,8 +551,9 @@ export function CareerKitApp({
     if (!mainResumeVersionId) throw new Error("找不到正在编辑的基础简历。");
     setResume(nextContent);
     const result = (await postJson("/api/resume", { versionId: mainResumeVersionId, content: nextContent, name })) as {
-      resume: { id: string; resumeId: string; updatedAt?: string };
+      resume: { id: string; resumeId: string; name: string; updatedAt?: string };
     };
+    setMainResumeTitle(result.resume.name);
     setMainResumeVersionId(result.resume.id);
     setMainResumeRootId(result.resume.resumeId);
     setResumeUpdatedAt(result.resume.updatedAt ?? new Date().toISOString());
@@ -635,6 +641,7 @@ export function CareerKitApp({
         const nextBase = remaining.find((version) => !version.jobId && !readStoredOptimizationBase(version.content));
         setVersions(nextBase ? remaining.filter((version) => version.id !== nextBase.id) : remaining);
         setResume(nextBase?.content ?? blank);
+        setMainResumeTitle(nextBase?.name);
         setResumeUpdatedAt(nextBase?.updatedAt ?? new Date().toISOString());
         setMainResumeVersionId(nextBase?.id ?? "");
         setMainResumeRootId(nextBase?.resumeId ?? "");
@@ -1093,6 +1100,7 @@ export function CareerKitApp({
 
   const agentAssistant = agentAssistantVisible ? (
     <AgentAssistant
+      key={agentResetKey}
       aiReady={isAiReady(aiSettings)}
       applications={applications}
       jobs={jobs}
@@ -1102,7 +1110,7 @@ export function CareerKitApp({
       resumes={[
         ...(mainResumeVersionId ? [{
           id: mainResumeVersionId,
-          name: initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历"),
+          name: mainResumeName,
         }] : []),
         ...versions.map((version) => ({ id: version.id, name: version.name })),
       ]}
@@ -1316,8 +1324,8 @@ export function CareerKitApp({
               key={interviewSessionId ?? interviewPreparationId ?? "setup"}
               versions={versions}
               resume={resume}
-               mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
-               mainResumeVersionId={mainResumeVersionId}
+              mainResumeName={mainResumeName}
+              mainResumeVersionId={mainResumeVersionId}
               targetSessionId={interviewSessionId}
               targetPreparationId={interviewPreparationId}
               onSessionUpsert={upsertInterviewSession}

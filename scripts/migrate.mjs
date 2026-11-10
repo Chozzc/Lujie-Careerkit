@@ -30,7 +30,9 @@ function runPrisma(args) {
     cwd: process.cwd(),
     env: process.env,
     encoding: "utf8",
-    stdio: "inherit",
+    // Deployment is non-interactive; don't inherit the desktop host's lifetime pipe on Windows.
+    stdio: ["ignore", "inherit", "inherit"],
+    windowsHide: true,
   });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);

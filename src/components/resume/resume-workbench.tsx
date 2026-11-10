@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -489,7 +489,8 @@ export function ResumeWorkbench({
   }
 
   function handleImportButtonClick() {
-    if (!aiReady && !localImportFallbackRef.current) {
+    localImportFallbackRef.current = false;
+    if (!aiReady) {
       setAiSetupDialogOpen(true);
       return;
     }
@@ -974,7 +975,7 @@ async function exportResume(resume: Resume, format: ResumeExportFormat) {
     return;
   }
 
-  downloadDataUrl(await combinePageImages(pages), `${buildExportName(resume)}.png`);
+  downloadBlob(await combinePageImages(pages), `${buildExportName(resume)}.png`);
 }
 
 async function captureResumePages(resume: Resume, smartOnePage: boolean) {
@@ -1158,7 +1159,12 @@ async function combinePageImages(pages: Array<{ dataUrl: string; width: number; 
     offsetY += A4_HEIGHT_PX * layout.pageScale + layout.pageGap * layout.pageScale;
   }
 
-  return canvas.toDataURL("image/png", 1);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("无法生成 PNG 图片。"));
+    }, "image/png");
+  });
 }
 
 function loadImage(src: string) {
@@ -1170,7 +1176,7 @@ function loadImage(src: string) {
   });
 }
 
-async function exportResumeAsEditableDocx(resume: Resume) {
+export async function exportResumeAsEditableDocx(resume: Resume) {
   const {
     AlignmentType,
     BorderStyle,
@@ -1189,13 +1195,13 @@ async function exportResumeAsEditableDocx(resume: Resume) {
   const name = getString(personal.fullName) || resume.title;
   const jobTitle = getString(personal.jobTitle);
   const docxTheme = buildDocxThemeConfig(resume.themeConfig);
-  const contacts = [
+  const contacts = [...new Set([
     getString(personal.email),
     getString(personal.phone),
     getString(personal.location),
     getString(personal.website),
     getString(personal.github),
-  ].filter(Boolean);
+  ].filter(Boolean))];
 
   children.push(new Paragraph({
     heading: HeadingLevel.TITLE,
@@ -1231,7 +1237,7 @@ async function exportResumeAsEditableDocx(resume: Resume) {
         },
         children: [new TextRun({ text: section.title, bold: true, color: docxTheme.primaryColor, size: docxTheme.sizes.h2, font: docxTheme.font })],
       }));
-      appendSectionToDocx(section, children, { Paragraph, TabStopPosition, TabStopType, TextRun }, docxTheme);
+      appendSectionToDocx(section, children, { Paragraph, TabStopPosition, TabStopType, TextRun }, docxTheme, resume.language);
     });
 
   const doc = new Document({
@@ -1274,6 +1280,7 @@ function appendSectionToDocx(
   children: Array<InstanceType<typeof import("docx").Paragraph>>,
   docx: Pick<typeof import("docx"), "Paragraph" | "TabStopPosition" | "TabStopType" | "TextRun">,
   docxTheme: DocxThemeConfig,
+  language: Resume["language"],
 ) {
   const content = getRecord(section.content);
   const items = getArray(content.items).map(getRecord);
@@ -1351,7 +1358,7 @@ function appendSectionToDocx(
       getString(item.issuer);
     const dates = [
       getString(item.startDate),
-      getString(item.endDate),
+      getString(item.endDate) || (item.current === true ? (language === "zh" ? "至今" : "Present") : ""),
       getString(item.date),
     ]
       .filter(Boolean)

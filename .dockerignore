@@ -6,21 +6,22 @@ coverage
 out
 build
 
-.env*
+**/.env*
 !.env.example
 
-*.db
-*.db-journal
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite-journal
-*.sqlite-shm
-*.sqlite-wal
-*.sqlite3
-*.sqlite3-journal
-*.sqlite3-shm
-*.sqlite3-wal
+**/*.db
+**/*.db-journal
+**/*.db-shm
+**/*.db-wal
+**/*.sqlite
+**/*.sqlite-journal
+**/*.sqlite-shm
+**/*.sqlite-wal
+**/*.sqlite3
+**/*.sqlite3-journal
+**/*.sqlite3-shm
+**/*.sqlite3-wal
+**/settings.key
 
 *.log
 *.tsbuildinfo
@@ -44,3 +45,5 @@ PRODUCT.md
 .impeccable
 tmp
 brand/promo-videos
+src-tauri/backend
+src-tauri/target

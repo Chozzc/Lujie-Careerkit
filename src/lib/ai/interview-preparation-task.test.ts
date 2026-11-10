@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildInterviewPreparationPrompt } from "./interview-preparation-task";
-import { createInterviewPreparationInputSchema, normalizeInterviewPreparation } from "../interview-preparation";
+import { buildInterviewPreparationPrompt, repairDeepSeekInterviewJson } from "./interview-preparation-task";
+import { createInterviewPreparationInputSchema, interviewPreparationSchema, normalizeInterviewPreparation } from "../interview-preparation";
 
 describe("interview preparation AI task", () => {
   it("accepts any non-empty JD and keeps resume ownership metadata", () => {
@@ -133,5 +133,10 @@ describe("interview preparation AI task", () => {
     };
 
     expect(() => normalizeInterviewPreparation(sparseGuide)).not.toThrow();
+    const valid = JSON.stringify(sparseGuide);
+    const malformed = valid.replace('],"knowledgeTopics"', ']},"knowledgeTopics"');
+    expect(() => JSON.parse(malformed)).toThrow();
+    expect(interviewPreparationSchema.parse(JSON.parse(repairDeepSeekInterviewJson(malformed)))).toEqual(sparseGuide);
+    expect(repairDeepSeekInterviewJson(valid)).toBe(valid);
   });
 });

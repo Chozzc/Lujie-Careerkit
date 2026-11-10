@@ -37,6 +37,12 @@ it.each([
   const form = new FormData();
   form.set("file", new File([pdf.output("arraybuffer")], "scan.pdf"));
 
+  form.set("preferLocalFallback", "true");
+  const local = await POST(new Request("http://localhost/api/ai/resume-import", { method: "POST", body: form }));
+  expect(local.status).toBe(422);
+  expect(await local.json()).toMatchObject({ error: expect.stringContaining("扫描 PDF") });
+  form.delete("preferLocalFallback");
+
   const content = {
     basics: { name: "林舟", email: "", phone: "", city: "", links: [] },
     profile: { title: "", summary: "" },
@@ -69,4 +75,4 @@ it.each([
   expect(payload.messages[0].content.map((part: { type: string }) => part.type))
     .toEqual(["text", "image_url", "image_url", "image_url"]);
   expect(JSON.stringify(payload.messages[0].content[0])).not.toContain("AB2359");
-});
+}, 20_000); // Cold-starting PDF.js and native canvas can exceed 5 seconds on hosted Windows.

@@ -109,7 +109,10 @@
     "topbar": {
       "notifications": "跟进提醒",
       "guide": "新手引导",
-      "profile": "本地账户"
+      "profile": "本地账户",
+      "desktopUpdate": "录阶桌面版 {version} 已发布",
+      "viewDesktopUpdate": "查看新版",
+      "dismissDesktopUpdate": "关闭更新提醒"
     },
     "header": {
       "processing": "正在处理...",

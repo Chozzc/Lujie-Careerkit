@@ -68,7 +68,13 @@ export function generateInterviewPreparationWithAI(
     prompt: buildInterviewPreparationPrompt(input),
     fallback: buildInterviewPreparationFallback(input),
     taskLabel: "面试准备资料",
+    repairJson: settings.providerId === "deepseek" ? repairDeepSeekInterviewJson : undefined,
   });
+}
+
+export function repairDeepSeekInterviewJson(text: string) {
+  // DeepSeek Flash has closed the root object just after evidenceMatrix, then continued with knowledgeTopics.
+  return text.replace(/(\]\s*)\}(\s*,\s*"knowledgeTopics"\s*:)/, "$1$2");
 }
 
 function buildInterviewPreparationFallback(input: InterviewPreparationInput): InterviewPreparation {

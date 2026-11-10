@@ -4,7 +4,7 @@ services:
       context: .
     image: lujie-careerkit:local
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: file:/data/dev.db
       LUJIE_SETTINGS_SECRET: ${LUJIE_SETTINGS_SECRET:-change-me-to-a-long-random-string}

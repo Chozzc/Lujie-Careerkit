@@ -1,0 +1,8 @@
+{
+  "bundle": {
+    "targets": ["appimage", "deb"],
+    "linux": {
+      "deb": { "depends": ["libssl3", "xdg-utils"] }
+    }
+  }
+}

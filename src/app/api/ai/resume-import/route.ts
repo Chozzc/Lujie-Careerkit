@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       return Response.json({ error: VISION_SETUP_MESSAGE }, { status: 422 });
     }
 
-    const text = await extractLocalText(file, kind, plainText, settings.enabled).catch((error) => {
+    const text = await extractLocalText(file, kind, plainText).catch((error) => {
       if (settings.providerId !== "qwen") throw error;
       return "";
     });
@@ -134,13 +134,12 @@ async function extractLocalText(
   file: File,
   kind: NonNullable<ReturnType<typeof getResumeUploadKind>>,
   plainText: string,
-  requireTextOnEveryPage = false,
 ) {
   if (kind === "text" || kind === "json") return plainText;
   if (kind !== "pdf" && kind !== "word") return "";
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const text = kind === "pdf" ? await extractPdfText(buffer, { requireTextOnEveryPage }) : await extractWordText(buffer);
+  const text = kind === "pdf" ? await extractPdfText(buffer, { requireTextOnEveryPage: true }) : await extractWordText(buffer);
   return text.replace(/\s/g, "").length >= 10 ? text : "";
 }
 

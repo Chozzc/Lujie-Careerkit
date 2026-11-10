@@ -109,7 +109,10 @@
     "topbar": {
       "notifications": "Follow-up reminders",
       "guide": "Getting started",
-      "profile": "Local account"
+      "profile": "Local account",
+      "desktopUpdate": "LuJie CareerKit Desktop {version} is available",
+      "viewDesktopUpdate": "View release",
+      "dismissDesktopUpdate": "Dismiss update reminder"
     },
     "header": {
       "processing": "Processing...",

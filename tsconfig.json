@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", ".next/dev", "brand/promo-videos", "outputs", "tmp"]
+  "exclude": ["node_modules", ".next/dev", "src-tauri", "brand/promo-videos", "outputs", "tmp"]
 }
