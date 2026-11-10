@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   desktop:
@@ -56,12 +57,36 @@ jobs:
       - run: cargo test --manifest-path src-tauri/Cargo.toml --release --locked
       - name: Install and check Windows resources
         if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
           $installer = Get-ChildItem 'src-tauri/target/release/bundle/nsis/*-setup.exe' | Select-Object -First 1
           $installDir = Join-Path $env:RUNNER_TEMP 'LuJie Desktop Test'
+          $upgradeProfile = Join-Path $env:LOCALAPPDATA 'dev.chozzc.lujie.preview'
+          $baselineDir = Join-Path $env:RUNNER_TEMP 'LuJie Upgrade Baseline'
+          $testUpgrade = $env:GITHUB_REF_NAME -eq 'codex/desktop-release-check-20261110'
+          if ($testUpgrade) {
+            gh run download 42770020747 --repo $env:GITHUB_REPOSITORY --name windows-x64-preview --dir $baselineDir
+            if ($LASTEXITCODE -ne 0) { throw 'Could not download verified baseline installer' }
+            $baseline = Get-ChildItem -LiteralPath $baselineDir -Recurse -Filter '*-setup.exe' | Select-Object -First 1
+            if (!$baseline -or (Get-FileHash -LiteralPath $baseline.FullName).Hash -ne 'A0DB4F896CFF82F3E355B301BC22BEE670D386ED17F52745E46F7E52D7E1B6F9') {
+              throw 'Baseline installer checksum mismatch'
+            }
+            $oldInstall = Start-Process -FilePath $baseline.FullName -ArgumentList @('/S', "/D=$installDir") -WindowStyle Hidden -Wait -PassThru
+            if ($oldInstall.ExitCode -ne 0) { throw "Baseline installer failed: $($oldInstall.ExitCode)" }
+            node scripts/desktop-upgrade.check.mjs seed "$installDir/backend" "$upgradeProfile"
+            if ($LASTEXITCODE -ne 0) { throw 'Could not seed isolated Windows upgrade profile' }
+            $sentinel = Join-Path $installDir 'backend/.next/static/obsolete-ci-chunk.txt'
+            Set-Content -LiteralPath $sentinel -Value 'synthetic stale asset'
+          }
           $install = Start-Process -FilePath $installer.FullName -ArgumentList @('/S', "/D=$installDir") -WindowStyle Hidden -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
+          if ($testUpgrade) {
+            if (Test-Path -LiteralPath $sentinel) { throw 'Upgrade retained obsolete generated assets' }
+            node scripts/desktop-upgrade.check.mjs verify "$installDir/backend" "$upgradeProfile"
+            if ($LASTEXITCODE -ne 0) { throw 'Windows upgrade profile verification failed' }
+          }
           node scripts/desktop-smoke.mjs "$installDir/backend"
           if ($LASTEXITCODE -ne 0) { throw 'Installed backend smoke test failed' }
       - name: Mount and check macOS installer resources
