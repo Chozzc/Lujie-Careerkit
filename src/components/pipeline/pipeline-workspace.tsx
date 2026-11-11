@@ -14,20 +14,31 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import {
   Archive,
+  ArrowDown,
+  ArrowUp,
+  BriefcaseBusiness,
+  Building2,
   CalendarClock,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
   ClipboardList,
+  Columns3,
   Edit3,
   FileCheck2,
   GripVertical,
+  Link2,
+  List,
   ListChecks,
   Mic,
   Plus,
+  Search,
   Trash2,
   Trophy,
   X,
   XCircle,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Bar,
   BarChart,
@@ -49,6 +60,7 @@ import {
   chunkPipelineStatuses,
   companySuggestions,
   defaultNextFollowUpDate,
+  filterPipelineApplications,
   normalizeApplicationSource,
   visiblePipelineStatuses,
 } from "@/lib/pipeline";
@@ -82,6 +94,8 @@ const pipelineStageOptions = pipelineStatuses.flatMap((status) => {
 
 const pipelineChartColors = ["#7F9CBF", "#9CB69C", "#C3B1D0", "#D4A8A8", "#C4A484", "#AF6F3B"];
 
+const emptyFilters = { query: "", company: "", status: "", source: "", days: 0, followUp: "" };
+
 export function PipelineView({
   jobs,
   applications,
@@ -97,6 +111,11 @@ export function PipelineView({
   deletePipelineEntry: (applicationId: string) => void;
   updateStatus: (applicationId: string, status: ApplicationStatus) => void;
 }) {
+  const t = useTranslations("pipeline");
+  const locale = useLocale();
+  const [view, setView] = useState<"list" | "board">("board");
+  const [filters, setFilters] = useState(emptyFilters);
+  const [ascending, setAscending] = useState(false);
   const jobById = useMemo(() => new Map(jobs.map((job) => [job.id, job])), [jobs]);
   const overview = useMemo(
     () =>
@@ -106,15 +125,17 @@ export function PipelineView({
       }),
     [applications, jobs],
   );
-  const applicationsByStatus = useMemo(() => {
-    const grouped = new Map<ApplicationStatus, ApplicationView[]>(
-      pipelineStatuses.map((status) => [status, [] as ApplicationView[]]),
-    );
-    for (const application of applications) {
-      if (isPipelineStatus(application.status)) grouped.get(application.status)?.push(application);
-    }
-    return grouped;
-  }, [applications]);
+
+  const companies = [...new Set([
+    filters.company,
+    ...applications.map(({ jobId }) => jobById.get(jobId)?.company.trim() ?? ""),
+  ].filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right, locale));
+  const visibleApplications = filterPipelineApplications(applications, jobById, filters);
+  const hasFilters = Boolean(filters.query.trim() || filters.company || filters.status || filters.source || filters.days || filters.followUp);
+  const changeFilter = <Key extends keyof typeof emptyFilters>(key: Key, value: (typeof emptyFilters)[Key]) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+  };
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [editingApplicationId, setEditingApplicationId] = useState<string | null>(null);
   const editingApplication = applications.find((application) => application.id === editingApplicationId);
@@ -125,40 +146,103 @@ export function PipelineView({
     <div className="space-y-5">
       <PipelineOverview overview={overview} />
 
-      <DndContext
-        id="pipeline-board-dnd"
-        sensors={sensors}
-        modifiers={[restrictToWindowEdges]}
-        onDragStart={(event) => setDraggedId(String(event.active.id))}
-        onDragEnd={(event: DragEndEvent) => {
-          const applicationId = String(event.active.id);
-          const nextStatus = event.over?.id;
-          if (typeof nextStatus === "string" && isPipelineStatus(nextStatus)) {
-            const application = applications.find((item) => item.id === applicationId);
-            if (application && application.status !== nextStatus) updateStatus(applicationId, nextStatus);
-          }
-          setDraggedId(null);
-        }}
-        onDragCancel={() => setDraggedId(null)}
-      >
-        <div data-tour="pipeline-board" className="space-y-4">
-          {chunkPipelineStatuses().map((row, rowIndex) => (
-            <div key={rowIndex} className="grid gap-4 lg:grid-cols-3">
-              {row.map((status) => (
-                <PipelineStatusColumn
-                  key={status}
-                  status={status}
-                  applications={applicationsByStatus.get(status) ?? []}
-                  versions={versions}
-                  jobById={jobById}
-                  draggingApplicationId={draggedId}
-                  onEditApplication={setEditingApplicationId}
-                />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-48 flex-1">
+            <Search aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input type="search" aria-label={t("list.search")} placeholder={t("list.search")} value={filters.query}
+              onChange={(event) => changeFilter("query", event.target.value)}
+              className="h-11 rounded-xl bg-background py-0 pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {filters.query && <button type="button" aria-label={t("list.clearSearch")} onClick={() => changeFilter("query", "")}
+              className="absolute right-1.5 top-1/2 grid size-8 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-surface-low focus-visible:ring-2 focus-visible:ring-ring">
+              <X aria-hidden className="size-4" />
+            </button>}
+          </div>
+          <div className="inline-flex shrink-0 rounded-xl border border-line bg-surface-low p-1">
+            {([{ mode: "board", Icon: Columns3 }, { mode: "list", Icon: List }] as const).map(({ mode, Icon }) => (
+              <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)}
+                className={cn("inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring",
+                  view === mode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+                <Icon aria-hidden className="size-4" />{t(`list.${mode}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <PipelineFilter label={t("fields.company")} value={filters.company} onChange={(value) => changeFilter("company", value)}>
+            {companies.map((company) => <option key={company} value={company}>{company}</option>)}
+          </PipelineFilter>
+          <PipelineFilter label={t("list.stage")} value={filters.status} onChange={(value) => changeFilter("status", value)}>
+            {pipelineStatuses.map((status) => <option key={status} value={status}>{pipelineStatusLabel(status, t)}</option>)}
+          </PipelineFilter>
+          <PipelineFilter label={t("fields.source")} value={filters.source} onChange={(value) => changeFilter("source", value)}>
+            {applicationSourceOptions.map((source) => <option key={source} value={source}>{sourceLabel(source, t)}</option>)}
+          </PipelineFilter>
+          <PipelineFilter label={t("statusDate.APPLIED")} value={filters.days ? String(filters.days) : ""} onChange={(value) => changeFilter("days", Number(value))}>
+            {[3, 7, 14, 30].map((days) => <option key={days} value={days}>{t("list.recentDays", { days })}</option>)}
+          </PipelineFilter>
+          <PipelineFilter label={t("list.followUp")} value={filters.followUp} onChange={(value) => changeFilter("followUp", value)}>
+            <option value="scheduled">{t("list.scheduled")}</option>
+            <option value="unscheduled">{t("list.unscheduled")}</option>
+          </PipelineFilter>
+        </div>
+      </div>
+
+      <div data-tour="pipeline-board" className="space-y-2.5">
+        <div className="flex min-h-7 items-center justify-between gap-2">
+          <p role="status" className="text-sm tabular-nums text-muted-foreground">{t("list.count", { count: visibleApplications.length })}</p>
+          {hasFilters && <button type="button" onClick={() => setFilters(emptyFilters)} className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring">{t("list.clearFilters")}</button>}
+        </div>
+        {visibleApplications.length === 0 ? (
+          <p className="rounded-xl border border-line bg-surface-low px-4 py-12 text-center text-sm text-muted-foreground">
+            {t(hasFilters ? "list.noMatches" : "board.empty")}
+          </p>
+        ) : view === "list" ? (
+          <PipelineList
+            applications={visibleApplications}
+            jobById={jobById}
+            ascending={ascending}
+            onSort={() => setAscending((current) => !current)}
+            onEditApplication={setEditingApplicationId}
+          />
+        ) : (
+          <DndContext
+            id="pipeline-board-dnd"
+            sensors={sensors}
+            modifiers={[restrictToWindowEdges]}
+            onDragStart={(event) => setDraggedId(String(event.active.id))}
+            onDragEnd={(event: DragEndEvent) => {
+              const applicationId = String(event.active.id);
+              const nextStatus = event.over?.id;
+              if (typeof nextStatus === "string" && isPipelineStatus(nextStatus)) {
+                const application = applications.find((item) => item.id === applicationId);
+                if (application && application.status !== nextStatus) updateStatus(applicationId, nextStatus);
+              }
+              setDraggedId(null);
+            }}
+            onDragCancel={() => setDraggedId(null)}
+          >
+            <div className="space-y-4">
+              {chunkPipelineStatuses().map((row, rowIndex) => (
+                <div key={rowIndex} className="grid gap-4 lg:grid-cols-3">
+                  {row.map((status) => (
+                    <PipelineStatusColumn
+                      key={status}
+                      status={status}
+                      applications={visibleApplications.filter((application) => application.status === status)}
+                      versions={versions}
+                      jobById={jobById}
+                      draggingApplicationId={draggedId}
+                      onEditApplication={setEditingApplicationId}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
-      </DndContext>
+          </DndContext>
+        )}
+      </div>
       <PipelineEditDialog
         application={editingApplication}
         job={editingJob}
@@ -175,6 +259,104 @@ export function PipelineView({
           setEditingApplicationId(null);
         }}
       />
+    </div>
+  );
+}
+
+function PipelineFilter({ label, value, onChange, children }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative min-w-0 flex-1 basis-32">
+      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}
+        className={cn("h-10 w-full cursor-pointer appearance-none truncate rounded-xl border border-line bg-background py-0 pl-3 pr-8 text-sm outline-none transition-colors hover:bg-surface-low focus-visible:ring-2 focus-visible:ring-ring",
+          value && "border-brand/25 bg-brand-muted font-medium text-brand")}>
+        <option value="">{label}</option>
+        {children}
+      </select>
+      <ChevronDown aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  );
+}
+
+const stagePillClass: Record<ApplicationStatus, string> = {
+  APPLIED: "bg-sky-500/12 text-sky-800 dark:text-sky-300",
+  ASSESSMENT: "bg-amber-500/15 text-amber-900 dark:text-amber-200",
+  INTERVIEW: "bg-violet-500/12 text-violet-800 dark:text-violet-300",
+  OFFER: "bg-emerald-500/12 text-emerald-800 dark:text-emerald-300",
+  REJECTED: "bg-rose-500/12 text-rose-800 dark:text-rose-300",
+  ARCHIVED: "bg-surface-mid text-muted-foreground",
+};
+
+function PipelineList({ applications, jobById, ascending, onSort, onEditApplication }: {
+  applications: ApplicationView[];
+  jobById: ReadonlyMap<string, JobView>;
+  ascending: boolean;
+  onSort: () => void;
+  onEditApplication: (id: string) => void;
+}) {
+  const t = useTranslations("pipeline");
+  const sorted = applications.toSorted((left, right) => {
+    if (!left.appliedAt || !right.appliedAt) return Number(!left.appliedAt) - Number(!right.appliedAt);
+    return (ascending ? 1 : -1) * left.appliedAt.localeCompare(right.appliedAt);
+  });
+  const SortIcon = ascending ? ArrowUp : ArrowDown;
+  return (
+    <div role="region" aria-label={t("list.list")} tabIndex={0} className="max-h-[65dvh] overflow-auto scroll-pt-12 rounded-xl border border-line bg-background focus-visible:ring-2 focus-visible:ring-ring">
+      <table className="w-full min-w-180 table-fixed border-separate border-spacing-0 text-left text-sm [&_tr>*+*]:border-l [&_tr>*+*]:border-line/70">
+        <colgroup>
+          <col className="w-[19%]" />
+          <col />
+          <col className="w-[18%]" />
+          <col className="w-[12%]" />
+          <col className="w-29" />
+          <col className="w-29" />
+        </colgroup>
+        <thead className="sticky top-0 z-10 bg-surface-low text-xs text-foreground/80">
+          <tr className="[&>th]:border-b [&>th]:border-line [&>th]:px-2.5 [&>th]:py-2.5 [&>th]:font-semibold [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-muted-foreground">
+            <th scope="col"><span className="flex items-center gap-1.5"><Building2 aria-hidden />{t("fields.company")}</span></th>
+            <th scope="col"><span className="flex items-center gap-1.5"><BriefcaseBusiness aria-hidden />{t("list.role")}</span></th>
+            <th scope="col"><span className="flex items-center gap-1.5"><ListChecks aria-hidden />{t("list.stage")}</span></th>
+            <th scope="col"><span className="flex items-center gap-1.5"><Link2 aria-hidden />{t("fields.source")}</span></th>
+            <th scope="col" aria-sort={ascending ? "ascending" : "descending"}>
+              <button type="button" onClick={onSort} className="inline-flex items-center gap-1 rounded-sm text-left hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                <CalendarDays aria-hidden /><span>{t("statusDate.APPLIED")}</span><SortIcon aria-hidden />
+              </button>
+            </th>
+            <th scope="col"><span className="flex items-center gap-1.5"><CalendarClock aria-hidden />{t("list.followUp")}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((application) => {
+            const job = jobById.get(application.jobId);
+            const company = job?.company ?? t("card.unknownCompany");
+            const role = job?.title ?? t("card.unknownTitle");
+            const stage = applicationStageLabel(application, t);
+            const source = sourceLabel(displaySource(job?.source), t);
+            return (
+              <tr key={application.id} className="relative transition-colors even:bg-surface-low/35 hover:bg-brand-muted/75 focus-within:bg-brand-muted/75 [&:not(:last-child)>td]:border-b [&>td]:h-9 [&>td]:border-line/70 [&>td]:px-2.5 [&>td]:py-1">
+                <td>
+                  <button type="button" disabled={!job} onClick={() => onEditApplication(application.id)} title={company}
+                    aria-label={t("list.open", { company, role })}
+                    className="flex w-full items-center justify-between gap-1 rounded-sm text-left font-semibold enabled:after:absolute enabled:after:inset-0 enabled:after:cursor-pointer focus-visible:ring-2 focus-visible:ring-ring">
+                    <span className="truncate">{company}</span><ChevronRight aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+                  </button>
+                </td>
+                <td className="truncate" title={role}>{role}</td>
+                <td><span title={stage} className={cn("block w-fit max-w-full truncate rounded-full px-2 py-0.5 text-xs font-medium", stagePillClass[application.status])}>
+                  {stage}
+                </span></td>
+                <td className="truncate text-muted-foreground" title={source}>{source}</td>
+                <td className="whitespace-nowrap tabular-nums text-muted-foreground">{application.appliedAt ?? "—"}</td>
+                <td className="whitespace-nowrap tabular-nums text-muted-foreground">{application.nextFollowUpAt ?? "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -260,7 +442,7 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
   const sourceTotal = sourceData.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Panel title={t("overview.title")}>
+    <section className="rounded-xl border border-line bg-surface p-4 shadow-[0_12px_40px_rgba(49,48,48,0.04)]">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <PipelineMetric icon={ClipboardList} label={t("overview.metrics.total")} value={overview.total} />
         <PipelineMetric icon={CalendarClock} label={t("overview.metrics.active")} value={overview.active} />
@@ -389,7 +571,7 @@ function PipelineOverview({ overview }: { overview: ReturnType<typeof buildPipel
           </div>
         </div>
       </div>
-    </Panel>
+    </section>
   );
 }
 
@@ -860,41 +1042,6 @@ function PipelineEditDialogContent({
         </form>
       </section>
     </div>
-  );
-}
-
-function Panel({
-  title,
-  action,
-  onAction,
-  children,
-  className,
-  contentClassName,
-}: {
-  title: string;
-  action?: string;
-  onAction?: () => void;
-  children: ReactNode;
-  className?: string;
-  contentClassName?: string;
-}) {
-  return (
-    <section
-      className={cn(
-        "rounded-xl border border-line bg-surface p-4 shadow-[0_12px_40px_rgba(49,48,48,0.04)]",
-        className,
-      )}
-    >
-      <div className="mb-3 flex items-center justify-between gap-4">
-        <h2 className="font-serif text-lg font-semibold">{title}</h2>
-        {action && (
-          <button type="button" onClick={onAction} className="text-xs font-medium text-primary">
-            {action}
-          </button>
-        )}
-      </div>
-      {contentClassName ? <div className={contentClassName}>{children}</div> : children}
-    </section>
   );
 }
 

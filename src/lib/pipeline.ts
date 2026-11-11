@@ -110,6 +110,31 @@ export function isVisiblePipelineStatus(status: ApplicationStatus): status is Vi
   return visiblePipelineStatuses.includes(status as VisiblePipelineStatus);
 }
 
+export function filterPipelineApplications<T extends PipelineApplicationInput>(
+  applications: T[],
+  jobs: ReadonlyMap<string, { company: string; title: string; source: string }>,
+  filters: { query: string; company: string; status: string; source: string; days: number; followUp: string },
+  today = new Date(),
+) {
+  const keywords = filters.query.normalize("NFKC").toLowerCase().trim().split(/\s+/u).filter(Boolean);
+  const end = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  const latest = end.toISOString().slice(0, 10);
+  end.setUTCDate(end.getUTCDate() - filters.days + 1);
+  const earliest = end.toISOString().slice(0, 10);
+
+  return applications.filter((application) => {
+    if (!isVisiblePipelineStatus(application.status)) return false;
+    if (filters.status && application.status !== filters.status) return false;
+    if (filters.days && (!application.appliedAt || application.appliedAt < earliest || application.appliedAt > latest)) return false;
+    const job = jobs.get(application.jobId);
+    if (filters.company && job?.company.trim() !== filters.company) return false;
+    if (filters.source && normalizeApplicationSource(job?.source) !== filters.source) return false;
+    if (filters.followUp && Boolean(application.nextFollowUpAt) !== (filters.followUp === "scheduled")) return false;
+    const text = `${job?.company ?? ""} ${job?.title ?? ""}`.normalize("NFKC").toLowerCase();
+    return keywords.every((keyword) => text.includes(keyword));
+  });
+}
+
 export function isActivePipelineStatus(status: ApplicationStatus) {
   return activePipelineStatuses.includes(status as (typeof activePipelineStatuses)[number]);
 }

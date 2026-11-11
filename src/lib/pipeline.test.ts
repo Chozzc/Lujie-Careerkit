@@ -7,11 +7,41 @@ import {
   chunkPipelineStatuses,
   companySuggestions,
   defaultNextFollowUpDate,
+  filterPipelineApplications,
   getApplicationDueDate,
   visiblePipelineStatuses,
 } from "./pipeline";
 
 describe("pipeline presentation helpers", () => {
+  it("combines cross-stage keyword search, source aliases and local application-date filters", () => {
+    const jobs = new Map([
+      ["job", { company: "北辰科技", title: "Java 开发工程师", source: "Boss" }],
+      ["other-job", { company: "北辰软件", title: "Java 开发工程师", source: "BOSS直聘" }],
+    ]);
+    const entry = { jobId: "job", nextFollowUpAt: null };
+    const applications = [
+      { ...entry, id: "boundary", status: "APPLIED", appliedAt: "2026-11-05" },
+      { ...entry, id: "interview", status: "INTERVIEW", appliedAt: "2026-11-11", nextFollowUpAt: "2026-11-14" },
+      { ...entry, id: "older", status: "APPLIED", appliedAt: "2026-11-04" },
+      { ...entry, id: "future", status: "APPLIED", appliedAt: "2026-11-12" },
+      { ...entry, id: "undated", status: "APPLIED", appliedAt: null },
+      { ...entry, id: "other", jobId: "other-job", status: "APPLIED", appliedAt: "2026-11-11" },
+    ] satisfies Parameters<typeof filterPipelineApplications>[0];
+    const filters = { query: " ＪＡＶＡ  北辰 ", company: "", status: "", source: "BOSS直聘", days: 7, followUp: "" };
+    const today = new Date(2026, 10, 11, 23, 30);
+
+    expect(filterPipelineApplications(applications, jobs, filters, today).map(({ id }) => id))
+      .toEqual(["boundary", "interview", "other"]);
+    expect(filterPipelineApplications(applications, jobs, { ...filters, status: "INTERVIEW" }, today))
+      .toEqual([applications[1]]);
+    expect(filterPipelineApplications(applications, jobs, { ...filters, source: "内推" }, today)).toEqual([]);
+    const companyFilters = { ...filters, company: "北辰科技", days: 3 };
+    expect(filterPipelineApplications(applications, jobs, { ...companyFilters, followUp: "scheduled" }, today))
+      .toEqual([applications[1]]);
+    expect(filterPipelineApplications(applications, jobs, { ...companyFilters, followUp: "unscheduled" }, today))
+      .toEqual([]);
+  });
+
   it("shows only tracked application states in two rows of three", () => {
     expect(visiblePipelineStatuses).toEqual([
       "APPLIED",
