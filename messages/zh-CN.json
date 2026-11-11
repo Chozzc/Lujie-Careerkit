@@ -599,6 +599,22 @@
     }
   },
   "pipeline": {
+    "list": {
+      "search": "搜索公司或岗位",
+      "clearSearch": "清除搜索关键词",
+      "board": "看板",
+      "list": "列表",
+      "stage": "投递阶段",
+      "role": "岗位",
+      "followUp": "下次跟进",
+      "scheduled": "已设置跟进日期",
+      "unscheduled": "未设置跟进日期",
+      "recentDays": "最近 {days} 天",
+      "clearFilters": "清空筛选",
+      "count": "{count} 条投递记录",
+      "noMatches": "没有匹配的投递记录，试试修改关键词或筛选条件。",
+      "open": "查看{company}的{role}投递信息"
+    },
     "status": {
       "READY": "准备投递",
       "APPLIED": "已投递",
@@ -664,7 +680,7 @@
     },
     "add": {
       "title": "新增投递岗位",
-      "description": "记录岗位、渠道和跟进日期，保存后会进入下方投递看板。",
+      "description": "记录岗位、渠道和跟进日期，保存后可在投递记录中查看。",
       "close": "关闭新增投递窗口",
       "submit": "添加到跟进"
     },

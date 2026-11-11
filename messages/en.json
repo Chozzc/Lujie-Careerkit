@@ -599,6 +599,22 @@
     }
   },
   "pipeline": {
+    "list": {
+      "search": "Search companies or roles",
+      "clearSearch": "Clear search",
+      "board": "Board",
+      "list": "List",
+      "stage": "Stage",
+      "role": "Role",
+      "followUp": "Next follow-up",
+      "scheduled": "Follow-up scheduled",
+      "unscheduled": "No follow-up scheduled",
+      "recentDays": "Last {days} days",
+      "clearFilters": "Clear filters",
+      "count": "{count, plural, one {# application} other {# applications}}",
+      "noMatches": "No matching applications. Try a different search or filter.",
+      "open": "View the {role} application at {company}"
+    },
     "status": {
       "READY": "Ready",
       "APPLIED": "Applied",
@@ -664,7 +680,7 @@
     },
     "add": {
       "title": "Add application",
-      "description": "Record the role, source, and follow-up date. It will appear on the application board after saving.",
+      "description": "Record the role, source, and follow-up date. The record will appear in application tracking after saving.",
       "close": "Close add application dialog",
       "submit": "Add to tracking"
     },
