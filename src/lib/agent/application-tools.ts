@@ -113,18 +113,7 @@ export async function searchApplicationContext(input: z.input<typeof pipelineSea
 export async function getResumeContext(input: z.input<typeof resumeContextSchema> = {}) {
   const data = await getAppData();
   const search = resumeContextSchema.parse(input);
-  const versions = [
-    ...(data.resume ? [{
-      id: data.resume.id,
-      resumeId: data.resume.resumeId,
-      name: data.resume.name,
-      summary: data.resume.summary,
-      content: data.resume.content,
-      jobId: null,
-      updatedAt: data.resume.updatedAt,
-    }] : []),
-    ...data.versions,
-  ];
+  const versions = data.versions;
 
   if (search.resumeVersionId) {
     const version = versions.find((item) => item.id === search.resumeVersionId);
@@ -178,7 +167,7 @@ export async function getResumeContext(input: z.input<typeof resumeContextSchema
 
 export async function applyApplicationChange(input: ApplicationChangeInput) {
   const current = await getAppData();
-  if (input.resumeVersionId && ![current.resume, ...current.versions].some((version) => version?.id === input.resumeVersionId)) {
+  if (input.resumeVersionId && !current.versions.some((version) => version?.id === input.resumeVersionId)) {
     throw new Error("找不到要关联的简历，请重新搜索后再试。");
   }
 

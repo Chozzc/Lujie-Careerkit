@@ -108,7 +108,7 @@ describe("Agent stream persistence", () => {
     expect(updateResumeVersion).not.toHaveBeenCalled();
     const version = { id: "v1", resumeId: "r1", jobId: null, name: "Resume", summary: "",
       content: { editor: { template: "ats" } }, createdAt: new Date(), updatedAt: new Date() };
-    vi.mocked(getAppData).mockResolvedValue({ resume: version, versions: [] } as never);
+    vi.mocked(getAppData).mockResolvedValue({ resume: null, versions: [version] } as never);
     vi.mocked(updateResumeVersion).mockResolvedValue(version as never);
     const response = await send(message);
     expect(response.status).toBe(200);
@@ -143,7 +143,7 @@ describe("Agent stream persistence", () => {
     });
     const version = { id: "v1", resumeId: "r1", jobId: null, name: "Resume", summary: "",
       content: { editor: { template: "ats" } }, createdAt: new Date(), updatedAt: new Date() };
-    vi.mocked(getAppData).mockResolvedValue({ resume: version, versions: [] } as never);
+    vi.mocked(getAppData).mockResolvedValue({ resume: null, versions: [version] } as never);
     vi.mocked(updateResumeVersion).mockResolvedValue(version as never);
     const chat = new Chat({ messages: [pending] });
     await chat.addToolApprovalResponse({ id: "approval", approved: true });

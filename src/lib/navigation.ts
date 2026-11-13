@@ -1,4 +1,4 @@
-export type NavKey = "dashboard" | "campus" | "resume" | "match" | "pipeline" | "interview" | "library" | "settings";
+export type NavKey = "dashboard" | "campus" | "resume" | "match" | "pipeline" | "interview" | "library" | "settings" | "trash";
 
 const NAV_PATHS: Record<NavKey, string> = {
   dashboard: "/dashboard",
@@ -9,6 +9,7 @@ const NAV_PATHS: Record<NavKey, string> = {
   interview: "/interview",
   library: "/library",
   settings: "/settings",
+  trash: "/trash",
 };
 
 const PATH_NAV_KEYS = new Map(Object.entries(NAV_PATHS).map(([key, path]) => [path, key as NavKey]));

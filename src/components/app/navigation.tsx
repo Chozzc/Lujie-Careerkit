@@ -7,6 +7,7 @@ import {
   Mic,
   Settings,
   Target,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,9 +24,10 @@ export const navItems: NavItem[] = [
   { key: "library", labelKey: "library", icon: FolderArchive },
   { key: "pipeline", labelKey: "pipeline", icon: ClipboardList },
   { key: "settings", labelKey: "settings", icon: Settings },
+  { key: "trash", labelKey: "trash", icon: Trash2 },
 ];
 
 export const navGroups: Array<{ labelKey: "workflow" | "system"; items: NavItem[] }> = [
-  { labelKey: "workflow", items: navItems.filter((item) => item.key !== "settings") },
-  { labelKey: "system", items: navItems.filter((item) => item.key === "settings") },
+  { labelKey: "workflow", items: navItems.filter((item) => !["settings", "trash"].includes(item.key)) },
+  { labelKey: "system", items: navItems.filter((item) => ["settings", "trash"].includes(item.key)) },
 ];

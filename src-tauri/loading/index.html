@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>录阶 LuJie CareerKit</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      --background: #f7f7f4;
+      --foreground: #202720;
+      --muted: #566156;
+      --accent: #42634e;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--background);
+      color: var(--foreground);
+    }
+    main { max-width: 38rem; padding: 2rem; text-align: center; }
+    h1 { margin: 1.25rem 0 0.5rem; font-size: 1.75rem; font-weight: 600; }
+    p { margin: 0; line-height: 1.65; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .dots { display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.25rem; }
+    .dots span {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 120ms; }
+    .dots span:nth-child(3) { animation-delay: 240ms; }
+    body[data-startup-error] .dots { display: none; }
+    @keyframes pulse { 0%, 60%, 100% { opacity: 0.4; transform: scale(0.75); } 30% { opacity: 1; transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { .dots span { animation: none; } }
+    @media (prefers-color-scheme: dark) {
+      :root { --background: #171c18; --foreground: #e9eee9; --muted: #afbcaf; --accent: #9ec7aa; }
+    }
+  </style>
+</head>
+<body><main>
+  <!-- The mark from public/brand/lujie-mark.svg is inlined so the first paint needs no asset request. -->
+  <svg width="76" height="76" viewBox="0 0 96 96" aria-hidden="true">
+    <path d="M20 78V16h42l18 18v28" fill="none" stroke="currentColor" stroke-linecap="square" stroke-width="8" />
+    <path d="M32 39h33v6H32v-6Zm0 14h27v6H32v-6Zm0 14h19v6H32v-6ZM56 78h24V56H69v10H56v12Z" fill="currentColor" />
+  </svg>
+  <h1 id="title">录阶 CareerKit</h1>
+  <p id="status" role="status">正在打开工作台<span lang="en"> · Opening workspace</span></p>
+  <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+</main></body>
+</html>

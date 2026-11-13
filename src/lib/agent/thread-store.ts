@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 import { z } from "zod";
 
+import { moveToTrash } from "@/lib/trash";
 import { prisma } from "@/lib/db";
 
 const storedMessageSchema = z.object({
@@ -68,7 +69,7 @@ export async function saveAgentThreadMessages(threadId: string, messages: UIMess
 }
 
 export async function deleteAgentThread(threadId: string) {
-  await prisma.agentThread.delete({ where: { id: threadId } });
+  await moveToTrash("agentThread", threadId);
 }
 
 export function deriveThreadTitle(messages: UIMessage[]) {

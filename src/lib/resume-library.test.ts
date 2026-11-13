@@ -18,8 +18,8 @@ const baseContent: ResumeContent = {
 describe("resume library cards", () => {
   it("sorts by actual updated time when the UI says recent edits", () => {
     const cards = buildResumeLibraryCards({
-      resume: baseContent,
-      mainResumeUpdatedAt: "2026-06-08T08:00:00.000Z",
+
+
       versions: [
         {
           id: "version-old",
@@ -42,16 +42,14 @@ describe("resume library cards", () => {
       sortMode: "recent",
     });
 
-    expect(cards.map((card) => card.id)).toEqual(["version-new", "main", "version-old"]);
+    expect(cards.map((card) => card.id)).toEqual(["version-new", "version-old"]);
     expect(cards[0].updatedAt).toBe("最近编辑于 2026/6/9");
-    expect(cards.find((card) => card.id === "main")?.detail).toBe("后端开发实习生 · 主简历");
-    expect(cards.find((card) => card.id === "main")?.detail).not.toContain("健康分");
   });
 
   it("falls back to creation time only when a legacy version has no updatedAt", () => {
     const cards = buildResumeLibraryCards({
-      resume: baseContent,
-      mainResumeUpdatedAt: "2026-06-08T08:00:00.000Z",
+
+
       versions: [
         {
           id: "legacy-version",
@@ -65,54 +63,20 @@ describe("resume library cards", () => {
       sortMode: "recent",
     });
 
-    expect(cards.map((card) => card.id)).toEqual(["main", "legacy-version"]);
-    expect(cards[1].updatedAt).toBe("创建于 2026/6/2");
+    expect(cards.map((card) => card.id)).toEqual(["legacy-version"]);
+    expect(cards[0].updatedAt).toBe("创建于 2026/6/2");
   });
 
-  it("uses the resume display name and hides an empty main resume", () => {
-    const namedContent: ResumeContent = {
-      ...baseContent,
-      editor: {
-        displayName: "王梓涵的简历",
-      },
-    };
-    const emptyContent: ResumeContent = {
-      basics: { name: "", email: "", phone: "", city: "", links: [] },
-      profile: { title: "", summary: "" },
-      education: [],
-      experiences: [],
-      internships: [],
-      projects: [],
-      skills: [],
-      awards: [],
-      selfReview: "",
-    };
-
-    expect(
-      buildResumeLibraryCards({
-        resume: namedContent,
-        mainResumeUpdatedAt: "2026-06-08T08:00:00.000Z",
-        versions: [],
-        search: "",
-        sortMode: "recent",
-      })[0].title,
-    ).toBe("王梓涵的简历");
-
-    expect(
-      buildResumeLibraryCards({
-        resume: emptyContent,
-        mainResumeUpdatedAt: "2026-06-08T08:00:00.000Z",
-        versions: [],
-        search: "",
-        sortMode: "recent",
-      }),
-    ).toEqual([]);
+  it("keeps empty named resumes addressable by their own ID", () => {
+    const cards = buildResumeLibraryCards({ versions: [{ id: "own-id", name: "自定义名称", summary: "", content: baseContent, createdAt: "2026-06-01" }], search: "", sortMode: "recent" });
+    expect(cards[0]).toMatchObject({ id: "own-id", title: "自定义名称", target: { kind: "version", id: "own-id" } });
+    expect(buildResumeLibraryCards({ versions: [], search: "", sortMode: "recent" })).toEqual([]);
   });
 
   it("puts recently optimized versions first when sorting by recent optimization", () => {
     const cards = buildResumeLibraryCards({
-      resume: baseContent,
-      mainResumeUpdatedAt: "2026-06-10T08:00:00.000Z",
+
+
       versions: [
         {
           id: "plain-version",
@@ -148,7 +112,6 @@ describe("resume library cards", () => {
       "optimized-version",
       "general-optimized-version",
       "plain-version",
-      "main",
     ]);
     expect(cards[0].title).toBe("JD匹配优化-百度 AIDU 大模型算法工程师");
     expect(cards[0].optimizationKind).toBe("job");
@@ -160,7 +123,6 @@ describe("resume library cards", () => {
   });
 
   it("keeps custom resume versions addressable in the editor route", () => {
-    expect(buildResumeEditorPath({ kind: "main" })).toBe("/resume/edit");
     expect(buildResumeEditorPath({ kind: "version", id: "rv-alibaba-data" })).toBe(
       "/resume/edit?version=rv-alibaba-data",
     );

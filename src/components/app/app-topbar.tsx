@@ -1,8 +1,8 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import Image from "next/image";
-import { Bell, CircleHelp } from "lucide-react";
+import { Bell, CircleHelp, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { HeaderIconButton, HeaderMenuPanel, type HeaderMenuKey } from "@/components/app/header-menu";
@@ -37,6 +37,16 @@ export function AppTopbar({
   onStartTour: () => void;
 }) {
   const t = useTranslations("app");
+  const [update, setUpdate] = useState<{ version: string; url: string } | null>(null);
+
+  useEffect(() => {
+    if (!window.__TAURI__) return;
+    const controller = new AbortController();
+    void fetch("/api/desktop/update", { signal: controller.signal }).then(async (response) => {
+      if (response.status === 200) setUpdate(await response.json());
+    }).catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   return (
     <header
@@ -119,6 +129,17 @@ export function AppTopbar({
           )}
         </div>
       </div>
+      {update && (
+        <div role="status" className="mt-2 flex items-center justify-end gap-3 text-sm">
+          <span>{t("topbar.desktopUpdate", { version: update.version })}</span>
+          <a href={update.url} target="_blank" rel="noreferrer" className="font-medium text-primary underline">
+            {t("topbar.viewDesktopUpdate")}
+          </a>
+          <HeaderIconButton label={t("topbar.dismissDesktopUpdate")} active={false} onClick={() => setUpdate(null)}>
+            <X className="h-4 w-4" />
+          </HeaderIconButton>
+        </div>
+      )}
     </header>
   );
 }

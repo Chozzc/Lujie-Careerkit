@@ -112,10 +112,9 @@ const PREPARATION_SECTION_IDS = [
 ] as const;
 
 export function InterviewWorkspace({
+  initialSelectedResumeId,
+  onResumeSelect,
   versions,
-  resume,
-  mainResumeName,
-  mainResumeVersionId,
   targetSessionId,
   targetPreparationId,
   onSessionUpsert,
@@ -127,10 +126,9 @@ export function InterviewWorkspace({
   onOpenSettings,
   onStatus,
 }: {
+  initialSelectedResumeId?: string;
+  onResumeSelect: (id: string) => void;
   versions: InterviewResumeVersion[];
-  resume: ResumeContent;
-  mainResumeName: string;
-  mainResumeVersionId?: string;
   targetSessionId?: string;
   targetPreparationId?: string;
   onSessionUpsert: (session: InterviewSessionRecord) => void;
@@ -148,7 +146,7 @@ export function InterviewWorkspace({
   const [activeSession, setActiveSession] = useState<InterviewSessionRecord | null>(null);
   const [activePreparation, setActivePreparation] = useState<InterviewPreparationRecord | null>(null);
   const [resumeSource, setResumeSource] = useState<"library" | "upload">("library");
-  const [selectedResumeId, setSelectedResumeId] = useState("main");
+  const [selectedResumeId, setSelectedResumeId] = useState(initialSelectedResumeId ?? "");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [isUploadingResume, setIsUploadingResume] = useState(false);
@@ -167,13 +165,6 @@ export function InterviewWorkspace({
 
   const resumeOptions = useMemo<ResumePickerOption[]>(() => {
     const options: ResumePickerOption[] = [];
-    if (hasResumeContent(resume)) {
-      options.push({
-        id: "main",
-        name: mainResumeName,
-        detail: t("resume.mainDetail", { skills: resume.skills.length, projects: resume.projects.length }),
-      });
-    }
     for (const version of versions) {
       options.push({
         id: version.id,
@@ -184,16 +175,16 @@ export function InterviewWorkspace({
       });
     }
     return options;
-  }, [locale, mainResumeName, resume, t, versions]);
-  const selectedResumeOption = resumeOptions.find((option) => option.id === selectedResumeId) ?? resumeOptions[0];
+  }, [locale, t, versions]);
+  const selectedResumeOption = resumeOptions.find((option) => option.id === selectedResumeId) ?? (!selectedResumeId && resumeOptions.length === 1 ? resumeOptions[0] : undefined);
   const selectedLibraryId = selectedResumeOption?.id;
   const selectedVersion = versions.find((version) => version.id === selectedLibraryId);
   const selectedResume =
-    resumeSource === "upload" ? uploadedResume?.content : selectedLibraryId === "main" ? resume : selectedVersion?.content;
+    resumeSource === "upload" ? uploadedResume?.content : selectedVersion?.content;
   const selectedResumeName =
     resumeSource === "upload"
       ? uploadedResume?.fileName ?? t("resume.uploaded")
-      : selectedResumeOption?.name ?? mainResumeName;
+      : selectedResumeOption?.name ?? t("setup.needResume");
   const resumeReady = Boolean(selectedResume && hasResumeContent(selectedResume));
   const setupDisabledReason = !resumeReady
     ? t("setup.needResume")
@@ -203,17 +194,6 @@ export function InterviewWorkspace({
   const canStart = !setupDisabledReason && !isWorking && !isUploadingResume;
   const activeQuestion = activeSession?.questions[activeSession.currentQuestionIndex];
   const report = activeSession?.feedback ?? null;
-
-  useEffect(() => {
-    if (resumeSource !== "library") return undefined;
-    if (!resumeOptions.length) return undefined;
-    if (resumeOptions.some((option) => option.id === selectedResumeId)) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedResumeId(resumeOptions[0].id);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [resumeOptions, resumeSource, selectedResumeId]);
 
   const fetchSession = useCallback(async (sessionId: string) => {
     setIsWorking(true);
@@ -385,7 +365,7 @@ export function InterviewWorkspace({
         {
           jobId: selectedVersion?.jobId ?? "",
           resumeVersionId: resumeSource === "library"
-            ? selectedResumeId === "main" ? mainResumeVersionId ?? null : selectedResumeId
+            ? selectedLibraryId ?? null
             : null,
           mode,
           context: {
@@ -421,7 +401,7 @@ export function InterviewWorkspace({
           jd: jdDraft.trim(),
           resumeName: selectedResumeName,
           resumeVersionId: resumeSource === "library"
-            ? selectedResumeId === "main" ? mainResumeVersionId ?? null : selectedResumeId
+            ? selectedLibraryId ?? null
             : null,
           resume: selectedResume,
           focus: mode,
@@ -557,10 +537,10 @@ export function InterviewWorkspace({
     setJdDraft(context.jd);
     setMode(nextMode);
     const storedVersion = resumeVersionId ? versions.find((version) => version.id === resumeVersionId) : null;
-    const libraryResume = storedVersion?.content ?? (resumeVersionId ? null : resume);
+    const libraryResume = storedVersion?.content;
     if (libraryResume && JSON.stringify(libraryResume) === JSON.stringify(context.resume)) {
       setResumeSource("library");
-      setSelectedResumeId(storedVersion?.id ?? "main");
+      setSelectedResumeId(storedVersion?.id ?? "");
     } else if (isResumeContentLike(context.resume)) {
       setUploadedResume({
         fileName: t("resume.historySnapshot", { name: context.resumeName }),
@@ -570,7 +550,7 @@ export function InterviewWorkspace({
       setResumeSource("upload");
     } else {
       setResumeSource("library");
-      setSelectedResumeId("main");
+      setSelectedResumeId("");
     }
     returnToSetup();
   }
@@ -611,7 +591,7 @@ export function InterviewWorkspace({
           uploadError={uploadError}
           isUploadingResume={isUploadingResume}
           onResumeSourceChange={setResumeSource}
-          onResumeSelect={setSelectedResumeId}
+          onResumeSelect={(id) => { setSelectedResumeId(id); onResumeSelect(id); }}
           onResumeUploadRequest={requestResumeUpload}
           onUploadResume={(file) => void uploadResume(file)}
           onOpenResume={onOpenResume}
@@ -717,7 +697,7 @@ function SetupScreen(props: {
         onSelect: props.onResumeSelect,
         onUploadRequest: props.onResumeUploadRequest,
         onUploadFile: props.onUploadResume,
-        onOpenResume: (id) => props.onOpenResume(id === "main" ? undefined : id),
+        onOpenResume: (id) => props.onOpenResume(id),
       }}
       title={t("setup.title")}
       description={t("setup.description")}

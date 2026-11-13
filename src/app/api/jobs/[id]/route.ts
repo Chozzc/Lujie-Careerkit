@@ -2,7 +2,7 @@ import type { ApplicationStatus } from "@prisma/client";
 import { z } from "zod";
 
 import { dateInputSchema, parseJsonRequest } from "@/lib/api-request";
-import { deleteJobWithApplications, updateJobIdentity, updateJobWithApplication } from "@/lib/repository";
+import { deleteJobWithApplications, getAppData, updateJobIdentity, updateJobWithApplication } from "@/lib/repository";
 
 const updateJobSchema = z.object({
   applicationId: z.string().trim().min(1).optional(),
@@ -51,8 +51,10 @@ export async function PATCH(request: Request, context: RouteContext<"/api/jobs/[
   return Response.json(result);
 }
 
-export async function DELETE(_request: Request, context: RouteContext<"/api/jobs/[id]">) {
+export async function DELETE(request: Request, context: RouteContext<"/api/jobs/[id]">) {
+  const parsed = await parseJsonRequest(request, z.object({ confirmed: z.literal(true) }));
+  if (!parsed.success) return parsed.response;
   const { id } = await context.params;
   const deleted = await deleteJobWithApplications(id);
-  return Response.json({ ok: true, deleted });
+  return Response.json({ ok: true, deleted, data: await getAppData() });
 }

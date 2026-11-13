@@ -28,6 +28,7 @@ model Resume {
 }
 
 model ResumeVersion {
+  deletedAt DateTime?
   id        String   @id @default(cuid())
   name      String
   summary   String
@@ -72,6 +73,7 @@ model Job {
 }
 
 model Application {
+  deletedAt DateTime?
   id             String            @id @default(cuid())
   status         ApplicationStatus @default(APPLIED)
   /// The date the application was originally submitted.
@@ -95,6 +97,7 @@ model Application {
 }
 
 model InterviewSession {
+  deletedAt DateTime?
   id                   String    @id @default(cuid())
   mode                 String    @default("comprehensive")
   status               String    @default("IN_PROGRESS")
@@ -118,6 +121,7 @@ model InterviewSession {
 }
 
 model InterviewPreparation {
+  deletedAt DateTime?
   id        String   @id @default(cuid())
   mode      String   @default("comprehensive")
   context   Json
@@ -150,6 +154,7 @@ model Settings {
 }
 
 model AgentThread {
+  deletedAt DateTime?
   id        String   @id @default(cuid())
   title     String   @default("新对话")
   messages  String   @default("[]")
@@ -158,4 +163,14 @@ model AgentThread {
   updatedAt DateTime @updatedAt
 
   @@index([updatedAt])
+}
+
+model TrashSnapshot {
+  id String @id @default(cuid())
+  kind String
+  recordId String
+  name String
+  content Json
+  deletedAt DateTime @default(now())
+  @@index([deletedAt])
 }

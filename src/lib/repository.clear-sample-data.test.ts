@@ -91,4 +91,40 @@ describe("clearSampleData", () => {
     expect(preserved.job?.company).toBe(sampleJob.company);
     expect(preserved.job?.title).toBe(sampleJob.title);
   }, 30_000);
+
+  it("preserves an edited example resume and application while removing untouched examples", async () => {
+    const original = await database.resumeVersion.findFirstOrThrow({ where: { jobId: null } });
+    const application = await database.application.findFirstOrThrow();
+    const editedAt = new Date(Math.max(original.createdAt.getTime(), application.createdAt.getTime()) + 1000);
+    await database.resumeVersion.update({
+      where: { id: original.id }, data: { name: "合成个人简历", updatedAt: editedAt },
+    });
+    await database.application.update({
+      where: { id: application.id }, data: { notes: "合成个人跟进", updatedAt: editedAt },
+    });
+    await database.job.update({
+      where: { id: application.jobId }, data: { title: "合成岗位", updatedAt: editedAt },
+    });
+
+    await clearSampleData();
+
+    expect(await database.resumeVersion.count()).toBe(1);
+    expect(await database.resumeVersion.findUnique({ where: { id: original.id } })).toMatchObject({ name: "合成个人简历" });
+    expect(await database.application.count()).toBe(1);
+    expect(await database.application.findUnique({ where: { id: application.id } })).toMatchObject({ notes: "合成个人跟进" });
+    expect(await database.job.count()).toBe(1);
+    expect(await database.job.findUnique({ where: { id: application.jobId } })).toMatchObject({ title: "合成岗位" });
+  });
+
+  it("keeps existing data if restoring samples fails during reset", async () => {
+    const before = await database.resumeVersion.findFirstOrThrow({ where: { jobId: null } });
+    await database.resumeVersion.update({ where: { id: before.id }, data: { name: "需要保留的合成简历" } });
+    await database.$executeRawUnsafe("CREATE TRIGGER test_reset_failure BEFORE INSERT ON Resume BEGIN SELECT RAISE(ABORT, 'synthetic restore failure'); END");
+    try {
+      await expect(resetAppDataToSample()).rejects.toThrow();
+      expect(await database.resumeVersion.findUnique({ where: { id: before.id } })).toMatchObject({ name: "需要保留的合成简历" });
+    } finally {
+      await database.$executeRawUnsafe("DROP TRIGGER test_reset_failure");
+    }
+  });
 });

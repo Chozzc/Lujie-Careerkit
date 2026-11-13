@@ -69,7 +69,7 @@ export function buildDashboardSummary(input: DashboardInput, today = new Date())
         target: actionTarget(application.status),
       }];
     })
-    .toSorted((left, right) => {
+    .sort((left, right) => {
       return dateTime(left.date) - dateTime(right.date);
     })
     .slice(0, 3);

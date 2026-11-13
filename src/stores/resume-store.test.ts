@@ -162,25 +162,70 @@ describe("resume editor store persistence", () => {
     expect(persist).toHaveBeenCalledTimes(1);
   });
 
-  function mockBrowser() {
+  function mockDesktop() {
+    let requestClose!: (event: { preventDefault: () => void }) => Promise<void>;
+    const destroy = vi.fn(async () => undefined);
+    const unlisten = vi.fn();
+    const alert = vi.fn();
     const listeners = new Map<string, (event: BeforeUnloadEvent) => void>();
     vi.stubGlobal("window", {
+      __TAURI__: { window: { getCurrentWindow: () => ({
+        destroy,
+        onCloseRequested: async (handler: typeof requestClose) => { requestClose = handler; return unlisten; },
+      }) } },
       addEventListener: (name: string, handler: (event: BeforeUnloadEvent) => void) => listeners.set(name, handler),
       removeEventListener: (name: string) => listeners.delete(name),
+      alert,
     });
+    vi.stubGlobal("document", { documentElement: { lang: "zh-CN" } });
     const cleanup = installSaveCloseGuard();
-    return { listeners, cleanup };
+    return { destroy, alert, unlisten, listeners, cleanup, close: () => requestClose({ preventDefault: vi.fn() }) };
   }
 
+  it("flushes the debounce before desktop close and coalesces repeated close requests", async () => {
+    const pending = Promise.withResolvers<void>();
+    const persist = vi.fn(() => pending.promise);
+    const store = useResumeStore.getState();
+    store.setPersistence(persist);
+    store.setResume(createResume());
+    store.setTitle("last keystroke");
+    const desktop = mockDesktop();
+    const closing = desktop.close();
+    await desktop.close();
+    expect(persist).toHaveBeenCalledTimes(1);
+    expect(desktop.destroy).not.toHaveBeenCalled();
+    pending.resolve();
+    await closing;
+    expect(useResumeStore.getState().isDirty).toBe(false);
+    expect(desktop.destroy).toHaveBeenCalledTimes(1);
+    desktop.cleanup();
+    expect(desktop.unlisten).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the desktop open after a write failure and closes only after a successful retry", async () => {
+    const store = useResumeStore.getState();
+    store.setPersistence(async () => { throw new Error("disk full"); });
+    store.setResume(createResume());
+    store.setTitle("unsaved");
+    const desktop = mockDesktop();
+    await desktop.close();
+    expect(desktop.destroy).not.toHaveBeenCalled();
+    expect(desktop.alert).toHaveBeenCalledTimes(1);
+    store.setPersistence(async () => undefined);
+    await desktop.close();
+    expect(desktop.destroy).toHaveBeenCalledTimes(1);
+    desktop.cleanup();
+  });
+
   it("warns about unsaved browser edits and removes listeners on cleanup", async () => {
-    const browser = mockBrowser();
+    const desktop = mockDesktop();
     const event = { preventDefault: vi.fn(), returnValue: undefined };
     useResumeStore.getState().setResume(createResume());
     useResumeStore.getState().setTitle("unsaved");
-    browser.listeners.get("beforeunload")!(event as unknown as BeforeUnloadEvent);
+    desktop.listeners.get("beforeunload")!(event as unknown as BeforeUnloadEvent);
     expect(event.preventDefault).toHaveBeenCalledTimes(1);
     await Promise.resolve();
-    browser.cleanup();
-    expect(browser.listeners.size).toBe(0);
+    desktop.cleanup();
+    expect(desktop.listeners.size).toBe(0);
   });
 });

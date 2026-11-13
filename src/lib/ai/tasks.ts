@@ -18,6 +18,7 @@ export type AiObjectTaskInput<TSchema extends z.ZodType> = {
   prompt: string;
   fallback: z.infer<TSchema>;
   taskLabel: string;
+  repairJson?: (text: string) => string;
 };
 
 export type AiObjectExecutor = <TSchema extends z.ZodType>(input: {
@@ -26,6 +27,7 @@ export type AiObjectExecutor = <TSchema extends z.ZodType>(input: {
   system: string;
   prompt: string;
   temperature?: number;
+  repairJson?: (text: string) => string;
 }) => Promise<{ object: z.infer<TSchema> }>;
 
 const connectionTestSchema = z.object({
@@ -53,6 +55,7 @@ export async function runAiObjectTask<TSchema extends z.ZodType>(
       system: input.system,
       prompt: input.prompt,
       temperature: getAiTemperature(input.settings),
+      repairJson: input.repairJson,
     });
 
     return {
@@ -88,6 +91,7 @@ async function defaultGenerateObject<TSchema extends z.ZodType>(input: {
   system: string;
   prompt: string;
   temperature?: number;
+  repairJson?: (text: string) => string;
 }) {
   const schemaDescription = JSON.stringify(z.toJSONSchema(input.schema));
   const result = await generateText({
@@ -97,7 +101,15 @@ async function defaultGenerateObject<TSchema extends z.ZodType>(input: {
     temperature: input.temperature,
   });
 
-  return { object: input.schema.parse(parseAiJsonResponse(result.text)) };
+  let object: unknown;
+  try {
+    object = parseAiJsonResponse(result.text);
+  } catch (error) {
+    const repaired = input.repairJson?.(result.text);
+    if (!repaired || repaired === result.text) throw error;
+    object = parseAiJsonResponse(repaired);
+  }
+  return { object: input.schema.parse(object) };
 }
 
 export function parseAiJsonResponse(text: string): unknown {

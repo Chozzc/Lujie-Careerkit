@@ -41,6 +41,7 @@ import {
   type MatchOptimizationResult,
 } from "@/components/match/match-view";
 import { AppPageHeader } from "@/components/app/app-page-header";
+import { TrashView } from "@/components/app/trash-view";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { AppTopbar } from "@/components/app/app-topbar";
 import { FirstUseTour } from "@/components/app/first-use-tour";
@@ -151,12 +152,10 @@ export function CareerKitApp({
   const [active, setActive] = useState<NavKey>(initialView);
   const [resumeMode, setResumeMode] = useState<ResumeMode>(initialResumeMode);
   const [resumeEditorVersionId, setResumeEditorVersionId] = useState(initialResumeVersionId);
+  const [selectedResumeId, setSelectedResumeId] = useState(initialResumeVersionId ?? "");
   const [libraryTarget, setLibraryTarget] = useState<CareerLibraryTarget | null>(initialLibraryTarget);
   const [libraryGroup, setLibraryGroup] = useState<CareerLibraryGroup>(initialLibraryGroup);
-  const [resume, setResume] = useState<ResumeContent>(initialData.resume?.content ?? emptyResume());
-  const [resumeUpdatedAt, setResumeUpdatedAt] = useState(initialData.resume?.updatedAt ?? new Date().toISOString());
-  const [mainResumeVersionId, setMainResumeVersionId] = useState(initialData.resume?.id ?? "");
-  const [mainResumeRootId, setMainResumeRootId] = useState(initialData.resume?.resumeId ?? "");
+  const [resume, setResume] = useState<ResumeContent>(emptyResume);
   const [jobs, setJobs] = useState(initialData.jobs);
   const [applications, setApplications] = useState(initialData.applications);
   const [versions, setVersions] = useState(initialData.versions);
@@ -179,6 +178,7 @@ export function CareerKitApp({
   const [resumeDiagnosisDialogOpen, setResumeDiagnosisDialogOpen] = useState(false);
   const [resumeOptimizationPreviousStage, setResumeOptimizationPreviousStage] = useState<0 | 1 | 2>(2);
   const [matchResetKey, setMatchResetKey] = useState(0);
+  const [agentResetKey, setAgentResetKey] = useState(0);
   const [isPending, startTransition] = useTransition();
   const agentAssistantVisible = useSyncExternalStore(
     subscribeAgentAssistantVisibility,
@@ -340,6 +340,7 @@ export function CareerKitApp({
     setActive("resume");
     setResumeMode("editor");
     setResumeEditorVersionId(versionId);
+    setSelectedResumeId(versionId ?? "");
     setResumeOptimizationVersionId(undefined);
     setResumeOptimizationResult(null);
     setResumeOptimizationStage(1);
@@ -370,7 +371,7 @@ export function CareerKitApp({
         setInterviewSessionId(undefined);
         window.history.pushState(null, "", "/interview");
       }
-      setToast("模拟面试记录已删除。");
+      setToast("模拟面试记录已移入回收站。");
     } catch (error) {
       setToast(error instanceof Error ? error.message : "删除模拟面试失败。");
     }
@@ -385,7 +386,7 @@ export function CareerKitApp({
         setInterviewPreparationId(undefined);
         window.history.pushState(null, "", "/interview");
       }
-      setToast("面试复习资料已删除。");
+      setToast("面试复习资料已移入回收站。");
     } catch (error) {
       setToast(error instanceof Error ? error.message : "删除面试复习资料失败。");
     }
@@ -420,25 +421,20 @@ export function CareerKitApp({
     }
   }
 
-  function deleteJobArchive(jobId: string) {
+  function deleteJobArchive(jobId: string, counts: { tailoredResumes: number; preparations: number; interviews: number }) {
     const job = jobs.find((item) => item.id === jobId);
     const name = `${job?.company ?? libraryT("unknownCompany")} · ${job?.title ?? libraryT("unknownJob")}`;
     if (!window.confirm(libraryT("deleteArchiveConfirm", {
       name,
-      resumes: versions.filter((version) => version.jobId === jobId).length,
-      preparations: interviewPreparations.filter((preparation) => preparation.jobId === jobId).length,
-      interviews: interviewSessions.filter((session) => session.jobId === jobId).length,
+      resumes: counts.tailoredResumes,
+      preparations: counts.preparations,
+      interviews: counts.interviews,
       applications: applications.filter((application) => application.jobId === jobId).length,
     }))) return;
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/jobs/${jobId}`, { method: "DELETE" });
-        if (!response.ok) throw new Error(await response.text());
-        setJobs((current) => current.filter((item) => item.id !== jobId));
-        setApplications((current) => current.filter((application) => application.jobId !== jobId));
-        setVersions((current) => current.filter((version) => version.jobId !== jobId));
-        setInterviewSessions((current) => current.filter((session) => session.jobId !== jobId));
-        setInterviewPreparations((current) => current.filter((preparation) => preparation.jobId !== jobId));
+        const result = await postJson(`/api/jobs/${jobId}`, { confirmed: true }, "DELETE") as { data: InitialData };
+        replaceLocalData(result.data);
         setToast(libraryT("archiveDeleted"));
         navigateTo("library");
       } catch (error) {
@@ -448,10 +444,7 @@ export function CareerKitApp({
   }
 
   function replaceLocalData(nextData: InitialData) {
-    setResume(nextData.resume?.content ?? emptyResume());
-    setResumeUpdatedAt(nextData.resume?.updatedAt ?? new Date().toISOString());
-    setMainResumeVersionId(nextData.resume?.id ?? "");
-    setMainResumeRootId(nextData.resume?.resumeId ?? "");
+    setResume(emptyResume());
     setJobs(nextData.jobs);
     setApplications(nextData.applications);
     setVersions(nextData.versions);
@@ -476,7 +469,8 @@ export function CareerKitApp({
   async function resetLocalDataToSample() {
     const result = (await postJson("/api/settings/reset-data", {})) as { data: InitialData };
     replaceLocalData(result.data);
-    setToast("本地数据已清空，并恢复示例数据。");
+    setAgentResetKey((key) => key + 1);
+    setToast("全部资料已移入回收站，示例数据已恢复，AI 设置已保留。");
     navigateTo("dashboard");
   }
 
@@ -513,7 +507,7 @@ export function CareerKitApp({
           ? t("pages.interviewSubtitle")
           : t("pages.defaultSubtitle");
 
-  async function saveResume(contentOverride?: ResumeContent, target: ResumeSaveTarget = { kind: "main" }, name?: string) {
+  async function saveResume(contentOverride?: ResumeContent, target: ResumeSaveTarget = { kind: "new" }, name?: string) {
     const nextContent = contentOverride ?? resume;
     if (target.kind === "version") {
       const result = (await postJson(`/api/resume-versions/${target.id}`, { content: nextContent, name }, "PATCH")) as {
@@ -543,16 +537,7 @@ export function CareerKitApp({
       return { kind: "version" as const, version: result.version };
     }
 
-    if (!mainResumeVersionId) throw new Error("找不到正在编辑的基础简历。");
-    setResume(nextContent);
-    const result = (await postJson("/api/resume", { versionId: mainResumeVersionId, content: nextContent, name })) as {
-      resume: { id: string; resumeId: string; updatedAt?: string };
-    };
-    setMainResumeVersionId(result.resume.id);
-    setMainResumeRootId(result.resume.resumeId);
-    setResumeUpdatedAt(result.resume.updatedAt ?? new Date().toISOString());
-    setToast("原简历已保存到本地 SQLite。");
-    return { kind: "main" as const };
+    throw new Error("请选择要保存的简历。");
   }
 
   async function renameCareerResumeArtifact(artifact: CareerArtifact, name: string) {
@@ -620,50 +605,9 @@ export function CareerKitApp({
     setToast(libraryT("feedbackRegenerated"));
   }
 
-  function deleteMainResume() {
-    const confirmed = window.confirm("删除这份基础简历及由它生成的所有优化版本？投递记录和面试资料会保留，但不再关联这份简历。此操作会真正删除数据，且无法撤销。");
-    if (!confirmed) return;
-    const blank = emptyResume();
-    startTransition(async () => {
-      try {
-        if (!mainResumeVersionId) return;
-        const response = await fetch(`/api/resume-versions/${mainResumeVersionId}`, { method: "DELETE" });
-        if (!response.ok) throw new Error(await response.text());
-        const result = (await response.json()) as { deletedIds: string[] };
-        const deletedIds = new Set(result.deletedIds);
-        const remaining = versions.filter((version) => !deletedIds.has(version.id));
-        const nextBase = remaining.find((version) => !version.jobId && !readStoredOptimizationBase(version.content));
-        setVersions(nextBase ? remaining.filter((version) => version.id !== nextBase.id) : remaining);
-        setResume(nextBase?.content ?? blank);
-        setResumeUpdatedAt(nextBase?.updatedAt ?? new Date().toISOString());
-        setMainResumeVersionId(nextBase?.id ?? "");
-        setMainResumeRootId(nextBase?.resumeId ?? "");
-        setApplications((current) => current.map((application) =>
-          application.resumeVersionId && deletedIds.has(application.resumeVersionId)
-            ? { ...application, resumeVersionId: null }
-            : application,
-        ));
-        setInterviewSessions((current) => current.map((session) =>
-          session.resumeVersionId && deletedIds.has(session.resumeVersionId)
-            ? { ...session, resumeVersionId: null }
-            : session,
-        ));
-        setInterviewPreparations((current) => current.map((preparation) =>
-          preparation.resumeVersionId && deletedIds.has(preparation.resumeVersionId)
-            ? { ...preparation, resumeVersionId: null }
-            : preparation,
-        ));
-        resetMatchIfDeleted(deletedIds);
-        setToast("原简历已删除。");
-      } catch (error) {
-        setToast(`删除失败：${formatRequestError(error)}`);
-      }
-    });
-  }
-
   function deleteResumeVersion(versionId: string) {
     const version = versions.find((item) => item.id === versionId);
-    const confirmed = window.confirm(`删除「${version?.name || "这份简历"}」？`);
+    const confirmed = window.confirm(`将「${version?.name || "这份简历"}」移入回收站？其他资料会保留。`);
     if (!confirmed) return;
     const deletedIds = new Set([versionId]);
 
@@ -675,25 +619,8 @@ export function CareerKitApp({
         const serverDeletedIds = new Set(result.deletedIds);
         result.deletedIds.forEach((id) => deletedIds.add(id));
         setVersions((current) => current.filter((item) => !serverDeletedIds.has(item.id)));
-        setApplications((current) =>
-          current.map((application) =>
-            application.resumeVersionId && serverDeletedIds.has(application.resumeVersionId)
-              ? { ...application, resumeVersionId: null }
-              : application,
-          ),
-        );
-        setInterviewSessions((current) => current.map((session) =>
-          session.resumeVersionId && serverDeletedIds.has(session.resumeVersionId)
-            ? { ...session, resumeVersionId: null }
-            : session,
-        ));
-        setInterviewPreparations((current) => current.map((preparation) =>
-          preparation.resumeVersionId && serverDeletedIds.has(preparation.resumeVersionId)
-            ? { ...preparation, resumeVersionId: null }
-            : preparation,
-        ));
         resetMatchIfDeleted(deletedIds);
-        setToast("简历已删除。");
+        setToast("简历已移入回收站。");
       } catch (error) {
         setToast(`删除失败：${formatRequestError(error)}`);
       }
@@ -913,11 +840,13 @@ export function CareerKitApp({
       if (saved.kind !== "version") throw new Error("通用优化版本保存失败。");
       version = normalizeVersion(saved.version);
     } else {
-      const sourceResumeId = result.sourceVersionId
-        ? result.sourceVersionId === mainResumeVersionId
-          ? mainResumeRootId
-          : versions.find((item) => item.id === result.sourceVersionId)?.resumeId
-        : mainResumeRootId;
+      let sourceVersion = versions.find((item) => item.id === result.sourceVersionId);
+      if (!result.sourceVersionId) {
+        sourceVersion = (await saveResume(result.before, { kind: "new" })).version;
+        // Remember the saved original even if saving the optimized copy fails.
+        setResumeOptimizationResult({ ...result, sourceVersionId: sourceVersion.id });
+      }
+      const sourceResumeId = sourceVersion?.resumeId;
       if (!sourceResumeId) throw new Error("找不到通用优化的来源简历。");
       version = normalizeVersion(((await postJson("/api/resume-versions", {
           name: optimization.versionName || `AI优化-${buildResumeDisplayName(result.before, "未命名简历")}`,
@@ -951,16 +880,14 @@ export function CareerKitApp({
       setResumeOptimizationStage(2);
       return;
     }
-    if (result.sourceVersionId === mainResumeVersionId) {
-      setResume(result.before);
-    } else if (result.sourceVersionId) {
+    if (result.sourceVersionId) {
       setVersions((current) => current.map((version) =>
         version.id === result.sourceVersionId ? { ...version, content: result.before } : version,
       ));
     } else {
       setResume(result.before);
     }
-    openResumeEditorFromMatch(result.sourceVersionId === mainResumeVersionId ? undefined : result.sourceVersionId);
+    openResumeEditorFromMatch(result.sourceVersionId);
   }
 
   async function rerunResumeOptimization(input: ResumeDiagnosisSelection) {
@@ -1093,6 +1020,7 @@ export function CareerKitApp({
 
   const agentAssistant = agentAssistantVisible ? (
     <AgentAssistant
+      key={agentResetKey}
       aiReady={isAiReady(aiSettings)}
       applications={applications}
       jobs={jobs}
@@ -1100,10 +1028,6 @@ export function CareerKitApp({
       onOpenSettings={() => navigateTo("settings")}
       onApplicationChanged={handleAgentApplicationChanged}
       resumes={[
-        ...(mainResumeVersionId ? [{
-          id: mainResumeVersionId,
-          name: initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历"),
-        }] : []),
         ...versions.map((version) => ({ id: version.id, name: version.name })),
       ]}
     />
@@ -1264,33 +1188,29 @@ export function CareerKitApp({
               </>
             ) : (
               <ResumeWorkbench
-                key={resumeEditorVersionId ?? "main-resume"}
-                 resume={resume}
-                 resumeUpdatedAt={resumeUpdatedAt}
-                 mainResumeVersionId={mainResumeVersionId}
-                setResume={setResume}
+                key={resumeEditorVersionId ?? "new-resume"}
+                resume={resume}
                 saveResume={saveResume}
                 versions={versions}
                 initialResumeVersionId={resumeEditorVersionId}
                 mode={resumeMode}
                 onModeChange={setResumeMode}
-                onEditorTargetChange={setResumeEditorVersionId}
+                onEditorTargetChange={(id) => { setResumeEditorVersionId(id); if (id) setSelectedResumeId(id); }}
                 aiReady={isResumeImportAiReady(aiSettings)}
                 optimizeAiReady={isAiReady(aiSettings)}
                 optimizeResume={runResumeOptimization}
                 onResumeOptimized={showResumeOptimizationResult}
                 onOpenSettings={() => navigateTo("settings")}
-                onDeleteMainResume={deleteMainResume}
                 onDeleteVersion={deleteResumeVersion}
               />
             )
           )}
           {active === "match" && (
             <MatchView
+              initialSelectedResumeId={selectedResumeId}
+              onResumeSelect={setSelectedResumeId}
               key={`${matchResetKey}:${matchVersionId ?? "input"}`}
-               resume={resume}
-               versions={versions}
-               mainResumeVersionId={mainResumeVersionId}
+                versions={versions}
               jobs={jobs}
               trackedJobIds={applications.map((application) => application.jobId)}
               targetVersionId={matchVersionId}
@@ -1313,11 +1233,10 @@ export function CareerKitApp({
           )}
           {active === "interview" && (
             <InterviewWorkspace
+              initialSelectedResumeId={selectedResumeId}
+              onResumeSelect={setSelectedResumeId}
               key={interviewSessionId ?? interviewPreparationId ?? "setup"}
               versions={versions}
-              resume={resume}
-               mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
-               mainResumeVersionId={mainResumeVersionId}
               targetSessionId={interviewSessionId}
               targetPreparationId={interviewPreparationId}
               onSessionUpsert={upsertInterviewSession}
@@ -1342,6 +1261,7 @@ export function CareerKitApp({
               onDeleteArtifact={deleteCareerArtifact}
             />
           )}
+          {active === "trash" && <TrashView onDataChange={(data) => { replaceLocalData(data); setAgentResetKey((key) => key + 1); }} />}
           {active === "settings" && (
             <SettingsView
               settings={appSettings}
@@ -1437,8 +1357,17 @@ async function postJson(url: string, body: unknown, method = "POST") {
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    const message = (await response.text()) || response.statusText || `HTTP ${response.status}`;
-    throw new Error(message);
+    const payload = await response.clone().json().catch(() => null);
+    if (url === "/api/applications" && response.status === 409 && payload?.code === "APPLICATION_IN_TRASH") {
+      if (!window.confirm(`${payload.error}\n恢复会保留原来的记录，不覆盖备注和进度。`)) throw new Error("已取消恢复，原记录仍保留在回收站。");
+      const restoredResponse = await fetch("/api/trash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore", kind: "application", id: payload.applicationId }) });
+      const restored = await restoredResponse.json();
+      if (!restoredResponse.ok) throw new Error(restored.error || "恢复失败，请重试。");
+      const application = restored.data.applications.find((item: ApplicationView) => item.id === payload.applicationId);
+      if (!application) throw new Error("记录已变化，请刷新后重试。");
+      return { application };
+    }
+    throw new Error(payload?.error || payload?.message || await response.text() || response.statusText || `HTTP ${response.status}`);
   }
   return response.json();
 }

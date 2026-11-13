@@ -7,8 +7,6 @@ import { useLocale, useTranslations } from "next-intl";
 
 import type { RedactedAiSettings } from "@/lib/ai/settings";
 import { aiReadinessMessage, isAiReady, isResumeImportAiReady } from "@/lib/ai/readiness";
-import { hasResumeContent } from "@/lib/resume-library";
-import { buildResumeDisplayName } from "@/lib/resume-naming";
 import {
   buildUploadedResumeDraft,
   isResumeContentLike,
@@ -92,9 +90,9 @@ export function resumeVersionDisplayName(version: MatchResumeVersionView) {
 }
 
 export function MatchView({
-  resume,
+  initialSelectedResumeId,
+  onResumeSelect,
   versions,
-  mainResumeVersionId,
   jobs,
   trackedJobIds,
   targetVersionId,
@@ -104,9 +102,9 @@ export function MatchView({
   aiSettings,
   onOpenSettings,
 }: {
-  resume: ResumeContent;
+  initialSelectedResumeId?: string;
+  onResumeSelect: (id: string) => void;
   versions: MatchResumeVersionView[];
-  mainResumeVersionId?: string;
   jobs: MatchJobView[];
   trackedJobIds: string[];
   targetVersionId?: string;
@@ -122,7 +120,7 @@ export function MatchView({
   const aiMessage = aiReadinessMessage(aiSettings);
   const resumeImportAiReady = isResumeImportAiReady(aiSettings);
   const [resumeSource, setResumeSource] = useState<"library" | "upload">("library");
-  const [selectedResumeKey, setSelectedResumeKey] = useState("main");
+  const [selectedResumeKey, setSelectedResumeKey] = useState(initialSelectedResumeId ?? "");
   const [uploadedResume, setUploadedResume] = useState<UploadedResumeDraft | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [isUploadingResume, setIsUploadingResume] = useState(false);
@@ -142,13 +140,6 @@ export function MatchView({
 
   const resumeOptions = useMemo(() => {
     const options: Array<{ id: string; name: string; detail: string }> = [];
-    if (hasResumeContent(resume)) {
-      options.push({
-        id: "main",
-        name: buildResumeDisplayName(resume, t("resume.original")),
-        detail: t("resume.mainDetail", { skills: resume.skills.length, projects: resume.projects.length }),
-      });
-    }
 
     for (const version of versions) {
       const isOptimizedVersion = Boolean(version.jobId || readTailoringBaseResume(version.content));
@@ -162,35 +153,22 @@ export function MatchView({
     }
 
     return options;
-  }, [locale, resume, t, versions]);
-  const selectedResumeOption = resumeOptions.find((item) => item.id === selectedResumeKey) ?? resumeOptions[0];
+  }, [locale, t, versions]);
+  const selectedResumeOption = resumeOptions.find((item) => item.id === selectedResumeKey) ?? (!selectedResumeKey && resumeOptions.length === 1 ? resumeOptions[0] : undefined);
   const selectedLibraryKey = selectedResumeOption?.id;
   const selectedVersion = versions.find((version) => version.id === selectedLibraryKey);
   const selectedBaseResume =
     resumeSource === "upload"
       ? uploadedResume?.content
-      : selectedLibraryKey === "main"
-        ? resume
-        : selectedVersion?.content;
+      : selectedVersion?.content;
   const selectedResumeRequest =
     resumeSource === "upload"
       ? { resumeContent: uploadedResume?.content }
-      : { resumeVersionId: selectedLibraryKey === "main" ? mainResumeVersionId : selectedLibraryKey };
+      : { resumeVersionId: selectedLibraryKey };
   const resumeReady = resumeSource === "upload" ? Boolean(uploadedResume) : Boolean(selectedBaseResume);
   const canOptimize = resumeReady && Boolean(jdDraft.trim()) && !isGenerating && !isUploadingResume;
   const currentBaseLabel =
     resumeSource === "upload" ? uploadedResume?.fileName ?? t("upload.waitingFile") : selectedResumeOption?.name ?? t("upload.selectResume");
-
-  useEffect(() => {
-    if (resumeSource !== "library") return undefined;
-    if (!resumeOptions.length) return undefined;
-    if (resumeOptions.some((option) => option.id === selectedResumeKey)) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      setSelectedResumeKey(resumeOptions[0].id);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [resumeOptions, resumeSource, selectedResumeKey]);
 
   async function handleUploadFile(file: File, options: { preferLocalFallback?: boolean } = {}) {
     setUploadError("");
@@ -271,7 +249,7 @@ export function MatchView({
         optimization: readOptimizationMeta(version.content),
         message: t("status.localVersionOpened"),
       });
-      setResultBaseResume(readTailoringBaseResume(version.content) ?? resume);
+      setResultBaseResume(readTailoringBaseResume(version.content) ?? version.content);
       setOptimizedDraft(version.content);
       setSelectedResumeKey(version.id);
       setResumeSource("library");
@@ -285,7 +263,7 @@ export function MatchView({
       }
       return true;
     },
-    [jobs, resume, t, versions],
+    [jobs, t, versions],
   );
 
   useEffect(() => {
@@ -411,10 +389,10 @@ export function MatchView({
             uploadError,
             isUploading: isUploadingResume,
             onSourceChange: setResumeSource,
-            onSelect: setSelectedResumeKey,
+            onSelect: (id) => { setSelectedResumeKey(id); onResumeSelect(id); },
             onUploadRequest: requestResumeUpload,
             onUploadFile: (file) => void handleUploadFile(file),
-            onOpenResume: (id) => onOpenResume(id === "main" ? undefined : id),
+            onOpenResume: (id) => onOpenResume(id),
           }}
           title={t("form.title")}
           description={t("form.description")}
@@ -437,7 +415,7 @@ export function MatchView({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs leading-5 text-muted-foreground">
                 {t("currentBase", { name: currentBaseLabel })}
-                {resumeSource === "library" && selectedLibraryKey ? <button type="button" onClick={() => onOpenResume(selectedLibraryKey === "main" ? undefined : selectedLibraryKey)} className="ml-2 font-medium text-primary hover:text-primary/80">{t("edit")}</button> : null}
+                {resumeSource === "library" && selectedLibraryKey ? <button type="button" onClick={() => onOpenResume(selectedLibraryKey)} className="ml-2 font-medium text-primary hover:text-primary/80">{t("edit")}</button> : null}
               </p>
               <div className="flex gap-3">
                 <button type="submit" disabled={!canOptimize} className={cn("flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white", !canOptimize && "cursor-not-allowed opacity-55")} title={canOptimize ? undefined : resumeReady ? t("status.needJd") : t("status.needResume")}>

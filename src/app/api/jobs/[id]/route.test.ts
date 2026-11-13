@@ -6,6 +6,7 @@ import { DELETE, PATCH } from "./route";
 
 vi.mock("@/lib/repository", () => ({
   deleteJobWithApplications: vi.fn(),
+  getAppData: vi.fn(async () => ({ versions: [] })),
   updateJobIdentity: vi.fn(),
   updateJobWithApplication: vi.fn(),
 }));
@@ -16,7 +17,15 @@ const updateIdentity = vi.mocked(updateJobIdentity);
 describe("DELETE /api/jobs/[id]", () => {
   beforeEach(() => deleteArchive.mockReset());
 
-  it("deletes the complete job archive and returns affected counts", async () => {
+  it("requires confirmation before moving a whole archive", async () => {
+    const response = await DELETE(new Request("http://localhost/api/jobs/job-1", { method: "DELETE" }), {
+      params: Promise.resolve({ id: "job-1" }),
+    });
+    expect(response.status).toBe(400);
+    expect(deleteArchive).not.toHaveBeenCalled();
+  });
+
+  it("moves the complete job archive and returns affected counts", async () => {
     deleteArchive.mockResolvedValue({
       interviewPreparations: 1,
       interviews: 2,
@@ -24,7 +33,7 @@ describe("DELETE /api/jobs/[id]", () => {
       resumeVersions: 3,
     });
 
-    const response = await DELETE(new Request("http://localhost/api/jobs/job-1", { method: "DELETE" }), {
+    const response = await DELETE(new Request("http://localhost/api/jobs/job-1", { method: "DELETE", body: JSON.stringify({ confirmed: true }) }), {
       params: Promise.resolve({ id: "job-1" }),
     });
 
@@ -32,6 +41,7 @@ describe("DELETE /api/jobs/[id]", () => {
     expect(await response.json()).toEqual({
       ok: true,
       deleted: { interviewPreparations: 1, interviews: 2, applications: 1, resumeVersions: 3 },
+      data: { versions: [] },
     });
   });
 });

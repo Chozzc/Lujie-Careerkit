@@ -161,7 +161,7 @@ export async function createInterviewPreparation(
   const data = await getAppData();
   const job = data.jobs.find((item) => item.id === input.jobId);
   if (!job) throw new Error("找不到指定岗位，请重新搜索后再试。");
-  const resume = [data.resume, ...data.versions].find((item) => item?.id === input.resumeVersionId);
+  const resume = data.versions.find((item) => item?.id === input.resumeVersionId);
   if (!resume) throw new Error("找不到指定简历，请重新搜索后再试。");
 
   const context = createInterviewPreparationInputSchema.parse({
@@ -187,7 +187,7 @@ export async function createMockInterview(input: z.infer<typeof createMockInterv
   const data = await getAppData();
   const job = data.jobs.find((item) => item.id === input.jobId);
   if (!job) throw new Error("找不到指定岗位，请重新搜索后再试。");
-  const resume = [data.resume, ...data.versions].find((item) => item?.id === input.resumeVersionId);
+  const resume = data.versions.find((item) => item?.id === input.resumeVersionId);
   if (!resume) throw new Error("找不到指定简历，请重新搜索后再试。");
   if (!job.jd.trim()) throw new Error("目标岗位没有可用于模拟面试的完整 JD。");
 
@@ -212,7 +212,7 @@ export async function createMockInterview(input: z.infer<typeof createMockInterv
 
 export async function updateResumePresentation(input: z.infer<typeof updateResumePresentationSchema>) {
   const data = await getAppData();
-  const resume = [data.resume, ...data.versions].find((item) => item?.id === input.resumeVersionId);
+  const resume = data.versions.find((item) => item?.id === input.resumeVersionId);
   if (!resume) throw new Error("找不到指定简历，请重新搜索后再试。");
 
   const version = await updateResumeVersion({

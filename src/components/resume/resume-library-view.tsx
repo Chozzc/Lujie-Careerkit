@@ -250,8 +250,8 @@ function ResumeCard({
                 onDelete();
               }}
               className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
-              aria-label={card.id === "main" ? t("deleteOriginal") : t("deleteResume")}
-              title={card.id === "main" ? t("deleteOriginal") : t("deleteResume")}
+              aria-label={t("deleteResume")}
+              title={t("deleteResume")}
             >
               <Trash2 className="h-4 w-4" />
             </button>

@@ -41,6 +41,7 @@ describe("/api/resume", () => {
       name: "主简历",
       summary: "",
       jobId: null,
+      deletedAt: null,
       content,
       resume: { id: "resume-1", name: "主简历", createdAt: new Date("2026-07-15T00:00:00.000Z"), updatedAt: new Date("2026-07-15T00:00:00.000Z") },
       createdAt: new Date("2026-07-15T00:00:00.000Z"),

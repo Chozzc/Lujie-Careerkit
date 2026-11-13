@@ -14,7 +14,8 @@
       "interview": "面试助手",
       "pipeline": "投递岗位跟进",
       "library": "求职资料库",
-      "settings": "设置"
+      "settings": "设置",
+      "trash": "回收站"
     },
     "campus": {
       "any": "不限",
@@ -109,7 +110,10 @@
     "topbar": {
       "notifications": "跟进提醒",
       "guide": "新手引导",
-      "profile": "本地账户"
+      "profile": "本地账户",
+      "desktopUpdate": "录阶桌面版 {version} 已发布",
+      "viewDesktopUpdate": "查看新版",
+      "dismissDesktopUpdate": "关闭更新提醒"
     },
     "header": {
       "processing": "正在处理...",
@@ -743,7 +747,7 @@
     "status": {
       "saved": "已保存到本地 SQLite",
       "importReview": "简历解析已完成，部分内容由 AI 自动归类，建议仔细甄别后再使用。",
-      "versionNotFound": "未找到该简历版本，已打开原简历",
+      "versionNotFound": "未找到这份简历，已打开空白草稿",
       "autoSaving": "正在自动保存...",
       "saving": "正在保存...",
       "autoSaved": "已自动保存到本地 SQLite",
@@ -781,7 +785,7 @@
       "rename": "修改简历名称",
       "meta": "模板 {template} · {kind}",
       "mainResume": "主简历",
-      "versionResume": "版本简历",
+      "versionResume": "简历",
       "undo": "撤销",
       "redo": "重做",
       "optimizing": "优化中...",
@@ -861,12 +865,12 @@
           "description": "使用常规表达和已有事实支持的技能关键词。"
         }
       },
-        "additionalDirection": {
-          "label": "告诉 AI 怎么改",
-          "optional": "可选",
-          "placeholder": "例如：保留有效建议，但不要调整 GPA；把项目经历写得更具体，把“协助”改成明确的个人行动，整体语气保持克制。",
-          "hint": "可以直接说明要改哪些内容、怎样表达，以及哪些建议不要采纳。AI 只处理你勾选的问题，并继续遵守不编造事实的边界。"
-        },
+      "additionalDirection": {
+        "label": "告诉 AI 怎么改",
+        "optional": "可选",
+        "placeholder": "例如：保留有效建议，但不要调整 GPA；把项目经历写得更具体，把“协助”改成明确的个人行动，整体语气保持克制。",
+        "hint": "可以直接说明要改哪些内容、怎样表达，以及哪些建议不要采纳。AI 只处理你勾选的问题，并继续遵守不编造事实的边界。"
+      },
       "optimizing": "正在按你的选择生成优化版本...",
       "optimizationFailed": "优化失败，请稍后重试。",
       "close": "暂不优化",
@@ -1013,15 +1017,15 @@
     "languageTitle": "语言",
     "languageDescription": "切换应用界面语言。简历正文、岗位 JD 和本地数据不会被自动翻译。",
     "localDataTitle": "本地数据",
-    "localDataDescription": "可以只移除内置示例，或清空全部本地业务数据和 AI 设置后重新恢复示例。",
-    "clearSampleConfirm": "一键清空全部内置示例岗位、示例简历及其生成资料？你自己创建的数据和 AI 设置不会被删除。",
+    "localDataDescription": "清空未修改的示例数据，或将全部资料移入回收站并恢复示例数据。旧资料可恢复，AI 设置会保留。",
+    "clearSampleConfirm": "清空未修改的示例数据？你修改过的示例、自己创建的资料和 AI 设置都会保留。",
     "clearingSample": "正在清空示例数据",
-    "clearSample": "一键清空示例数据",
-    "clearSampleSuccess": "示例数据已清空，你自己创建的数据均已保留。",
+    "clearSample": "清空示例数据",
+    "clearSampleSuccess": "未修改的示例数据已清空，你修改过的示例和自己创建的资料均已保留。",
     "clearSampleFailed": "示例数据清理失败。",
-    "resetConfirm": "清空本地 SQLite 中的简历、投递进度、面试记录和 AI 设置，并恢复项目内置示例数据？",
-    "resetting": "正在恢复示例数据",
-    "reset": "重置并恢复示例数据",
+    "resetConfirm": "将全部资料移入回收站，并重新添加一套示例数据？旧资料和之前的回收站内容都会保留，可从回收站恢复；AI 设置不变。",
+    "resetting": "正在移入回收站并恢复示例…",
+    "reset": "将全部资料移入回收站并恢复示例数据",
     "resetFailed": "本地数据重置失败。",
     "ai": {
       "title": "AI 模型配置",
@@ -1284,17 +1288,18 @@
     "categoryCount": "{count} 份",
     "updatedAt": "最近更新于 {date}",
     "delete": "删除资料",
-    "deleteArtifactConfirm": "删除「{name}」？只会删除当前这份资料，其他岗位资料不会受影响。此操作无法撤销。",
+    "deleteArtifactConfirm": "将「{name}」移入回收站？可随时恢复。",
     "editArtifactName": "修改资料标题",
     "doubleClickToRename": "{name}（双击修改标题）",
     "unknownCompany": "该公司",
     "unknownJob": "该岗位",
-    "deleteArchiveConfirm": "删除「{name}」岗位档案？\n\n将永久删除：\n• 原始 JD 与岗位分析\n• {resumes} 份岗位优化简历\n• {preparations} 份面试准备资料\n• {interviews} 次模拟面试与复盘\n• {applications} 条投递跟进记录\n\n你的原始简历不会被删除。此操作无法撤销。",
-    "deleteAnalysisConfirm": "删除「{name}」的原始 JD 与岗位分析？其他简历、面试资料和投递跟进记录不会受影响。此操作无法撤销。",
-    "deleteQuestionsConfirm": "删除这次模拟面试的全部问题与回答？AI 复盘会保留。此操作无法撤销。",
-    "deleteFeedbackConfirm": "删除这次模拟面试的 AI 复盘？问题与回答会保留。此操作无法撤销。",
+    "deleteJobArchive": "将此岗位全部资料移入回收站",
+    "deleteArchiveConfirm": "将「{name}」的全部关联资料移入回收站？\n\n包含已有的岗位描述与分析、{resumes} 份岗位优化简历、{preparations} 份面试准备、{interviews} 次模拟面试与复盘、{applications} 条投递记录。\n\n原简历、其他岗位资料和仅按岗位描述归组的旧资料会保留。移入的资料可从回收站恢复。",
+    "deleteAnalysisConfirm": "将岗位描述和分析移入回收站？其他资料会保留，可在回收站恢复。",
+    "deleteQuestionsConfirm": "将面试问题和回答移入回收站？其他资料会保留，可在回收站恢复。",
+    "deleteFeedbackConfirm": "将面试复盘移入回收站？其他资料会保留，可在回收站恢复。",
     "regenerateFeedbackConfirm": "根据当前回答重新生成 AI 复盘？现有复盘结果将被永久覆盖。",
-    "archiveDeleted": "岗位档案及其关联资料、投递跟进记录已删除，原始简历已保留。",
+    "archiveDeleted": "此岗位的全部资料已移入回收站。",
     "analysisDeleted": "原始 JD 与岗位分析已删除。",
     "questionsDeleted": "问题与回答已删除。",
     "feedbackDeleted": "AI 复盘已删除。",
@@ -1499,6 +1504,29 @@
     "avatar": {
       "circle": "圆形",
       "oneInch": "1 寸照"
+    }
+  },
+  "trash": {
+    "description": "删除的资料统一保存在这里，不会自动清空。恢复不会覆盖你后来的修改。",
+    "restoreAll": "全部恢复",
+    "restoreAllRemaining": "可恢复的资料已处理。还有 {count} 项在回收站，可能缺少关联记录或恢复时会覆盖现有内容。",
+    "empty": "清空回收站",
+    "emptyConfirm": "永久删除回收站里的全部资料？此操作无法撤销。",
+    "deleteConfirm": "永久删除「{name}」？此操作无法撤销。",
+    "restore": "恢复",
+    "delete": "永久删除",
+    "working": "正在处理…",
+    "noItems": "回收站是空的",
+    "failed": "操作失败，请重试。",
+    "kinds": {
+      "resumeVersion": "简历",
+      "application": "投递记录",
+      "interviewSession": "模拟面试",
+      "interviewPreparation": "面试资料",
+      "agentThread": "Agent 对话",
+      "job-analysis": "岗位资料",
+      "questions": "面试问答",
+      "feedback": "面试复盘"
     }
   }
 }

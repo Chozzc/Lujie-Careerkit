@@ -96,7 +96,7 @@ type CareerLibraryData = Pick<
   "versions" | "jobs" | "applications" | "interviews" | "interviewPreparations"
 >;
 
-export function buildCareerArtifacts(data: CareerLibraryData): CareerArtifact[] {
+export function buildCareerArtifacts(data: CareerLibraryData, inferJobFromDescription = true): CareerArtifact[] {
   const jobsById = new Map(data.jobs.map((job) => [job.id, job]));
   const versionsById = new Map(data.versions.map((version) => [version.id, version]));
   const jobsByJd = new Map<string, JobView[]>();
@@ -117,7 +117,7 @@ export function buildCareerArtifacts(data: CareerLibraryData): CareerArtifact[] 
   }) =>
     (jobId ? jobsById.get(jobId) : undefined) ??
     (resumeVersionId ? jobsById.get(versionsById.get(resumeVersionId)?.jobId ?? "") : undefined) ??
-    closestJob(jobsByJd.get(normalizeJobDescription(jd)) ?? [], createdAt);
+    (inferJobFromDescription ? closestJob(jobsByJd.get(normalizeJobDescription(jd)) ?? [], createdAt) : undefined);
   const artifacts: CareerArtifact[] = [];
 
   for (const version of data.versions) {

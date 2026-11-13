@@ -46,7 +46,7 @@ export function CareerLibraryView({
   onGroupChange: (group: CareerLibraryGroup) => void;
   onOpenJob: (id: string) => void;
   onUpdateJob: (id: string, company: string, title: string) => Promise<void>;
-  onDeleteJob: (id: string) => void;
+  onDeleteJob: (id: string, counts: CareerJobArchive["counts"]) => void;
   onOpenArtifact: (artifact: CareerArtifact) => void;
   onDeleteArtifact: (artifact: CareerArtifact) => void;
 }) {
@@ -56,6 +56,7 @@ export function CareerLibraryView({
   const [editDraft, setEditDraft] = useState<{ id: string; company: string; title: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const artifacts = useMemo(() => buildCareerArtifacts(data), [data]);
+  const explicitArchives = useMemo(() => buildCareerJobArchives(data, buildCareerArtifacts(data, false)), [data]);
   const archives = useMemo(
     () => buildCareerJobArchives(data, artifacts),
     [artifacts, data],
@@ -143,7 +144,8 @@ export function CareerLibraryView({
                     isSample={archive.isSample}
                     onOpen={() => onOpenJob(archive.id)}
                     onEdit={archive.jobId ? () => setEditDraft({ id: archive.jobId!, company: archive.company, title: archive.role }) : undefined}
-                    onDelete={archive.jobId ? () => onDeleteJob(archive.jobId!) : undefined}
+                    onDelete={archive.jobId ? () => onDeleteJob(archive.jobId!, explicitArchives.find((item) => item.id === archive.id)?.counts ?? { analyses: 0, tailoredResumes: 0, preparations: 0, interviews: 0 }) : undefined}
+                    deleteLabel={t("deleteJobArchive")}
                   />
                 ))}
               </div>
@@ -245,6 +247,7 @@ function LibraryCard({
   onOpen,
   onEdit,
   onDelete,
+  deleteLabel,
 }: {
   title: string;
   subtitle?: string;
@@ -255,6 +258,7 @@ function LibraryCard({
   onOpen: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  deleteLabel?: string;
 }) {
   const t = useTranslations("careerLibrary");
   return (
@@ -298,8 +302,8 @@ function LibraryCard({
                 type="button"
                 onClick={onDelete}
                 className="pointer-events-auto grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition hover:bg-red-50 hover:text-red-600"
-                aria-label={t("delete")}
-                title={t("delete")}
+                aria-label={deleteLabel ?? t("delete")}
+                title={deleteLabel ?? t("delete")}
               >
                 <Trash2 className="h-4 w-4" />
               </button>

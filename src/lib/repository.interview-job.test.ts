@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({
+  $transaction: vi.fn(),
+  trashSnapshot: { create: vi.fn() },
   resume: { findFirst: vi.fn() },
   settings: { upsert: vi.fn(), update: vi.fn() },
   job: { findUnique: vi.fn(), findFirst: vi.fn(), create: vi.fn() },
-  interviewSession: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  interviewSession: { create: vi.fn(), findUniqueOrThrow: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }));
 
 vi.mock("./db", () => ({ prisma: db }));
@@ -15,6 +17,8 @@ import { deleteInterviewSessionSection, interviewSessionRepository } from "./rep
 describe("interview job attribution", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    db.$transaction.mockImplementation(async (fn) => fn(db));
+    db.interviewSession.findUniqueOrThrow.mockImplementation((args) => db.interviewSession.findUnique(args));
     db.resume.findFirst.mockResolvedValue({ id: "resume-1" });
     db.settings.upsert.mockResolvedValue({
       aiProvider: "openai",

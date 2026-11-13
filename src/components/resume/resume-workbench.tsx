@@ -1,6 +1,5 @@
-﻿"use client";
+"use client";
 
-import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -76,17 +75,13 @@ type ResumeVersionCard = {
 };
 
 type ResumeSaveResult =
-  | { kind: "main" }
-  | {
+  {
       kind: "version";
       version: ResumeVersionCard;
     };
 
 type ResumeWorkbenchProps = {
   resume: ResumeContent;
-  resumeUpdatedAt?: string;
-  mainResumeVersionId?: string;
-  setResume: Dispatch<SetStateAction<ResumeContent>>;
   saveResume: (content?: ResumeContent, target?: ResumeSaveTarget, name?: string) => Promise<ResumeSaveResult>;
   versions?: ResumeVersionCard[];
   initialResumeVersionId?: string;
@@ -118,12 +113,11 @@ type ResumeWorkbenchProps = {
     optimization?: ResumeOptimizationMeta;
   }) => void;
   onOpenSettings: () => void;
-  onDeleteMainResume: () => void;
   onDeleteVersion: (versionId: string) => void;
 };
 
 type WorkbenchMode = "library" | "editor";
-export type ResumeSaveTarget = { kind: "main" } | { kind: "version"; id: string } | { kind: "new" };
+export type ResumeSaveTarget = { kind: "version"; id: string } | { kind: "new" };
 type ViewMode = ResumeLibraryViewMode;
 type SortMode = ResumeLibrarySortMode;
 
@@ -131,9 +125,6 @@ const DEFAULT_EDITOR_THEME = DEFAULT_RESUME_THEME;
 
 export function ResumeWorkbench({
   resume,
-  resumeUpdatedAt,
-  mainResumeVersionId,
-  setResume,
   saveResume,
   versions = [],
   initialResumeVersionId,
@@ -145,7 +136,6 @@ export function ResumeWorkbench({
   optimizeResume,
   onResumeOptimized,
   onOpenSettings,
-  onDeleteMainResume,
   onDeleteVersion,
 }: ResumeWorkbenchProps) {
   const t = useTranslations("resumeWorkbench");
@@ -161,7 +151,7 @@ export function ResumeWorkbench({
   const [editingContent, setEditingContent] = useState<ResumeContent>(initialVersion?.content ?? resume);
   const [editingTitle, setEditingTitle] = useState(initialVersion ? versionTitle(initialVersion) : buildResumeTitle(resume));
   const [editingTarget, setEditingTarget] = useState<ResumeSaveTarget>(
-    initialVersion ? { kind: "version", id: initialVersion.id } : { kind: "main" },
+    initialVersion ? { kind: "version", id: initialVersion.id } : { kind: "new" },
   );
   const [status, setStatus] = useState(savedStatus);
   const [showPreview, setShowPreview] = useState(true);
@@ -185,7 +175,7 @@ export function ResumeWorkbench({
   const localImportFallbackRef = useRef(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const importNoticeTimerRef = useRef<number | null>(null);
-  const saveContextRef = useRef({ editingTarget, editingTitle, editingContent, saveResume, setResume });
+  const saveContextRef = useRef({ editingTarget, editingTitle, editingContent, saveResume });
 
   const currentResume = useResumeStore((state) => state.currentResume);
   const sections = useResumeStore((state) => state.sections);
@@ -211,7 +201,7 @@ export function ResumeWorkbench({
       if (!versionId) {
         setEditingContent(resume);
         setEditingTitle(buildResumeTitle(resume));
-        setEditingTarget({ kind: "main" });
+        setEditingTarget({ kind: "new" });
         setStatus(savedStatus);
         return;
       }
@@ -220,7 +210,7 @@ export function ResumeWorkbench({
       if (!version) {
         setEditingContent(resume);
         setEditingTitle(buildResumeTitle(resume));
-        setEditingTarget({ kind: "main" });
+        setEditingTarget({ kind: "new" });
         setStatus(t("status.versionNotFound"));
         window.history.replaceState(null, "", "/resume/edit");
         return;
@@ -237,8 +227,8 @@ export function ResumeWorkbench({
   }, [resume, savedStatus, t, versions]);
 
   useEffect(() => {
-    saveContextRef.current = { editingTarget, editingTitle, editingContent, saveResume, setResume };
-  }, [editingContent, editingTarget, editingTitle, saveResume, setResume]);
+    saveContextRef.current = { editingTarget, editingTitle, editingContent, saveResume };
+  }, [editingContent, editingTarget, editingTitle, saveResume]);
 
   useEffect(() => {
     return () => {
@@ -259,7 +249,6 @@ export function ResumeWorkbench({
         editingTitle: title,
         editingContent: sourceContent,
         saveResume: persistResume,
-        setResume: setMainResume,
       } = saveContextRef.current;
       const content = preserveResumeInternalMetadata(jadeResumeToContent(liveResume), sourceContent);
       const resolvedTitle = resolveResumeTitle(content, title);
@@ -277,15 +266,10 @@ export function ResumeWorkbench({
           onEditorTargetChange(result.version.id);
           window.history.replaceState(null, "", buildResumeEditorPath(nextTarget));
         }
-        if (target.kind === "main") {
-          setMainResume(contentWithTitle);
-        }
         setStatus(
           context.source === "auto"
             ? t("status.autoSaved")
-            : target.kind === "main"
-              ? t("status.mainSaved")
-              : t("status.resumeSaved"),
+            : t("status.resumeSaved"),
         );
       } catch (error) {
         setStatus(context.source === "auto" ? t("status.autoSaveFailed") : t("status.saveFailed"));
@@ -315,14 +299,7 @@ export function ResumeWorkbench({
     useEditorStore.getState().selectSection(hydratedResume.sections[0]?.id ?? null);
   }, [editingContent, mode]);
 
-  useEffect(() => {
-    return useResumeStore.subscribe((state) => {
-      if (mode !== "editor" || !state.currentResume) return;
-      if (editingTarget.kind !== "main") return;
-      const liveResume: Resume = { ...state.currentResume, sections: state.sections };
-      setResume(jadeResumeToContent(liveResume));
-    });
-  }, [editingTarget.kind, mode, setResume]);
+
 
   const activeResume = useMemo<Resume | null>(() => {
     if (!currentResume) return null;
@@ -331,13 +308,11 @@ export function ResumeWorkbench({
 
   const resumeCards = useMemo(() => {
     return buildResumeLibraryCards({
-      resume,
-      mainResumeUpdatedAt: resumeUpdatedAt,
       versions,
       search,
       sortMode,
     });
-  }, [resume, resumeUpdatedAt, search, sortMode, versions]);
+  }, [search, sortMode, versions]);
 
   function withSnapshot(action: () => void) {
     pushSnapshot(sections);
@@ -387,7 +362,7 @@ export function ResumeWorkbench({
     if (snapshot) reorderSections(snapshot.sections);
   }
 
-  function openEditor(content: ResumeContent, title = buildResumeTitle(content), target: ResumeSaveTarget = { kind: "main" }) {
+  function openEditor(content: ResumeContent, title = buildResumeTitle(content), target: ResumeSaveTarget = { kind: "new" }) {
     setEditingContent(content);
     setEditingTitle(title);
     setEditingTarget(target);
@@ -489,7 +464,8 @@ export function ResumeWorkbench({
   }
 
   function handleImportButtonClick() {
-    if (!aiReady && !localImportFallbackRef.current) {
+    localImportFallbackRef.current = false;
+    if (!aiReady) {
       setAiSetupDialogOpen(true);
       return;
     }
@@ -540,7 +516,7 @@ export function ResumeWorkbench({
       onResumeOptimized({
         before: diagnosisResume,
         after: result.draft,
-        sourceVersionId: editingTarget.kind === "version" ? editingTarget.id : mainResumeVersionId,
+        sourceVersionId: editingTarget.kind === "version" ? editingTarget.id : undefined,
           diagnosis: input.diagnosis,
           selectedIssueIds: input.selectedIssueIds,
           selectedIssues: input.diagnosis.issues.filter((issue) => input.selectedIssueIds.includes(issue.id)),
@@ -660,13 +636,7 @@ export function ResumeWorkbench({
           onOpenCard={(card) => openEditor(card.content, card.title, card.target)}
           onCopyCard={(card) => void handleCopyResume(card)}
           copyingCardId={copyingResumeId}
-          onDeleteCard={(card) => {
-            if (card.id === "main") {
-              onDeleteMainResume();
-            } else {
-              onDeleteVersion(card.id);
-            }
-          }}
+          onDeleteCard={(card) => onDeleteVersion(card.id)}
         />
         {importAiSetupDialog}
         {optimizeAiSetupDialog}
@@ -708,7 +678,7 @@ export function ResumeWorkbench({
               <p className="text-[0.6875rem] text-muted-foreground">
                 {t("toolbar.meta", {
                   template: templateT(activeResume.template),
-                  kind: editingTarget.kind === "main" ? t("toolbar.mainResume") : t("toolbar.versionResume"),
+                  kind: t("toolbar.versionResume"),
                 })}
               </p>
             </div>
@@ -974,7 +944,7 @@ async function exportResume(resume: Resume, format: ResumeExportFormat) {
     return;
   }
 
-  downloadDataUrl(await combinePageImages(pages), `${buildExportName(resume)}.png`);
+  downloadBlob(await combinePageImages(pages), `${buildExportName(resume)}.png`);
 }
 
 async function captureResumePages(resume: Resume, smartOnePage: boolean) {
@@ -1158,7 +1128,12 @@ async function combinePageImages(pages: Array<{ dataUrl: string; width: number; 
     offsetY += A4_HEIGHT_PX * layout.pageScale + layout.pageGap * layout.pageScale;
   }
 
-  return canvas.toDataURL("image/png", 1);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("无法生成 PNG 图片。"));
+    }, "image/png");
+  });
 }
 
 function loadImage(src: string) {
@@ -1170,7 +1145,7 @@ function loadImage(src: string) {
   });
 }
 
-async function exportResumeAsEditableDocx(resume: Resume) {
+export async function exportResumeAsEditableDocx(resume: Resume) {
   const {
     AlignmentType,
     BorderStyle,
@@ -1189,13 +1164,13 @@ async function exportResumeAsEditableDocx(resume: Resume) {
   const name = getString(personal.fullName) || resume.title;
   const jobTitle = getString(personal.jobTitle);
   const docxTheme = buildDocxThemeConfig(resume.themeConfig);
-  const contacts = [
+  const contacts = [...new Set([
     getString(personal.email),
     getString(personal.phone),
     getString(personal.location),
     getString(personal.website),
     getString(personal.github),
-  ].filter(Boolean);
+  ].filter(Boolean))];
 
   children.push(new Paragraph({
     heading: HeadingLevel.TITLE,
@@ -1231,7 +1206,7 @@ async function exportResumeAsEditableDocx(resume: Resume) {
         },
         children: [new TextRun({ text: section.title, bold: true, color: docxTheme.primaryColor, size: docxTheme.sizes.h2, font: docxTheme.font })],
       }));
-      appendSectionToDocx(section, children, { Paragraph, TabStopPosition, TabStopType, TextRun }, docxTheme);
+      appendSectionToDocx(section, children, { Paragraph, TabStopPosition, TabStopType, TextRun }, docxTheme, resume.language);
     });
 
   const doc = new Document({
@@ -1274,6 +1249,7 @@ function appendSectionToDocx(
   children: Array<InstanceType<typeof import("docx").Paragraph>>,
   docx: Pick<typeof import("docx"), "Paragraph" | "TabStopPosition" | "TabStopType" | "TextRun">,
   docxTheme: DocxThemeConfig,
+  language: Resume["language"],
 ) {
   const content = getRecord(section.content);
   const items = getArray(content.items).map(getRecord);
@@ -1351,7 +1327,7 @@ function appendSectionToDocx(
       getString(item.issuer);
     const dates = [
       getString(item.startDate),
-      getString(item.endDate),
+      getString(item.endDate) || (item.current === true ? (language === "zh" ? "至今" : "Present") : ""),
       getString(item.date),
     ]
       .filter(Boolean)

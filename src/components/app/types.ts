@@ -43,7 +43,6 @@ export type ResumeVersionView = {
 };
 
 export type InitialData = {
-  resume: { id: string; resumeId: string; name: string; summary: string; content: ResumeContent; updatedAt: string } | null;
   versions: ResumeVersionView[];
   jobs: JobView[];
   applications: ApplicationView[];

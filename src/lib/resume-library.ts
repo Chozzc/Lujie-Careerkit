@@ -4,8 +4,8 @@ import { normalizeOptimizedResumeVersionName } from "@/lib/resume-versioning";
 import type { ResumeContent } from "@/lib/types";
 
 export type ResumeLibrarySortMode = "recent" | "recentOptimized";
-export type ResumeLibraryCardKind = "原简历" | "优化后简历";
-export type ResumeLibrarySaveTarget = { kind: "main" } | { kind: "version"; id: string };
+export type ResumeLibraryCardKind = "简历" | "优化后简历";
+export type ResumeLibrarySaveTarget = { kind: "version"; id: string };
 
 export type ResumeLibraryVersion = {
   id: string;
@@ -87,35 +87,14 @@ export const resumeTemplateLabels: Record<string, string> = {
 };
 
 export function buildResumeLibraryCards({
-  resume,
-  mainResumeUpdatedAt,
   versions,
   search,
   sortMode,
 }: {
-  resume: ResumeContent;
-  mainResumeUpdatedAt?: string;
   versions: ResumeLibraryVersion[];
   search: string;
   sortMode: ResumeLibrarySortMode;
 }): ResumeLibraryCard[] {
-  const mainTemplate = getValidResumeTemplate(resume.editor?.template);
-  const mainCard: ResumeLibraryCard | null = hasResumeContent(resume)
-    ? {
-        id: "main",
-        kind: "原简历",
-        title: buildResumeTitle(resume),
-        detail: `${resume.profile.title || "目标岗位待填写"} · 主简历`,
-        template: resumeTemplateLabels[mainTemplate] ?? "现代",
-        templateKey: mainTemplate,
-        updatedAt: formatResumeEditedAt(mainResumeUpdatedAt),
-        ...formatResumeDateParts(mainResumeUpdatedAt, "edited"),
-        timestamp: toTimestamp(mainResumeUpdatedAt),
-        content: resume,
-        target: { kind: "main" },
-      }
-    : null;
-
   const versionCards: ResumeLibraryCard[] = versions.map((version) => {
     const editedAt = version.updatedAt ?? version.createdAt;
     const optimizationKind = getResumeOptimizationKind(version);
@@ -123,7 +102,7 @@ export function buildResumeLibraryCards({
     const templateKey = getValidResumeTemplate(version.content.editor?.template);
     return {
       id: version.id,
-      kind: isOptimized ? "优化后简历" : "原简历",
+      kind: isOptimized ? "优化后简历" : "简历",
       optimizationKind,
       title: optimizationKind === "job"
         ? normalizeOptimizedResumeVersionName(version.name)
@@ -146,8 +125,7 @@ export function buildResumeLibraryCards({
   });
 
   const keyword = search.trim().toLowerCase();
-  return [mainCard, ...versionCards]
-    .filter((card): card is ResumeLibraryCard => Boolean(card))
+  return versionCards
     .filter((card) => {
       if (!keyword) return true;
       return `${card.title} ${card.detail} ${card.template} ${card.kind}`.toLowerCase().includes(keyword);
@@ -167,7 +145,7 @@ export function buildResumeTitle(content: ResumeContent) {
 }
 
 export function buildResumeEditorPath(target: ResumeLibrarySaveTarget) {
-  return target.kind === "version" ? `/resume/edit?version=${encodeURIComponent(target.id)}` : "/resume/edit";
+  return `/resume/edit?version=${encodeURIComponent(target.id)}`;
 }
 
 export function getResumeOptimizationKind(

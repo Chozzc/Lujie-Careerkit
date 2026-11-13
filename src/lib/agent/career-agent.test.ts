@@ -72,7 +72,7 @@ describe("Agent context integration", () => {
       finishReason: { unified: "stop", raw: undefined }, usage, warnings: [],
     } });
     vi.mocked(createAiModel).mockReturnValue(model);
-    vi.mocked(getAppData).mockResolvedValue({ resume: version, versions: [] } as never);
+    vi.mocked(getAppData).mockResolvedValue({ resume: null, versions: [version] } as never);
     vi.mocked(updateResumeVersion).mockResolvedValue(version as never);
     const agent = createCareerAgent({ enabled: true } as never, "zh-CN");
     const result = await agent.generate({ messages: approvedTemplateChange() });
@@ -100,8 +100,8 @@ describe("Agent context integration", () => {
       finishReason: { unified: "tool-calls", raw: undefined }, usage, warnings: [],
     } });
     vi.mocked(createAiModel).mockReturnValue(model);
-    vi.mocked(getAppData).mockResolvedValue({ resume: { ...version,
-      content: { ...content, profile: { summary: "项目经历".repeat(5_000) } } }, versions: [] } as never);
+    vi.mocked(getAppData).mockResolvedValue({ resume: null, versions: [{ ...version,
+      content: { ...content, profile: { summary: "项目经历".repeat(5_000) } } }] } as never);
     await expect(createCareerAgent({ enabled: true } as never, "zh-CN").generate({ prompt: "Read my resume" })).rejects.toBeInstanceOf(AgentContextError);
     expect(model.doGenerateCalls).toHaveLength(1);
     expect(updateResumeVersion).not.toHaveBeenCalled();

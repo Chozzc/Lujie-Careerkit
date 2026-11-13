@@ -23,16 +23,18 @@ const emptyResume: ResumeContent = {
 
 describe("resume content normalization", () => {
   it("splits a phone-prefixed QQ email into phone and email fields", () => {
+    const phone = "13000000000";
+    const email = "00000@qq.com";
     const normalized = normalizeResumeContent({
       ...emptyResume,
       basics: {
         ...emptyResume.basics,
-        email: "18379185091858653164@qq.com",
+        email: phone + email,
       },
     });
 
-    expect(normalized.basics.phone).toBe("18379185091");
-    expect(normalized.basics.email).toBe("858653164@qq.com");
+    expect(normalized.basics.phone).toBe(phone);
+    expect(normalized.basics.email).toBe(email);
   });
 
   it("keeps imported summaries separate from self evaluations", () => {

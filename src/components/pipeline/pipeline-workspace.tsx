@@ -299,7 +299,7 @@ function PipelineList({ applications, jobById, ascending, onSort, onEditApplicat
   onEditApplication: (id: string) => void;
 }) {
   const t = useTranslations("pipeline");
-  const sorted = applications.toSorted((left, right) => {
+  const sorted = [...applications].sort((left, right) => {
     if (!left.appliedAt || !right.appliedAt) return Number(!left.appliedAt) - Number(!right.appliedAt);
     return (ascending ? 1 : -1) * left.appliedAt.localeCompare(right.appliedAt);
   });

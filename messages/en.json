@@ -14,7 +14,8 @@
       "interview": "Interview Assistant",
       "pipeline": "Application Tracking",
       "library": "Career Library",
-      "settings": "Settings"
+      "settings": "Settings",
+      "trash": "Recycle bin"
     },
     "campus": {
       "any": "Any",
@@ -109,7 +110,10 @@
     "topbar": {
       "notifications": "Follow-up reminders",
       "guide": "Getting started",
-      "profile": "Local account"
+      "profile": "Local account",
+      "desktopUpdate": "LuJie CareerKit Desktop {version} is available",
+      "viewDesktopUpdate": "View release",
+      "dismissDesktopUpdate": "Dismiss update reminder"
     },
     "header": {
       "processing": "Processing...",
@@ -612,15 +616,7 @@
       "noMatches": "No matching applications. Try a different search or filter.",
       "open": "View the {role} application at {company}"
     },
-    "status": {
-      "READY": "Ready",
-      "APPLIED": "Applied",
-      "ASSESSMENT": "Assessment",
-      "INTERVIEW": "Interview",
-      "OFFER": "Offer",
-      "REJECTED": "Rejected",
-      "ARCHIVED": "Archived"
-    },
+    "status": { "READY": "Ready", "APPLIED": "Applied", "ASSESSMENT": "Assessment", "INTERVIEW": "Interview", "OFFER": "Offer", "REJECTED": "Rejected", "ARCHIVED": "Archived" },
     "round": {
       "FIRST": "First round",
       "SECOND": "Second round",
@@ -743,7 +739,7 @@
     "status": {
       "saved": "Saved to local SQLite",
       "importReview": "Resume import is complete. Some content was categorized by AI; review carefully before use.",
-      "versionNotFound": "Resume version not found. Opened the original resume.",
+      "versionNotFound": "Resume not found. Opened a blank draft.",
       "autoSaving": "Autosaving...",
       "saving": "Saving...",
       "autoSaved": "Autosaved to local SQLite",
@@ -781,7 +777,7 @@
       "rename": "Rename resume",
       "meta": "Template {template} · {kind}",
       "mainResume": "Main resume",
-      "versionResume": "Resume version",
+      "versionResume": "Resume",
       "undo": "Undo",
       "redo": "Redo",
       "optimizing": "Optimizing...",
@@ -861,12 +857,12 @@
           "description": "Use conventional wording and supported skill terms."
         }
       },
-        "additionalDirection": {
-          "label": "Tell AI how to revise",
-          "optional": "Optional",
-          "placeholder": "For example: keep useful suggestions but do not change my GPA; make project bullets more specific, replace vague assistance wording with clear ownership, and keep the tone restrained.",
-          "hint": "State what to revise, how to phrase it, and which suggestions to ignore. AI only handles selected issues and must not invent facts."
-        },
+      "additionalDirection": {
+        "label": "Tell AI how to revise",
+        "optional": "Optional",
+        "placeholder": "For example: keep useful suggestions but do not change my GPA; make project bullets more specific, replace vague assistance wording with clear ownership, and keep the tone restrained.",
+        "hint": "State what to revise, how to phrase it, and which suggestions to ignore. AI only handles selected issues and must not invent facts."
+      },
       "optimizing": "Generating an optimized version from your choices...",
       "optimizationFailed": "Optimization failed. Try again later.",
       "close": "Not now",
@@ -1013,15 +1009,15 @@
     "languageTitle": "Language",
     "languageDescription": "Switch the app interface language. Resume content, JDs, and local data are not translated automatically.",
     "localDataTitle": "Local data",
-    "localDataDescription": "Remove only the built-in samples, or clear all local career data and AI settings before restoring them.",
+    "localDataDescription": "Clear unmodified samples, or move all resources to trash and restore sample data. Previous records remain recoverable and AI settings are preserved.",
     "clearSampleConfirm": "Remove all built-in sample jobs, the sample resume, and their generated materials? Your own data and AI settings will be preserved.",
     "clearingSample": "Removing sample data",
-    "clearSample": "Remove sample data",
+    "clearSample": "Clear sample data",
     "clearSampleSuccess": "Sample data removed. Your own data was preserved.",
     "clearSampleFailed": "Failed to remove sample data.",
-    "resetConfirm": "Clear local SQLite resumes, application progress, interview records, and AI settings, then restore built-in sample data?",
-    "resetting": "Restoring sample data",
-    "reset": "Reset and restore samples",
+    "resetConfirm": "Move all resources to trash and add a fresh set of sample data? Existing records and earlier trash remain recoverable. AI settings are preserved.",
+    "resetting": "Moving to trash and restoring samples…",
+    "reset": "Move all resources to trash and restore sample data",
     "resetFailed": "Failed to reset local data.",
     "ai": {
       "title": "AI Model",
@@ -1284,17 +1280,18 @@
     "categoryCount": "{count} items",
     "updatedAt": "Updated {date}",
     "delete": "Delete outcome",
-    "deleteArtifactConfirm": "Delete “{name}”? Only this item will be deleted; other job materials will not be affected. This action cannot be undone.",
+    "deleteArtifactConfirm": "Move “{name}” to the recycle bin? You can restore it later.",
     "editArtifactName": "Edit item title",
     "doubleClickToRename": "{name} (double-click to rename)",
     "unknownCompany": "This company",
     "unknownJob": "this role",
-    "deleteArchiveConfirm": "Delete the job file “{name}”?\n\nThis permanently deletes:\n• The original JD and job analysis\n• {resumes} job-optimized resumes\n• {preparations} interview preparation guides\n• {interviews} mock interviews and reviews\n• {applications} application tracking records\n\nYour original resume will not be deleted. This action cannot be undone.",
-    "deleteAnalysisConfirm": "Delete the original JD and job analysis for “{name}”? Other resumes, interview materials, and application tracking records will not be affected. This action cannot be undone.",
-    "deleteQuestionsConfirm": "Delete all questions and answers from this mock interview? The AI review will be kept. This action cannot be undone.",
-    "deleteFeedbackConfirm": "Delete the AI review from this mock interview? The questions and answers will be kept. This action cannot be undone.",
+    "deleteJobArchive": "Move all materials for this role to the recycle bin",
+    "deleteArchiveConfirm": "Move all linked materials for “{name}” to the recycle bin?\n\nThis includes any job description and analysis, {resumes} tailored resumes, {preparations} interview preparation guides, {interviews} mock interviews and reviews, and {applications} application records.\n\nOriginal resumes, materials for other roles, and older materials grouped by job description alone will remain. You can restore the moved items from the recycle bin.",
+    "deleteAnalysisConfirm": "Move this material to the recycle bin? Other work is preserved and you can restore it later.",
+    "deleteQuestionsConfirm": "Move this material to the recycle bin? Other work is preserved and you can restore it later.",
+    "deleteFeedbackConfirm": "Move this material to the recycle bin? Other work is preserved and you can restore it later.",
     "regenerateFeedbackConfirm": "Regenerate the AI review from the current answers? The existing review will be permanently replaced.",
-    "archiveDeleted": "The job file, related materials, and application tracking record were deleted. Your original resume was kept.",
+    "archiveDeleted": "All materials for this role moved to the recycle bin.",
     "analysisDeleted": "The original JD and job analysis were deleted.",
     "questionsDeleted": "Questions and answers deleted.",
     "feedbackDeleted": "AI review deleted.",
@@ -1499,6 +1496,29 @@
     "avatar": {
       "circle": "Circle",
       "oneInch": "ID photo"
+    }
+  },
+  "trash": {
+    "description": "Deleted work stays here until you permanently delete it. Restoring never overwrites newer work.",
+    "restoreAll": "Restore all",
+    "restoreAllRemaining": "Restored the available items. {count} remain because their source record may be missing or restoring them may overwrite existing content.",
+    "empty": "Empty recycle bin",
+    "emptyConfirm": "Permanently delete everything in the recycle bin? This cannot be undone.",
+    "deleteConfirm": "Permanently delete “{name}”? This cannot be undone.",
+    "restore": "Restore",
+    "delete": "Delete permanently",
+    "working": "Working…",
+    "noItems": "The recycle bin is empty",
+    "failed": "Operation failed. Please retry.",
+    "kinds": {
+      "resumeVersion": "Resume",
+      "application": "Application",
+      "interviewSession": "Mock interview",
+      "interviewPreparation": "Interview preparation",
+      "agentThread": "Agent conversation",
+      "job-analysis": "Job material",
+      "questions": "Interview questions and answers",
+      "feedback": "Interview feedback"
     }
   }
 }

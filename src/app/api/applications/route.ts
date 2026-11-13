@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { dateInputSchema, parseJsonRequest } from "@/lib/api-request";
-import { createApplication } from "@/lib/repository";
+import { ApplicationInTrashError, createApplication } from "@/lib/repository";
 
 const applicationSchema = z.object({
   jobId: z.string().trim().min(1),
@@ -17,6 +17,11 @@ const applicationSchema = z.object({
 export async function POST(request: Request) {
   const parsed = await parseJsonRequest(request, applicationSchema);
   if (!parsed.success) return parsed.response;
-  const application = await createApplication(parsed.data);
-  return Response.json({ application });
+  try {
+    const application = await createApplication(parsed.data);
+    return Response.json({ application });
+  } catch (error) {
+    if (error instanceof ApplicationInTrashError) return Response.json({ error: error.message, code: "APPLICATION_IN_TRASH", applicationId: error.applicationId }, { status: 409 });
+    throw error;
+  }
 }
