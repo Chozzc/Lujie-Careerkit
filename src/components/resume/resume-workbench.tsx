@@ -513,10 +513,11 @@ export function ResumeWorkbench({
           additionalDirection: input.additionalDirection,
         locale,
       });
-      onResumeOptimized({
+        const sourceTarget = saveContextRef.current.editingTarget;
+        onResumeOptimized({
         before: diagnosisResume,
         after: result.draft,
-        sourceVersionId: editingTarget.kind === "version" ? editingTarget.id : undefined,
+          sourceVersionId: sourceTarget.kind === "version" ? sourceTarget.id : undefined,
           diagnosis: input.diagnosis,
           selectedIssueIds: input.selectedIssueIds,
           selectedIssues: input.diagnosis.issues.filter((issue) => input.selectedIssueIds.includes(issue.id)),

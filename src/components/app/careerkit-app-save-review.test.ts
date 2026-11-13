@@ -21,7 +21,7 @@ function setup(sourceVersionId?: string) {
     normalizeVersion: (version: unknown) => version,
     saveResume: vi.fn(async () => { state.versions.push(original); return { kind: "version", version: original }; }),
     postJson: vi.fn(async () => ({ version: optimized })),
-    setResumeOptimizationResult: (value: typeof state.currentResumeOptimizationResult) => { state.currentResumeOptimizationResult = value; },
+    setResumeOptimizationResult: (value: { before: typeof original.content; after: typeof optimized.content; sourceVersionId: string | undefined }) => { state.currentResumeOptimizationResult = value; },
     setVersions: (update: (versions: typeof original[]) => typeof original[]) => { state.versions = update(state.versions); },
     setResumeOptimizationVersionId: vi.fn(),
     setResumeOptimizationStage: vi.fn(),
@@ -56,4 +56,20 @@ it("does not silently replace a missing explicitly selected source", async () =>
   await expect(save()).rejects.toThrow("找不到通用优化的来源简历");
   expect(state.saveResume).not.toHaveBeenCalled();
   expect(state.postJson).not.toHaveBeenCalled();
+});
+
+it("uses the saved resume ID when autosave completes during AI optimization", async () => {
+  const workbench = readFileSync(new URL("../resume/resume-workbench.tsx", import.meta.url), "utf8");
+  const optimizeHandler = workbench.slice(workbench.indexOf("  async function handleDiagnosisOptimization("), workbench.indexOf("  function openApplicationMessageDialog("));
+  const target: { kind: string; id?: string } = { kind: "new" };
+  const onResumeOptimized = vi.fn();
+  const context = createContext({
+    setIsOptimizingResume: vi.fn(), setStatus: vi.fn(), t: (key: string) => key,
+    diagnosisResume: {}, locale: "zh-CN", editingTarget: { kind: "new" },
+    saveContextRef: { current: { editingTarget: target } }, onResumeOptimized,
+    optimizeResume: async () => { target.kind = "version"; target.id = "saved-during-optimization"; return { draft: {} }; },
+  });
+  runInContext(ts.transpileModule(optimizeHandler, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
+  await runInContext('handleDiagnosisOptimization({ diagnosis: { issues: [] }, selectedIssueIds: [], additionalDirection: "" })', context);
+  expect(onResumeOptimized).toHaveBeenCalledWith(expect.objectContaining({ sourceVersionId: "saved-during-optimization" }));
 });
