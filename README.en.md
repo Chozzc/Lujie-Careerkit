@@ -320,6 +320,51 @@ It is the local encryption secret used to encrypt API keys saved in SQLite. If y
 
 Yes. Any OpenAI-compatible provider can be configured by entering its Base URL, model name, and API key in Settings.
 
+### 6. How do I use my own campus recruitment data?
+
+The campus library and the in-app Agent read the same JSON catalog. The maintainers update the online preview's catalog.
+
+#### Prepare and Check the File
+
+Run `npm ci` from the project root, create the `data/campus/custom` directory, and copy the [bundled `current.json`](data/campus/current.json) into it. Use its records as examples. Save the file as UTF-8 without a BOM. The limits are 50 MiB and 50,000 records. Set `schemaVersion` to `1`, give the catalog a `sourceName`, and set `preparedAt` to a `YYYY-MM-DD` date. Each record needs a unique `id`. Use `YYYY-MM-DD` or `null` for `updatedAt` and `deadlineDate`, and use `http://`, `https://`, or `null` for the application and announcement links.
+
+```bash
+npm run check:campus -- "data/campus/custom/current.json"
+```
+
+A successful check prints the snapshot date and record count. `Record 2 · deadlineDate` means the second record's deadline needs fixing. Omit the path to check `data/campus/current.json`.
+
+#### Run from Source
+
+Back up `data/campus/current.json`. After checking your file, copy it to `data/campus/current.next.json` and run this command from the project root to replace the catalog in one step.
+
+```bash
+node -e "require('node:fs').renameSync('data/campus/current.next.json', 'data/campus/current.json')"
+```
+
+Refresh the campus page and search for a new listing to confirm the catalog was replaced. To restore the catalog, repeat the replacement using your backup. Git tracks `data/campus/current.json`, so keep your customized data local.
+
+#### Run with Docker
+
+Bind-mount a dedicated host directory containing `current.json` at `/app/data/campus` in read-only mode. Recreate the container for the initial setup using the same SQLite volume and `LUJIE_SETTINGS_SECRET`.
+
+- **`docker run`** Add `--mount "type=bind,source=<absolute path to custom directory>,target=/app/data/campus,readonly"` before the image name in the original command and keep `-v lujie-data:/data`.
+- **Docker Compose** Save the following as `data/campus/compose.custom.yml` and run `docker compose -f docker-compose.yml -f data/campus/compose.custom.yml up -d` from the project root.
+
+```yaml
+services:
+  lujie-careerkit:
+    volumes:
+      - type: bind
+        source: ./data/campus/custom
+        target: /app/data/campus
+        read_only: true
+        bind:
+          create_host_path: false
+```
+
+For later updates, check the new file, replace `current.json` in the mounted host directory in one step, and refresh the page. To restore the bundled catalog, remove the custom mount and recreate the container. If you build your own image, you can also replace the source file and run `docker compose up -d --build`.
+
 ## Project Structure
 
 ```text

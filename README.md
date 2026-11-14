@@ -319,6 +319,51 @@ OPENAI_MODEL="qwen3.8-flash"
 
 可以。只要服务兼容 OpenAI 接口，就可以在设置页填写对应的 Base URL、模型名称和 API Key。
 
+### 6. 怎么使用自己的校招数据？
+
+校招信息库和应用内 Agent 共用一份 JSON 招聘清单。在线预览由维护者更新清单。
+
+#### 准备并检查文件
+
+从项目根目录运行 `npm ci`，然后新建 `data/campus/custom` 目录，把 [自带的 `current.json`](data/campus/current.json) 复制进去，以其中的记录为样例编辑。文件使用 UTF-8（无 BOM），最大 50 MiB，最多 50,000 条记录。`schemaVersion` 填 `1`，`sourceName` 填清单名称，`preparedAt` 用 `YYYY-MM-DD`。每条记录的 `id` 必须唯一，`updatedAt` 和 `deadlineDate` 用 `YYYY-MM-DD` 或 `null`，投递和公告链接用 `http://`、`https://` 或 `null`。
+
+```bash
+npm run check:campus -- "data/campus/custom/current.json"
+```
+
+检查通过后会显示整理日期和记录数。出现 `Record 2 · deadlineDate` 时，表示第 2 条记录的截止日期需要修改。省略文件路径会检查 `data/campus/current.json`。
+
+#### 源码运行
+
+先备份 `data/campus/current.json`。检查通过后，把新文件复制成 `data/campus/current.next.json`，再从项目根目录运行下面的命令一次性替换，避免应用读到只写了一半的文件。
+
+```bash
+node -e "require('node:fs').renameSync('data/campus/current.next.json', 'data/campus/current.json')"
+```
+
+刷新校招页面，搜索一条新记录，确认清单已换好。需要恢复时，用备份按相同步骤换回。`data/campus/current.json` 是项目跟踪的文件，自定义数据请留在本地。
+
+#### Docker 运行
+
+把包含 `current.json` 的专用目录以只读方式挂载到容器的 `/app/data/campus`。首次设置时用同一个 SQLite 卷和 `LUJIE_SETTINGS_SECRET` 重新创建容器。
+
+- **`docker run`** 在原命令的镜像名之前加上 `--mount "type=bind,source=<自定义目录绝对路径>,target=/app/data/campus,readonly"`，并保留原来的 `-v lujie-data:/data`。
+- **Docker Compose** 把下面的配置保存为 `data/campus/compose.custom.yml`，在项目根目录运行 `docker compose -f docker-compose.yml -f data/campus/compose.custom.yml up -d`。
+
+```yaml
+services:
+  lujie-careerkit:
+    volumes:
+      - type: bind
+        source: ./data/campus/custom
+        target: /app/data/campus
+        read_only: true
+        bind:
+          create_host_path: false
+```
+
+后续更新时，在宿主机上校验并一次性替换挂载目录里的 `current.json`，再刷新页面。恢复内置清单时，去掉自定义挂载并重新创建容器。从源码构建镜像的用户也可以在完成源码替换后运行 `docker compose up -d --build`。
+
 ## 项目结构
 
 ```text

@@ -1,36 +1,5 @@
 import { z } from "zod";
-
-const text = z.string().max(6000);
-const webUrl = z.url({ protocol: /^https?$/ }).max(4000);
-
-export const campusRecordSchema = z.object({
-  id: z.string().min(1).max(120),
-  company: text.min(1),
-  companyType: text,
-  industry: text,
-  recruitmentTypes: z.array(text).max(20),
-  targets: z.array(text).max(20),
-  location: text,
-  positions: text,
-  updatedAt: z.iso.date().nullable(),
-  deadlineRaw: text,
-  deadlineDate: z.iso.date().nullable(),
-  applyUrl: webUrl.nullable(),
-  noticeUrl: webUrl.nullable(),
-  exams: z.array(text).max(20),
-  reviewNote: text,
-  sourceRows: text,
-});
-
-export const campusDatasetSchema = z.object({
-  schemaVersion: z.literal(1),
-  sourceName: text.min(1),
-  sourceUrl: webUrl.optional(),
-  preparedAt: z.iso.date(),
-  records: z.array(campusRecordSchema).max(50000),
-}).refine((data) => new Set(data.records.map((record) => record.id)).size === data.records.length, {
-  message: "Duplicate campus record IDs",
-});
+import type { campusDatasetSchema } from "./campus-dataset.mjs";
 
 export const campusQuerySchema = z.object({
   recordId: z.string().trim().min(1).max(120).optional(),
@@ -46,8 +15,8 @@ export const campusQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(100000).default(1),
 });
 
-export type CampusRecord = z.infer<typeof campusRecordSchema>;
 export type CampusDataset = z.infer<typeof campusDatasetSchema>;
+export type CampusRecord = CampusDataset["records"][number];
 export type CampusQuery = z.infer<typeof campusQuerySchema>;
 export type CampusResult = ReturnType<typeof queryCampus>;
 export const CAMPUS_PAGE_SIZE = 20;

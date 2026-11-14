@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
-import { campusDatasetSchema, campusDeadline, campusQuerySchema, chinaDate, queryCampus, type CampusDataset, type CampusRecord } from "./campus";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { campusDatasetSchema } from "./campus-dataset.mjs";
+import { campusDeadline, campusQuerySchema, chinaDate, queryCampus, type CampusDataset, type CampusRecord } from "./campus";
 import { GET } from "@/app/api/campus/route";
 import { searchCampus } from "@/lib/agent/campus-tools";
 
@@ -16,6 +20,30 @@ const record: CampusRecord = {
 };
 const dataset: CampusDataset = { schemaVersion: 1, sourceName: "Synthetic test data", preparedAt: "2026-09-14", records: [record] };
 const query = (input = {}) => campusQuerySchema.parse(input);
+
+it("checks a candidate file before replacement and identifies the invalid fields", () => {
+  const directory = mkdtempSync(join(tmpdir(), "campus-check-"));
+  const file = join(directory, "candidate.json");
+  const check = (data: CampusDataset) => {
+    writeFileSync(file, JSON.stringify(data));
+    const result = spawnSync(process.execPath, ["scripts/check-campus.mjs", file], { encoding: "utf8" });
+    if (result.error) throw result.error;
+    return result;
+  };
+
+  try {
+    const valid = check(dataset);
+    expect(valid.status).toBe(0);
+    expect(valid.stdout).toContain("2026-09-14");
+    const invalid = check({ ...dataset, records: [record, { ...record, deadlineDate: "2026-11-31" }] });
+    expect(invalid.status).toBe(1);
+    expect(invalid.stderr).toContain("Record 2 · deadlineDate: Invalid ISO date");
+    expect(invalid.stderr).toContain("Record 2 · id: Duplicate ID. First used in record 1.");
+  } finally {
+    rmSync(file, { force: true });
+    rmdirSync(directory);
+  }
+});
 
 describe("campus catalog", () => {
   it("ships valid recruitment data without an original source URL", () => {

@@ -1,6 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { campusDatasetSchema, type CampusDataset } from "@/lib/campus";
+import type { CampusDataset } from "@/lib/campus";
+import { assertCampusDatasetSize, parseCampusDataset } from "./campus-dataset.mjs";
 
 const datasetPath = path.join(process.cwd(), "data", "campus", "current.json");
 let cached: { stamp: string; data: CampusDataset } | undefined;
@@ -8,10 +9,10 @@ let cached: { stamp: string; data: CampusDataset } | undefined;
 export async function readCampusDataset() {
   try {
     const info = await stat(datasetPath);
-    if (info.size > 50 * 1024 * 1024) throw new Error("Campus dataset exceeds size limit");
+    assertCampusDatasetSize(info.size);
     const stamp = `${info.mtimeMs}:${info.size}`;
     if (cached?.stamp === stamp) return cached.data;
-    const data = campusDatasetSchema.parse(JSON.parse(await readFile(datasetPath, "utf8")));
+    const data = parseCampusDataset(await readFile(datasetPath, "utf8"));
     cached = { stamp, data };
     return data;
   } catch (error) {

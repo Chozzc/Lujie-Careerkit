@@ -12,6 +12,7 @@
     "desktop:dev": "tauri dev",
     "desktop:check": "node --test scripts/desktop-runtime.check.mjs",
     "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "check:campus": "node scripts/check-campus.mjs",
     "test": "vitest run",
     "prestart": "node scripts/migrate.mjs",
     "start": "next start",
