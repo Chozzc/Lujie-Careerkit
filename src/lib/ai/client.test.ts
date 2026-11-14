@@ -78,11 +78,14 @@ it("omits fixed sampling parameters on native services and gateways, preserving 
       ["moonshot", "kimi-k3.1-pro-highspeed", undefined],
       ["openrouter", "openai/gpt-6.1-terra", undefined],
       ["anthropic-via-openrouter", "anthropic/claude-haiku-5.5", undefined],
+      ["anthropic-via-openrouter", "anthropic/claude-fable-5.2", undefined],
       ["openrouter", "anthropic/claude-opus-5.5", undefined],
       ["one-api", "kimi-k3.1-pro", undefined],
       ["one-api", "claude-haiku-5-5", undefined],
       ["custom-openai-compatible", "MiniMax-M3.1-Flash", undefined],
       ["openrouter", "google/gemini-4-argon", 0.3],
+      ["openrouter", "google/gemini-4-carbon", 0.3],
+      ["openrouter", "google/gemini-4-hydrogen", 0.3],
       ["qwen", "qwen3.8-flash", 0.3],
     ] as const) {
       const provider = getAiProvider(providerId);

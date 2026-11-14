@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceName": "27届实习校招投递表与招聘公告增补",
-  "preparedAt": "2026-10-31",
+  "preparedAt": "2026-11-14",
   "records": [
     {
       "id": "fs-fdb9a3ef69f0e039",
@@ -66872,15 +66872,15 @@
       ],
       "location": "上海及岗位页面列示地点",
       "positions": "上海银行2027届校园招聘；官方招聘门户列有岗位",
-      "updatedAt": "2026-09-23",
-      "deadlineRaw": "上海国资委启动信息未列统一截止日。",
-      "deadlineDate": null,
+      "updatedAt": "2026-10-19",
+      "deadlineRaw": "简历投递截至2026年11月22日",
+      "deadlineDate": "2026-11-22",
       "applyUrl": "https://bosc.zhiye.com/Campus/jobs?queryId=c03f0b7c-44c9-462a-a4f2-a9a2c554476f",
-      "noticeUrl": "https://www.gzw.sh.gov.cn/shgzw_xxgk_cqzp/20260923/e103427cc6554ce6b2be0ea7b0c87260.html",
+      "noticeUrl": "https://51uns.bysjy.com.cn/Announce/Details/3624623?schoolCode=10710",
       "exams": [
-        "未明确"
+        "需要笔试"
       ],
-      "reviewNote": "招聘详情页/岗位层级的报名截止、具体分行、考试安排需逐岗核验；未把高校板块同日出现的宁波分行岗位并入本集团记录。",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：长安大学就业网10月19日刊载上海银行股份有限公司招聘公告，列出投递截止日和笔试测评安排。招聘方官网可查岗位列表，具体岗位状态以网申页面为准。宁波分行招聘保持独立。",
       "sourceRows": ""
     },
     {
@@ -68167,6 +68167,127 @@
       ],
       "sourceRows": "",
       "reviewNote": "2026-10-31核验：招聘方原站部分核验；来源：浙商银行招聘官网计划详情。补录已截止的历史项目：截至2026年10月31日已过官网报名日期，不计作新开可投机会。境内2026年1月至2027年7月毕业、境外2025年1月至2027年7月毕业，且最高学历毕业后首次就业。 公告存在或未到截止不保证每个岗位当前仍可投。"
+    },
+    {
+      "id": "research-20261114-hebei-expressway",
+      "company": "河北高速公路集团有限公司",
+      "companyType": "地方国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "河北，详见岗位表",
+      "positions": "总部管理培训生，直属单位和子公司岗位，所属分公司岗位。涉及法学、金融、土木、电气、通信、财务等方向。",
+      "updatedAt": "2026-11-04",
+      "deadlineRaw": "2026年12月4日12:00（北京时间）",
+      "deadlineDate": "2026-12-04",
+      "applyUrl": "https://hbgsxy2027.zhaopin.com/",
+      "noticeUrl": "https://www.hbgs.com.cn/c/2026-11-04/1506638.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：招聘方官网发布公告并列出网申地址。2026届限未落实工作单位者，岗位地点和具体要求见公告附件；投递站当前状态未独立确认。"
+    },
+    {
+      "id": "research-20261114-sichuan-hydropower",
+      "company": "四川省水电投资经营集团有限公司",
+      "companyType": "地方国企",
+      "industry": "能源/电力",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "四川，详见公告岗位表",
+      "positions": "所属公司2027届招聘，含综能公司交易员等岗位，岗位和专业要求见公告表格。",
+      "updatedAt": "2026-11-13",
+      "deadlineRaw": "2026年11月19日17:00（以邮箱记录时间为准）",
+      "deadlineDate": "2026-11-19",
+      "applyUrl": null,
+      "noticeUrl": "https://jy.scu.edu.cn/index/index/newsdetail.html?data=MDAwMDAwMDAwMJG6n3_Ed6imi4qQtbR4iZiKlLa-yGHRp7ugzc-GnZ2skMx9ZMN4gtKLipCwxKF0lZC5sq-0gqJv",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：四川大学就业网发布的招聘方公告。按公告附件及指定邮箱报名，每人限报一家公司。"
+    },
+    {
+      "id": "research-20261114-shenzhen-agri-food",
+      "company": "深圳农业与食品投资控股集团有限公司",
+      "companyType": "地方国企",
+      "industry": "农业/食品",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "北京、上海、广东、甘肃、广西等，按岗位",
+      "positions": "深农投A+计划：管理培训生；下属企业的信息技术、供应链、贸易、财务、粮食食品、质量技术支持、基金投研等岗位。",
+      "updatedAt": "2026-11-12",
+      "deadlineRaw": "",
+      "deadlineDate": null,
+      "applyUrl": "https://afi2027.zhaopin.com/",
+      "noticeUrl": "https://career.nankai.edu.cn/correcruit/content/id/120598.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：南开大学就业网刊载招聘方简章，列出网申入口和岗位方向。11月12日为高校站刊登日期，简章未列统一截止日，投递站当前状态未独立确认。"
+    },
+    {
+      "id": "research-20261114-jinhua-bank",
+      "company": "金华银行",
+      "companyType": "银行",
+      "industry": "银行/金融",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "浙江，依总行及分支机构岗位表",
+      "positions": "总行管培生、总行各部室岗位、分支行管培生、客户经理、柜面服务。",
+      "updatedAt": "2026-10-30",
+      "deadlineRaw": "招满即止",
+      "deadlineDate": null,
+      "applyUrl": null,
+      "noticeUrl": "https://www.jhccb.com.cn/art/2026/10/30/art_167_4003599.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：招聘方官网列有岗位说明与报名表，按公告通过指定邮箱投递。各岗位招满即止，尚未确认各岗位剩余名额。"
+    },
+    {
+      "id": "research-20261114-cfmmc-campus",
+      "company": "中国期货市场监控中心",
+      "companyType": "央国企",
+      "industry": "银行/金融/证券/保险",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "信息技术、系统管理、衍生品交易分析、分析研究、综合管理。面向2027届硕士及以上毕业生。",
+      "updatedAt": "2026-10-20",
+      "deadlineRaw": "2026年11月15日24时",
+      "deadlineDate": "2026-11-15",
+      "applyUrl": "https://cfmmc.zhaopin.com/",
+      "noticeUrl": "https://www.csrc.gov.cn/csrc/c100082/c7665663/content.shtml",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-14 21:15（北京时间）核验：证监会官网公布的正式校招启事，每人限报一个岗位。目录中6月的实习批次独立保留。"
     }
   ]
 }

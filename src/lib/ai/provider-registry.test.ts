@@ -79,15 +79,15 @@ describe("AI provider registry", () => {
     expect(getAiProvider("siliconflow").models).toContain("zai-org/GLM-5.3");
   });
 
-  it("offers verified October releases without replacing working saved model choices", () => {
+  it("offers verified model releases without replacing working saved model choices", () => {
     const additions: Record<string, string[]> = {
       moonshot: ["kimi-k3.1-pro", "kimi-k3.1-pro-highspeed"],
       openai: ["gpt-6.1-terra"],
       siliconflow: ["deepseek-ai/DeepSeek-V4.1-Flash", "zai-org/GLM-5.3-Flash"],
-      "anthropic-via-openrouter": ["anthropic/claude-haiku-5.5"],
-      "gemini-via-openrouter": ["google/gemini-4-argon"],
+      "anthropic-via-openrouter": ["anthropic/claude-fable-5.2", "anthropic/claude-haiku-5.5"],
+      "gemini-via-openrouter": ["google/gemini-4-argon", "google/gemini-4-carbon", "google/gemini-4-hydrogen"],
       mistral: ["mistral-large-4"],
-      openrouter: ["openai/gpt-6.1-terra", "anthropic/claude-haiku-5.5", "google/gemini-4-argon", "moonshotai/kimi-k3.1-pro", "minimax/minimax-m3.1-flash", "mistralai/mistral-large-4-0", "deepseek/deepseek-v4.1-flash-1017"],
+      openrouter: ["openai/gpt-6.1-terra", "anthropic/claude-fable-5.2", "anthropic/claude-haiku-5.5", "google/gemini-4-argon", "google/gemini-4-carbon", "google/gemini-4-hydrogen", "moonshotai/kimi-k3.1-pro", "minimax/minimax-m3.1-flash", "mistralai/mistral-large-4-0", "deepseek/deepseek-v4.1-flash-1017"],
     };
     for (const [id, models] of Object.entries(additions)) {
       expect(getAiProvider(id).models).toEqual(expect.arrayContaining(models));

@@ -23,7 +23,7 @@ export const AI_PROVIDER_GROUPS: Array<{ id: AiProviderGroupId; label: string }>
   { id: "custom", label: "自定义" },
 ];
 
-// Verified against provider documentation and gateway catalogs on 2026-10-31.
+// November 2026 additions verified against provider documentation and OpenRouter's model catalog.
 export const AI_PROVIDERS: AiProviderDefinition[] = [
   {
     id: "deepseek",
@@ -128,6 +128,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     baseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "anthropic/claude-fable-5.1",
     models: [
+      "anthropic/claude-fable-5.2",
       "anthropic/claude-fable-5.1",
       "anthropic/claude-opus-5.5",
       "anthropic/claude-sonnet-5.5",
@@ -142,6 +143,8 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     baseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "google/gemini-3.8-flash",
     models: [
+      "google/gemini-4-hydrogen",
+      "google/gemini-4-carbon",
       "google/gemini-3.8-flash",
       "google/gemini-4-argon",
       "google/gemini-3.5-flash-lite",
@@ -193,10 +196,13 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "openai/gpt-6-astra",
       "openai/gpt-5.6-terra",
       "openai/gpt-5.6-luna",
+      "anthropic/claude-fable-5.2",
       "anthropic/claude-fable-5.1",
       "anthropic/claude-opus-5.5",
       "anthropic/claude-sonnet-5.5",
       "anthropic/claude-haiku-5.5",
+      "google/gemini-4-hydrogen",
+      "google/gemini-4-carbon",
       "google/gemini-3.8-flash",
       "google/gemini-4-argon",
       "google/gemini-3.5-flash-lite",
