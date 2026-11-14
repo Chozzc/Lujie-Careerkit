@@ -42,6 +42,19 @@ async function fixture() {
   return { base, application, optimized };
 }
 
+it("returns the same application for concurrent tracking requests", async () => {
+  const job = await repo.createJob({ company: "Concurrent", title: "Tracking", jd: "Unique tracking test" });
+  const { POST } = await import("@/app/api/applications/route");
+  const responses = await Promise.all(Array.from({ length: 6 }, (_, index) => POST(new Request("http://localhost/api/applications", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jobId: job.id, notes: `request ${index}` }),
+  }))));
+  expect(responses.map((response) => response.status)).toEqual(Array(6).fill(200));
+  const records = await Promise.all(responses.map(async (response) => (await response.json()).application));
+  expect(records).toEqual(Array(6).fill(records[0]));
+  expect(await db.application.count({ where: { jobId: job.id } })).toBe(1);
+});
+
 it("returns a recoverable application conflict without overwriting notes or progress", async () => {
   const { application } = await fixture();
   await db.application.update({ where: { id: application.id }, data: { notes: "keep my interview notes", status: "INTERVIEW" } });

@@ -711,10 +711,13 @@ export async function createApplication(input: {
   interviewRound?: InterviewRound;
 }) {
   await ensureSeedData();
-  const existing = await prisma.application.findUnique({ where: { jobId: input.jobId } });
+  const findExisting = async () => {
+    const application = await database.application.findUnique({ where: { jobId: input.jobId } });
+    if (application?.deletedAt) throw new ApplicationInTrashError(application.id);
+    return application;
+  };
+  const existing = await findExisting();
   if (existing) return existing;
-  const trashed = await database.application.findUnique({ where: { jobId: input.jobId } });
-  if (trashed) throw new ApplicationInTrashError(trashed.id);
   const applicationStatus = input.status ?? "APPLIED";
   const interviewRound = normalizeApplicationInterviewRound(applicationStatus, input.interviewRound);
   const stageDate = input.stageDate ?? input.appliedAt ?? null;
@@ -735,6 +738,12 @@ export async function createApplication(input: {
       nextFollowUpAt: input.nextFollowUpAt ? new Date(input.nextFollowUpAt) : null,
       notes: input.notes || "已加入投递跟进。",
     },
+  }).catch(async (error: unknown) => {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const concurrent = await findExisting();
+      if (concurrent) return concurrent;
+    }
+    throw error;
   });
 }
 

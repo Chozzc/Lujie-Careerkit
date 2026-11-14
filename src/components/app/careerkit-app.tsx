@@ -763,7 +763,7 @@ export function CareerKitApp({
         appliedAt: new Date().toISOString().slice(0, 10),
         notes: "从 JD 匹配加入投递跟进。",
       })) as { application: ApplicationView };
-      setApplications((current) => [normalizeApplication(result.application), ...current]);
+      setApplications((current) => [normalizeApplication(result.application), ...current.filter((item) => item.id !== result.application.id)]);
       setToast("已加入投递岗位跟进。");
     } catch (error) {
       setToast(`加入投递跟进失败：${formatRequestError(error)}`);
