@@ -82,10 +82,11 @@ describe("AI provider registry", () => {
   it("offers verified model releases without replacing working saved model choices", () => {
     const additions: Record<string, string[]> = {
       moonshot: ["kimi-k3.1-pro", "kimi-k3.1-pro-highspeed"],
-      openai: ["gpt-6.1-terra"],
+      openai: ["gpt-6.2-sol", "gpt-6.2-astra", "gpt-6.1-terra"],
+      qwen: ["qwen4-max"],
       siliconflow: ["deepseek-ai/DeepSeek-V4.1-Flash", "zai-org/GLM-5.3-Flash"],
       "anthropic-via-openrouter": ["anthropic/claude-fable-5.2", "anthropic/claude-haiku-5.5"],
-      "gemini-via-openrouter": ["google/gemini-4-argon", "google/gemini-4-carbon", "google/gemini-4-hydrogen"],
+      "gemini-via-openrouter": ["google/gemini-4-neon", "google/gemini-4-argon", "google/gemini-4-carbon", "google/gemini-4-hydrogen"],
       mistral: ["mistral-large-4"],
       openrouter: ["openai/gpt-6.1-terra", "anthropic/claude-fable-5.2", "anthropic/claude-haiku-5.5", "google/gemini-4-argon", "google/gemini-4-carbon", "google/gemini-4-hydrogen", "moonshotai/kimi-k3.1-pro", "minimax/minimax-m3.1-flash", "mistralai/mistral-large-4-0", "deepseek/deepseek-v4.1-flash-1017"],
     };
@@ -93,6 +94,10 @@ describe("AI provider registry", () => {
       expect(getAiProvider(id).models).toEqual(expect.arrayContaining(models));
       expect(new Set(getAiProvider(id).models).size).toBe(getAiProvider(id).models.length);
     }
+    expect(getAiProvider("openrouter").models).toEqual(expect.arrayContaining([
+      "openai/gpt-6.2-sol", "openai/gpt-6.2-astra", "google/gemini-4-neon", "qwen/qwen4-max",
+      "tencent/hy4-flash", "thinkingmachines/inkling-2-mini",
+    ]));
     expect(getDefaultAiModel("moonshot")).toBe("kimi-k3.1-pro");
     expect(getCurrentAiModel("moonshot", "kimi-k2.5")).toBe("kimi-k3.1-pro");
     expect(getCurrentAiModel("moonshot", "kimi-k2.6")).toBe("kimi-k2.6");

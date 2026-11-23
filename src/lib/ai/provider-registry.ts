@@ -49,6 +49,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     defaultModel: "qwen3.8-flash",
     models: [
       "qwen3.8-flash",
+      "qwen4-max",
       "qwen3.8-max",
       "qwen3.7-plus",
       "qwen3.7-flash",
@@ -112,6 +113,8 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     baseUrl: "https://api.openai.com/v1",
     defaultModel: "gpt-6-luna",
     models: [
+      "gpt-6.2-sol",
+      "gpt-6.2-astra",
       "gpt-6-luna",
       "gpt-6.1-sol",
       "gpt-6.1-terra",
@@ -143,6 +146,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     baseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "google/gemini-3.8-flash",
     models: [
+      "google/gemini-4-neon",
       "google/gemini-4-hydrogen",
       "google/gemini-4-carbon",
       "google/gemini-3.8-flash",
@@ -190,6 +194,8 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
     baseUrl: "https://openrouter.ai/api/v1",
     defaultModel: "openai/gpt-6.1-sol",
     models: [
+      "openai/gpt-6.2-sol",
+      "openai/gpt-6.2-astra",
       "openai/gpt-6.1-sol",
       "openai/gpt-6.1-terra",
       "openai/gpt-6-luna",
@@ -201,6 +207,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "anthropic/claude-opus-5.5",
       "anthropic/claude-sonnet-5.5",
       "anthropic/claude-haiku-5.5",
+      "google/gemini-4-neon",
       "google/gemini-4-hydrogen",
       "google/gemini-4-carbon",
       "google/gemini-3.8-flash",
@@ -210,6 +217,7 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "deepseek/deepseek-v4-pro",
       "deepseek/deepseek-v4.1-flash",
       "deepseek/deepseek-v4.1-flash-1017",
+      "qwen/qwen4-max",
       "qwen/qwen3.8-flash",
       "qwen/qwen3.8-max-0902",
       "qwen/qwen3.8-max-prime",
@@ -226,6 +234,8 @@ export const AI_PROVIDERS: AiProviderDefinition[] = [
       "x-ai/grok-4.7",
       "mistralai/mistral-medium-3-5",
       "mistralai/mistral-large-4-0",
+      "tencent/hy4-flash",
+      "thinkingmachines/inkling-2-mini",
       "openai/gpt-oss-120b",
     ],
   },

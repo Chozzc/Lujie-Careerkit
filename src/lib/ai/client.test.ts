@@ -24,6 +24,32 @@ it("uses OpenAI Responses and omits unsupported temperature for GPT-6", () => {
   expect(getAiTemperature({ ...settings, providerId: "qwen", model: "qwen3.8-flash" })).toBe(0.3);
 });
 
+it("sends GPT-6.2 instructions and tools through the Responses API", async () => {
+  const fetch = vi.fn(async (_url: string, _init: RequestInit) => Response.json({
+    id: "resp_test", created_at: 0, model: "gpt-6.2-sol", status: "completed", output: [],
+    usage: { input_tokens: 1, input_tokens_details: { cached_tokens: 0 }, output_tokens: 1, output_tokens_details: { reasoning_tokens: 0 }, total_tokens: 2 },
+  }));
+  vi.stubGlobal("fetch", fetch);
+  try {
+    const provider = getAiProvider("openai");
+    for (const modelId of ["gpt-6.2-sol", "gpt-6.2-astra"]) {
+      const config: EffectiveAiSettings = { provider, providerId: provider.id, model: modelId, baseUrl: provider.baseUrl,
+        apiKey: "synthetic-key", enabled: true, temperature: 0.3, requiresApiKey: true };
+      await generateText({ model: createAiModel(config), temperature: getAiTemperature(config),
+        system: "Help with career planning.", prompt: "Find jobs", tools: { lookup: tool({ inputSchema: z.object({}) }) } });
+      const [url, request] = fetch.mock.lastCall!;
+      expect(url).toBe("https://api.openai.com/v1/responses");
+      const body = JSON.parse(String(request.body));
+      expect(body.model).toBe(modelId);
+      expect(body.input[0]).toEqual({ role: "developer", content: "Help with career planning." });
+      expect(body.tools).toEqual([expect.objectContaining({ name: "lookup" })]);
+      expect(body).not.toHaveProperty("temperature");
+    }
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
 it("keeps MiniMax reasoning separate in generated and streamed responses", async () => {
   const requests: { url: string; body: Record<string, unknown> }[] = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {

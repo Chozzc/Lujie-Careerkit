@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceName": "27届实习校招投递表与招聘公告增补",
-  "preparedAt": "2026-11-14",
+  "preparedAt": "2026-11-23",
   "records": [
     {
       "id": "fs-fdb9a3ef69f0e039",
@@ -68288,6 +68288,320 @@
       ],
       "sourceRows": "",
       "reviewNote": "2026-11-14 21:15（北京时间）核验：证监会官网公布的正式校招启事，每人限报一个岗位。目录中6月的实习批次独立保留。"
+    },
+    {
+      "id": "research-20261123-cfa",
+      "company": "中国期货业协会",
+      "companyType": "行业协会",
+      "industry": "银行/金融/证券/保险",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "北京西城区",
+      "positions": "法律、金融统计、财务",
+      "updatedAt": "2026-11-20",
+      "deadlineRaw": "2026年11月20日至12月20日",
+      "deadlineDate": "2026-12-20",
+      "applyUrl": null,
+      "noticeUrl": "https://www.csrc.gov.cn/csrc/c100082/c7672196/content.shtml",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：证监会刊发招聘公告。按公告下载申请表并通过指定邮箱投递。"
+    },
+    {
+      "id": "research-20261123-shfe-ine",
+      "company": "上海国际能源交易中心股份有限公司",
+      "companyType": "央国企",
+      "industry": "银行/金融/证券/保险",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "金融经管、信息技术、综合管理；面向硕士及以上学历应届毕业生",
+      "updatedAt": "2026-11-20",
+      "deadlineRaw": "2026年12月13日24点（北京时间）",
+      "deadlineDate": "2026-12-13",
+      "applyUrl": "https://shfe.zhaopin.com/",
+      "noticeUrl": "https://www.csrc.gov.cn/csrc/c100082/c7671957/content.shtml",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：证监会刊发招聘公告。仅收录其中的校园招聘，每人限一个志愿。"
+    },
+    {
+      "id": "research-20261123-chinare",
+      "company": "中国再保险（集团）股份有限公司",
+      "companyType": "央国企",
+      "industry": "银行/金融/证券/保险",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "集团及子公司的金融保险、信息科技和综合类岗位，含数据管理、精算定价、人工智能和AI应用开发",
+      "updatedAt": null,
+      "deadlineRaw": "2026年11月30日",
+      "deadlineDate": "2026-11-30",
+      "applyUrl": "https://chinare.zhiye.com/campus",
+      "noticeUrl": "https://www.chinare.com.cn/zhzjt/rlzy2018/index.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：招聘方官网公告。最多可投集团总部及子公司合计三个岗位；官网公告未标发布日期。"
+    },
+    {
+      "id": "research-20261123-cndg",
+      "company": "国家数据集团有限公司",
+      "companyType": "央国企",
+      "industry": "互联网/数据服务",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "数据及技术方向、市场营销和职能方向；含数源拓展、生态合作、财务、人力和法务",
+      "updatedAt": "2026-11-01",
+      "deadlineRaw": "2026年11月30日17:00",
+      "deadlineDate": "2026-11-30",
+      "applyUrl": "https://cndg.iguopin.com/",
+      "noticeUrl": "https://career.hebut.edu.cn/home/correcruit/content/id/82269.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：中国雄安官网11月1日刊载启动消息，河北工业大学就业网刊载简章和截止时间。每人限报一个岗位；投递入口具体职位待核实。"
+    },
+    {
+      "id": "research-20261123-bjbus",
+      "company": "北京公共交通控股（集团）有限公司",
+      "companyType": "地方国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "北京",
+      "positions": "计划招聘41人，含总部管理培训生、业务数据分析、审计，以及所属单位的会计、法务和教师等",
+      "updatedAt": "2026-11-12",
+      "deadlineRaw": "2026年11月24日",
+      "deadlineDate": "2026-11-24",
+      "applyUrl": "https://bjbus.iguopin.com/",
+      "noticeUrl": "https://jy.buu.edu.cn/art/2026/11/16/art_29313_841301.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：北京联合大学就业网转载集团11月12日公告；北京市国资委11月16日列出同一批次。每人限报一个职位。"
+    },
+    {
+      "id": "research-20261123-sgcc",
+      "company": "国家电网有限公司",
+      "companyType": "央国企",
+      "industry": "能源/电力",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "全国，按所属单位公告",
+      "positions": "2027年高校毕业生第一批招聘，岗位及要求以招聘平台各所属单位和交易机构公告为准",
+      "updatedAt": "2026-11-19",
+      "deadlineRaw": "填报截止日期以各单位招聘公告为准",
+      "deadlineDate": null,
+      "applyUrl": "https://zhaopin.sgcc.com.cn",
+      "noticeUrl": "https://www.gzhgz.com/show-4014-60291.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：已读国家电网公告转载，国务院国资委招聘栏目11月19日刊发同名公告。集团正文要求按各单位的截止日期报名；统一笔试暂定12月6日。"
+    },
+    {
+      "id": "research-20261123-sgcc-shanghai",
+      "company": "国网上海市电力公司",
+      "companyType": "央国企",
+      "industry": "能源/电力",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "上海",
+      "positions": "第一批，计划招聘约335人，主要为生产一线技术和技能岗位；按公告岗位表",
+      "updatedAt": "2026-11-17",
+      "deadlineRaw": "2026年11月25日",
+      "deadlineDate": "2026-11-25",
+      "applyUrl": "https://zhaopin.sgcc.com.cn",
+      "noticeUrl": "https://sh.bendibao.com/job/gongkao/exam164761.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：上海本地宝转载国网上海电力第一批公告；公告站返回访问限制，截止日依据转载正文。计划人数含提前批。"
+    },
+    {
+      "id": "research-20261123-chngc",
+      "company": "中国金币集团有限公司",
+      "companyType": "央国企",
+      "industry": "银行/金融/证券/保险",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "北京",
+      "positions": "集团总部业务类和综合管理类管培生；北京开元中国金币经销中心相关管理岗位",
+      "updatedAt": "2026-11-17",
+      "deadlineRaw": "2026年11月17日至12月6日",
+      "deadlineDate": "2026-12-06",
+      "applyUrl": "https://chngc.zhaopin.com",
+      "noticeUrl": "https://www.fenbi.com/page/fenxiaozhaokaodetail/16/159/470526656017408",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：粉笔转载招聘方署名公告；每人最多报集团和北京开元各一岗。网申站实际岗位状态待核实。"
+    },
+    {
+      "id": "research-20261123-ccoopg",
+      "company": "中国供销集团有限公司",
+      "companyType": "央国企",
+      "industry": "",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "经济、财会、法律、管理、计算机五类岗位",
+      "updatedAt": "2026-11-19",
+      "deadlineRaw": "2026年11月12日至12月6日（北京时间）",
+      "deadlineDate": "2026-12-06",
+      "applyUrl": "https://zggxjt.iguopin.com/",
+      "noticeUrl": "https://jy.buu.edu.cn/art/2026/11/19/art_29313_843697.html",
+      "exams": [
+        "需要笔试"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：北京联合大学就业网11月19日转载集团招聘公告。岗位所在地以国聘岗位信息为准。"
+    },
+    {
+      "id": "research-20261123-cdrail-a",
+      "company": "中国铁路成都局集团有限公司",
+      "companyType": "央国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "",
+      "positions": "2027年度招聘高校毕业生公告（一）；计划招聘1,069人，本科及以上，详见岗位信息表（一）",
+      "updatedAt": "2026-11-16",
+      "deadlineRaw": "2026年11月17日至12月16日",
+      "deadlineDate": "2026-12-16",
+      "applyUrl": "https://www.cd-rail.com/Talent/login",
+      "noticeUrl": "https://www.gzhgz.com/show-4014-60246.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：已读招聘方公告转载，四川文理学院亦刊载校招公告。2026届限未就业者，每人限报一岗。考试考核方式依招聘通知。"
+    },
+    {
+      "id": "research-20261123-cdrail-b",
+      "company": "中国铁路成都局集团有限公司",
+      "companyType": "央国企",
+      "industry": "交通运输/物流仓储",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届",
+        "2026届"
+      ],
+      "location": "",
+      "positions": "2027年度招聘高校毕业生公告（二）；计划招聘3,160人，大专（高职），详见岗位信息表（二）",
+      "updatedAt": "2026-11-16",
+      "deadlineRaw": "2026年11月17日至12月6日",
+      "deadlineDate": "2026-12-06",
+      "applyUrl": "https://www.cd-rail.com/Talent/login",
+      "noticeUrl": "https://www.gzhgz.com/show-4014-60247.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：已读招聘方公告转载，四川文理学院亦刊载校招公告。2026届限未就业者，每人限报一岗。考试考核方式依招聘通知。"
+    },
+    {
+      "id": "research-20261123-4399-supplement",
+      "company": "4399",
+      "companyType": "民营企业",
+      "industry": "游戏",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "秋招补录绿色通道，覆盖策划、技术、美术、国内及海外运营和职能方向",
+      "updatedAt": "2026-11-18",
+      "deadlineRaw": "",
+      "deadlineDate": null,
+      "applyUrl": "http://web.4399.com/campus/",
+      "noticeUrl": "https://sem2.tongji.edu.cn/62/4e/c26118a418382/page.htm",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：同济大学经济与管理学院刊载的独立补录通道，7月常规秋招记录保留。公告未列统一截止日；投递详情见公告。"
+    },
+    {
+      "id": "research-20261123-jigang",
+      "company": "济钢集团",
+      "companyType": "地方国企",
+      "industry": "机械/制造",
+      "recruitmentTypes": [
+        "秋招"
+      ],
+      "targets": [
+        "2027届"
+      ],
+      "location": "",
+      "positions": "2027年高校毕业生校招计划165人，专业与单位见招聘明细表",
+      "updatedAt": "2026-11-11",
+      "deadlineRaw": "2026年11月27日17:00",
+      "deadlineDate": "2026-11-27",
+      "applyUrl": null,
+      "noticeUrl": "https://jnhrss.jinan.gov.cn/col/col18309/art/2026/art_9a7cb00e8c154e12b0116e239a1b4ce9.html",
+      "exams": [
+        "未明确"
+      ],
+      "sourceRows": "",
+      "reviewNote": "2026-11-23 20:05（北京时间）核验：济南市人社局刊载校招信息，按公告二维码获取完整岗位和报名说明。"
     }
   ]
 }
