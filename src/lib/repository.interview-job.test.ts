@@ -29,9 +29,9 @@ describe("interview job attribution", () => {
     });
   });
 
-  it("reuses the existing Job by identical JD and keeps its canonical company and title", async () => {
+  it("keeps the explicitly selected Job even when generated labels differ", async () => {
     const job = { id: "job-byte", company: "字节跳动", title: "AI产品实习生-AI数据与安全", jd: "相同 JD" };
-    db.job.findFirst.mockResolvedValue(job);
+    db.job.findUnique.mockResolvedValue(job);
     db.interviewSession.create.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({
       ...data,
       id: "session-1",
@@ -43,7 +43,7 @@ describe("interview job attribution", () => {
     }));
 
     const session = await interviewSessionRepository.create({
-      jobId: null,
+      jobId: job.id,
       resumeVersionId: null,
       mode: "comprehensive",
       status: "IN_PROGRESS",
@@ -55,7 +55,7 @@ describe("interview job attribution", () => {
       completedAt: null,
     });
 
-    expect(db.job.findFirst).toHaveBeenCalledWith({ where: { jd: "相同 JD" }, orderBy: { updatedAt: "desc" } });
+    expect(db.job.findUnique).toHaveBeenCalledWith({ where: { id: job.id } });
     expect(db.job.create).not.toHaveBeenCalled();
     expect(db.interviewSession.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({ jobId: "job-byte", context: expect.objectContaining({ company: "字节跳动", title: "AI产品实习生-AI数据与安全" }) }),

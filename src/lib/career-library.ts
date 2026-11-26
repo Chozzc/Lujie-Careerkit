@@ -108,16 +108,18 @@ export function buildCareerArtifacts(data: CareerLibraryData, inferJobFromDescri
     jobId,
     resumeVersionId,
     jd,
-    createdAt,
+    company,
+    title,
   }: {
     jobId: string | null;
     resumeVersionId: string | null;
     jd: string;
-    createdAt: string;
+    company: string;
+    title: string;
   }) =>
     (jobId ? jobsById.get(jobId) : undefined) ??
     (resumeVersionId ? jobsById.get(versionsById.get(resumeVersionId)?.jobId ?? "") : undefined) ??
-    (inferJobFromDescription ? closestJob(jobsByJd.get(normalizeJobDescription(jd)) ?? [], createdAt) : undefined);
+    (inferJobFromDescription ? uniqueJob(jobsByJd.get(normalizeJobDescription(jd)) ?? [], company, title) : undefined);
   const artifacts: CareerArtifact[] = [];
 
   for (const version of data.versions) {
@@ -173,7 +175,8 @@ export function buildCareerArtifacts(data: CareerLibraryData, inferJobFromDescri
       jobId: preparation.jobId,
       resumeVersionId: preparation.resumeVersionId,
       jd: preparation.context.jd,
-      createdAt: preparation.createdAt,
+      company: preparation.content.meta.company,
+      title: preparation.content.meta.title,
     });
     const company = job?.company ?? preparation.content.meta.company;
     const role = job?.title ?? preparation.content.meta.title;
@@ -202,7 +205,8 @@ export function buildCareerArtifacts(data: CareerLibraryData, inferJobFromDescri
       jobId: interview.jobId,
       resumeVersionId: interview.resumeVersionId,
       jd: interview.context.jd,
-      createdAt: interview.createdAt,
+      company: interview.context.company,
+      title: interview.context.title,
     });
     const company = job?.company ?? interview.context.company;
     const role = job?.title ?? interview.context.title;
@@ -441,17 +445,9 @@ function normalizeJobDescription(value: string) {
   return value.normalize("NFKC").replace(/\s+/g, " ").trim();
 }
 
-function closestJob(jobs: JobView[], createdAt: string) {
-  if (!jobs.length) return undefined;
-  const target = Date.parse(createdAt);
-  if (!Number.isFinite(target)) return jobs[0];
-  const previous = jobs
-    .filter((job) => Date.parse(job.createdAt) <= target)
-    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
-  if (previous[0]) return previous[0];
-  return [...jobs].sort(
-    (left, right) => Math.abs(Date.parse(left.createdAt) - target) - Math.abs(Date.parse(right.createdAt) - target),
-  )[0];
+function uniqueJob(jobs: JobView[], company: string, title: string) {
+  const matches = jobs.filter((job) => job.company.trim() === company.trim() && job.title.trim() === title.trim());
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 function isPlaceholderCompany(company: string) {

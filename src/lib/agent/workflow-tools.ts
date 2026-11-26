@@ -12,11 +12,10 @@ import { createInterviewSessionInputSchema, interviewModeSchema } from "@/lib/in
 import { analyzeJobInput } from "@/lib/job-analysis";
 import {
   createInterviewPreparationRecord,
-  createJob,
   createResumeVersion,
   createTailoredVersionForJob,
   getAppData,
-  getTailoringBaseResume,
+  getTailoringSource,
   updateResumeVersion,
 } from "@/lib/repository";
 import type { JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "@/lib/types";
@@ -121,10 +120,10 @@ export async function createJdTailoredResume(
   const title = existingJob?.title ?? input.title?.trim() ?? "";
   if (!company || !title) throw new Error("创建岗位前需要明确公司和岗位名称。");
 
-  const baseResume = await getTailoringBaseResume({ resumeVersionId: input.resumeVersionId });
+  const source = await getTailoringSource({ resumeVersionId: input.resumeVersionId });
   const analysis = withConfirmedJobIdentity(analyzeJobInput(`${company} - ${title}\n${jd}`), company, title);
   const tailored = await tailorResumeWithAI({
-    resume: baseResume,
+    resume: source.content,
     jd,
     job: { id: existingJob?.id ?? "new-job", company, title },
     analysis,
@@ -134,15 +133,14 @@ export async function createJdTailoredResume(
   if (tailored.source !== "ai") throw new Error(tailored.message);
   const effectiveAnalysis = mergeTailoringAnalysis(analysis, tailored.meta);
 
-  const job = existingJob ?? await createJob({ company, title, jd, source: "录阶 Agent" });
   const version = await createTailoredVersionForJob({
-    jobId: job.id,
-    resumeVersionId: input.resumeVersionId,
+    target: existingJob ? { jobId: existingJob.id, expectedJd: existingJob.jd } : { newJob: { company, title, jd, source: "录阶 Agent" } },
+    source,
     tailoredContent: tailored.data,
     analysis: effectiveAnalysis,
     optimizationMeta: tailored.meta,
   });
-  const savedJob = (await getAppData()).jobs.find((item) => item.id === job.id);
+  const savedJob = version.job;
   if (!savedJob) throw new Error("定制简历已生成，但岗位回读失败。");
   return {
     operation: "created" as const,

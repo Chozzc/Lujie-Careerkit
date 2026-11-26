@@ -155,21 +155,26 @@ For company- or role-specific tasks, the skills proactively research current inf
 
 ## Data and Privacy
 
-- Resume content, resume versions, jobs, applications, interview prep guides, mock sessions, agent conversations, and settings are stored in `prisma/dev.db`.
-- Docker stores personal data in its mounted volume. Local source runs, Docker and the online preview do not automatically synchronize personal data.
+- When running from source, resume content, resume versions, jobs, applications, interview prep guides, mock sessions, agent conversations, and settings are stored in `prisma/dev.db`.
+- The desktop app keeps `careerkit.db` and `settings.key` in its application data directory. When moving to another computer, close LuJie and back up both files together.
+- Docker stores personal data in its mounted volume. Desktop installations, local source runs, Docker and the online preview do not automatically synchronize personal data.
 - API keys are configured from the in-app Settings page. They are encrypted before being saved to SQLite.
 - `LUJIE_SETTINGS_SECRET` is the local encryption secret for saved AI keys. Use a long random value in `.env.local`.
 - AI tasks send the required resume, JD, or conversation content to your configured model provider. Local storage does not make AI requests fully offline. Agent resume reads filter contact information such as email addresses and phone numbers.
 
 ## Quick Start
 
-### Requirements
+### Desktop installation (recommended)
+
+Choose an installer from the `v0.5.0` assets on [GitHub Releases](https://github.com/Chozzc/Lujie-Careerkit/releases). Use `.exe` for Windows x64, `aarch64.dmg` for Apple silicon Macs, `x64.dmg` for Intel Macs, or `.deb` or `.AppImage` for Linux x64. Open LuJie to enter the workspace.
+
+### Requirements for running from source
 
 - Node.js 20.9 or later
 - npm
 - Chrome or Edge for the best browser speech experience
 
-### Docker Deployment (Recommended)
+### Docker Deployment
 
 ```bash
 docker run -d --name lujie-careerkit \
@@ -237,6 +242,25 @@ AI is available after saving a valid configuration; test the connection first. A
 
 ## Release Notes
 
+### v0.5.0
+
+LuJie now runs as a desktop app. You can recover deleted career materials from Trash and switch to a list to find applications by company or stage.
+
+#### Desktop installation and updates
+
+- Installers are available for Windows x64, macOS (Apple silicon and Intel), and Linux x64. Each includes its own runtime and stores resumes, applications, and AI settings on your computer.
+- Before upgrading the database, the desktop app backs up the database and its settings key. When you open the app, it offers a download link if a newer installer is available for your platform.
+
+#### Career materials and Trash
+
+- Restore job descriptions, interview prep guides, and mock interview materials after removing them from the library. Trash also holds deleted resume versions, applications, and agent conversations.
+- Restore one item or all items. Permanently deleting an item or emptying Trash requires confirmation.
+
+#### Application tracking and resume editing
+
+- Switch between a board and a list. Search by company or role, filter by stage or source, and sort by date. Adding the same role to tracking again reuses its existing application.
+- Import scanned resumes with your selected vision model. Reorder entries, choose a compact layout, and add logos. Starting an optimization immediately after editing links the result to the resume version you just saved.
+
 ### v0.4.0
 
 Campus recruitment and expanded in-app agent workflows, with stronger saving and operation-confirmation safeguards.
@@ -288,13 +312,6 @@ Campus recruitment and expanded in-app agent workflows, with stronger saving and
 - Added six structured sample roles and one complete Baidu workflow covering a base resume, tailored resume, professional interview preparation, eight complete mock answers, per-question feedback, and an AI review.
 - Added “Remove sample data” in Settings. It removes built-in sample roles, the sample resume, and generated sample materials while preserving user-created data and AI settings. “Reset and restore sample data” remains the full local reset action.
 
-### v0.2.5
-
-#### Turn refined job-search workflows into Agent Skills
-
-- Packaged LuJie's refined workflows for resume improvement, interview preparation, mock interviews, and job application writing as four Agent Skills.
-- The skills live under `.agents/skills`, where Codex can discover them inside the repository and other coding agents such as Claude Code can read and reuse the same workflows.
-
 ## FAQ
 
 ### 1. Do I need an API key to use it?
@@ -303,7 +320,7 @@ No. Resume editing, materials browsing, and application tracking work locally. T
 
 ### 2. Where is my data stored?
 
-Source-based local runs default to `prisma/dev.db`; Docker uses its mounted volume. The online preview stores personal data in the current browser. Back up the database together with its encryption secret. Neither should be committed to GitHub.
+The desktop app uses its application data directory. Source-based local runs default to `prisma/dev.db`; Docker uses its mounted volume. The online preview stores personal data in the current browser. Back up the database together with its encryption secret. Neither should be committed to GitHub.
 
 ### 3. How are Dashboard metrics calculated?
 

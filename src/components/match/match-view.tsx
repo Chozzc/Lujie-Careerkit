@@ -314,7 +314,7 @@ export function MatchView({
 
       if (nextResult.version) {
         setResult(nextResult);
-        setResultBaseResume(selectedBaseResume);
+        setResultBaseResume(readTailoringBaseResume(nextResult.version.content) ?? selectedBaseResume);
         setOptimizedDraft(nextResult.version.content);
         setScreen("result");
         setSaveStatus(t("status.generated"));

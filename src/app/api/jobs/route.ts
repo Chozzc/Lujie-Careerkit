@@ -20,6 +20,13 @@ export function GET() {
 export async function POST(request: Request) {
   const parsed = await parseJsonRequest(request, jobSchema);
   if (!parsed.success) return parsed.response;
-  const job = await createJob(parsed.data);
-  return Response.json({ job });
+  try {
+    const job = await createJob(parsed.data);
+    return Response.json({ job });
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("多个岗位符合")) {
+      return Response.json({ error: error.message }, { status: 409 });
+    }
+    throw error;
+  }
 }

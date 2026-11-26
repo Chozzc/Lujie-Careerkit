@@ -682,75 +682,19 @@ export function CareerKitApp({
     if (!jd) throw new Error("请先粘贴职位描述 / 任职要求。");
     if (!isAiReady(aiSettings)) throw new Error(aiReadinessMessage(aiSettings));
 
-    const result = (await postJson("/api/jobs", {
-      company: "待填写公司",
-      title: "待分析岗位",
-      city: "待填写",
-      source: "JD匹配优化",
-      deadline: null,
-      link: "",
-      jd,
-    })) as { job: JobView };
-    const job = normalizeJob(result.job);
-
-    setJobs((current) => [job, ...current.filter((item) => item.id !== job.id)]);
-
-    let tailored: {
-      analysis: JobAnalysis;
+    const tailored = await postJson("/api/ai/resume-tailor", { ...input, jd }) as {
+      job: JobView;
       version: ResumeVersionView;
+      analysis: JobAnalysis;
       optimization?: ResumeOptimizationMeta;
-      source?: "ai" | "fallback";
       message?: string;
     };
-    try {
-      tailored = (await postJson("/api/ai/resume-tailor", {
-        jobId: job.id,
-        jd,
-        resumeVersionId: input.resumeVersionId,
-        resumeContent: input.resumeContent,
-        preferences: input.preferences,
-      })) as {
-        analysis: JobAnalysis;
-        version: ResumeVersionView;
-        optimization?: ResumeOptimizationMeta;
-        source?: "ai" | "fallback";
-        message?: string;
-      };
-    } catch (error) {
-      throw error;
-    }
+    const job = normalizeJob(tailored.job);
     const version = normalizeVersion(tailored.version);
-
-    setJobs((current) =>
-      current.map((item) =>
-        item.id === job.id
-          ? {
-              ...item,
-              company: cleanOptimizationLabel(tailored.analysis.company) || item.company,
-              title: cleanOptimizationLabel(tailored.analysis.title) || item.title,
-              analysis: tailored.analysis,
-            }
-          : item,
-      ),
-    );
+    setJobs((current) => [job, ...current.filter((item) => item.id !== job.id)]);
     setVersions((current) => [version, ...current]);
-    setToast(
-      tailored.message ??
-        `${cleanOptimizationLabel(tailored.analysis.title) || "目标岗位"}的优化后简历已生成。`,
-    );
-
-    return {
-      job: {
-        ...job,
-        company: cleanOptimizationLabel(tailored.analysis.company) || job.company,
-        title: cleanOptimizationLabel(tailored.analysis.title) || job.title,
-        analysis: tailored.analysis,
-      },
-      analysis: tailored.analysis,
-      version,
-      optimization: tailored.optimization,
-      message: tailored.message,
-    };
+    setToast(tailored.message ?? "优化后简历已生成。");
+    return { ...tailored, job, version };
   }
 
   async function trackMatchedJob(jobId: string, resumeVersionId: string) {
@@ -1400,13 +1344,6 @@ function isResumeContentRecord(value: unknown): value is ResumeContent {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Partial<ResumeContent>;
   return Boolean(record.basics && record.profile && Array.isArray(record.projects) && Array.isArray(record.skills));
-}
-
-function cleanOptimizationLabel(value?: string | null) {
-  const text = value?.trim() ?? "";
-  if (!text) return "";
-  if (/待|未知|未识别|目标公司|目标岗位/.test(text)) return "";
-  return text.length > 100 ? "" : text;
 }
 
 function emptyResume(): ResumeContent {

@@ -188,9 +188,14 @@ export async function applyApplicationChange(input: ApplicationChangeInput) {
   }
 
   let job = input.jobId ? current.jobs.find((item) => item.id === input.jobId) : undefined;
+  if (input.jobId && !job) throw new Error("找不到指定岗位，请重新选择。");
   if (!job && input.company && input.title) {
     const identity = jobIdentity(input.company, input.title);
-    job = current.jobs.find((item) => jobIdentity(item.company, item.title) === identity);
+    const matches = current.jobs.filter((item) => jobIdentity(item.company, item.title) === identity
+      && (!input.jd || item.jd === input.jd) && (!input.city || item.city === input.city)
+      && (!input.link || item.link === input.link));
+    if (matches.length > 1) throw new Error("多个岗位符合这些资料，请先选择具体岗位。");
+    [job] = matches;
   }
   if (!job) {
     const company = input.company?.trim();

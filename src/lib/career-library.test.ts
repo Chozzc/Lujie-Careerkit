@@ -149,14 +149,14 @@ describe("career library", () => {
     expect(virtual?.id).toMatch(/^virtual-/);
   });
 
-  it("binds interview outcomes through a tailored resume first and the exact JD second", () => {
+  it("uses the linked resume or a unique matching company, role and JD", () => {
     const data = makeData();
     const preparation = makePreparation("prep-linked", "interview-draft-job", "不同展示名", "不同岗位名");
     preparation.resumeVersionId = "tailored";
-    const interview = makeInterview("session-linked", "interview-draft-job", "另一展示名", "另一岗位名");
+    const interview = makeInterview("session-linked", null, data.jobs[0].company, data.jobs[0].title);
     interview.resumeVersionId = null;
     interview.context.jd = data.jobs[0].jd;
-    interview.createdAt = "2026-08-05T00:00:00.000Z";
+    data.jobs.push({ ...data.jobs[0], id: "other-company", company: "另一家公司" });
     data.interviewPreparations = [preparation];
     data.interviews = [interview];
 
@@ -172,6 +172,17 @@ describe("career library", () => {
       company: "字节跳动",
       role: "AI 产品经理",
     });
+  });
+
+  it("keeps an unlinked interview separate when company, title and JD match multiple jobs", () => {
+    const data = makeData();
+    const job = data.jobs[0];
+    data.jobs.push({ ...job, id: "different-posting" });
+    const interview = makeInterview("ambiguous", null, job.company, job.title);
+    interview.resumeVersionId = null;
+    interview.context.jd = job.jd;
+    data.interviews = [interview];
+    expect(buildCareerArtifacts(data).find((item) => item.id === interview.id)?.jobId).toBeNull();
   });
 
   it("only exposes tree nodes backed by data and parses deep links", () => {
@@ -259,7 +270,7 @@ function makePreparation(
 
 function makeInterview(
   id: string,
-  jobId: string,
+  jobId: string | null,
   company: string,
   title: string,
 ): InterviewSessionRecord {

@@ -1162,7 +1162,7 @@ export async function exportResumeAsEditableDocx(resume: Resume) {
   const visibleSections = resume.sections.filter((section) => section.visible !== false);
   const personalSection = visibleSections.find((section) => section.type === "personal_info");
   const personal = getRecord(personalSection?.content);
-  const name = getString(personal.fullName) || resume.title;
+  const name = getString(personal.fullName) || getExportTitle(resume);
   const jobTitle = getString(personal.jobTitle);
   const docxTheme = buildDocxThemeConfig(resume.themeConfig);
   const contacts = [...new Set([
@@ -1429,7 +1429,15 @@ function waitForNextFrame() {
 }
 
 function buildExportName(resume: Resume) {
-  return sanitizeFileName(resume.title || "录阶简历");
+  return sanitizeFileName(getExportTitle(resume));
+}
+
+function getExportTitle(resume: Resume) {
+  // The automatic title can contain the name or contact details the user hid.
+  if (resume.sections.some((section) => section.type === "personal_info" && section.visible === false)) {
+    return resume.language.startsWith("en") ? "Resume" : "简历";
+  }
+  return resume.title;
 }
 
 function sanitizeFileName(value: string) {

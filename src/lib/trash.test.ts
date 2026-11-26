@@ -42,6 +42,41 @@ async function fixture() {
   return { base, application, optimized };
 }
 
+it("tracks distinct companies using the same JD and keeps concurrent retries on the same card", async () => {
+  const { POST: postJob } = await import("@/app/api/jobs/route");
+  const { POST: postApplication } = await import("@/app/api/applications/route");
+  const request = (body: object) => new Request("http://localhost/api", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  async function track(company: string) {
+    const response = await postJob(request({ company, title: "实习生", jd: "统一模板 JD" }));
+    expect(response.status).toBe(200);
+    const { job } = await response.json();
+    const card = await postApplication(request({ jobId: job.id, notes: company }));
+    expect(card.status).toBe(200);
+    return (await card.json()).application;
+  }
+  const [a, retry, b] = await Promise.all([track("甲公司"), track("甲公司"), track("乙公司")]);
+  expect(retry.id).toBe(a.id);
+  expect(b.jobId).not.toBe(a.jobId);
+  expect([a.notes, b.notes]).toEqual(["甲公司", "乙公司"]);
+  expect(await active.job.count({ where: { jd: "统一模板 JD" } })).toBe(2);
+});
+
+it("requires a disambiguating city or posting link when identical job labels match several postings", async () => {
+  const { POST } = await import("@/app/api/jobs/route");
+  const posting = { company: "分公司", title: "技术岗", jd: "统一说明" };
+  const first = await repo.createJob({ ...posting, city: "上海" });
+  const second = await repo.createJob({ ...posting, city: "成都" });
+  expect(first.id).not.toBe(second.id);
+  expect((await repo.createJob({ ...posting, city: "成都" })).id).toBe(second.id);
+  const result = await POST(new Request("http://localhost/api/jobs", {
+    method: "POST", body: JSON.stringify(posting),
+  }));
+  expect(result.status).toBe(409);
+  expect(await active.job.count({ where: posting })).toBe(2);
+});
+
 it("returns the same application for concurrent tracking requests", async () => {
   const job = await repo.createJob({ company: "Concurrent", title: "Tracking", jd: "Unique tracking test" });
   const { POST } = await import("@/app/api/applications/route");

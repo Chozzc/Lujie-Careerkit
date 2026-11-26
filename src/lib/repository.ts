@@ -534,131 +534,79 @@ export async function updateResumeVersion(input: {
   return version;
 }
 
-export async function getTailoringBaseResume(input: {
-  resumeVersionId?: string;
-  resumeContent?: ResumeContent;
-}) {
+type TailoringInput = { resumeVersionId?: string; resumeContent?: ResumeContent };
+type TailoringSource = { versionId: string; resumeId: string; content: ResumeContent } | { content: ResumeContent; versionId?: undefined };
+
+export async function getTailoringSource(input: TailoringInput): Promise<TailoringSource> {
   await ensureSeedData();
-  if (input.resumeContent) return input.resumeContent;
-  if (input.resumeVersionId) {
-    const version = await prisma.resumeVersion.findUnique({
-      where: { id: input.resumeVersionId },
-      select: { content: true },
-    });
-    if (version) return version.content as ResumeContent;
-    throw new Error("找不到所选简历版本。");
-  }
-  const version = await prisma.resumeVersion.findFirst({
-    where: { jobId: null },
-    orderBy: { updatedAt: "desc" },
-    select: { content: true },
-  });
-  if (!version) throw new Error("找不到可用于优化的简历。");
-  return version.content as ResumeContent;
+  if (input.resumeContent && !input.resumeVersionId) return { content: input.resumeContent };
+  const select = { id: true, resumeId: true, content: true } as const;
+  const version = input.resumeVersionId
+    ? await prisma.resumeVersion.findUnique({ where: { id: input.resumeVersionId }, select })
+    : await prisma.resumeVersion.findFirst({ where: { jobId: null }, orderBy: { updatedAt: "desc" }, select });
+  if (!version) throw new Error(input.resumeVersionId ? "找不到所选简历版本。" : "找不到可用于优化的简历。");
+  return { versionId: version.id, resumeId: version.resumeId, content: input.resumeContent ?? version.content as ResumeContent };
 }
 
-async function resolveResumeSource(input: {
-  resumeVersionId?: string;
-  resumeContent?: ResumeContent;
-}) {
-  await ensureSeedData();
-  if (input.resumeVersionId) {
-    const version = await prisma.resumeVersion.findUnique({
-      where: { id: input.resumeVersionId },
-      select: { id: true, resumeId: true, content: true },
-    });
-    if (version) return { versionId: version.id, resumeId: version.resumeId, content: version.content as ResumeContent };
-  }
+export async function getTailoringBaseResume(input: TailoringInput) {
+  return (await getTailoringSource(input)).content;
+}
 
-  if (input.resumeContent) {
-    const content = input.resumeContent;
-    const name = deriveResumeVersionName(content);
-    return prisma.$transaction(async (transaction) => {
-      const resume = await transaction.resume.create({ data: { name } });
-      const version = await transaction.resumeVersion.create({
-        data: {
-          resumeId: resume.id,
-          jobId: null,
-          name,
-          summary: "导入后用于岗位优化的基础简历。",
-          content,
-        },
-      });
-      return { versionId: version.id, resumeId: resume.id, content };
-    });
-  }
-
-  const version = await prisma.resumeVersion.findFirst({
-    where: { jobId: null },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, resumeId: true, content: true },
-  });
-  if (!version) throw new Error("找不到可用于优化的简历。");
-  return { versionId: version.id, resumeId: version.resumeId, content: version.content as ResumeContent };
+export function getTailoringJob(id: string) {
+  return prisma.job.findUnique({ where: { id }, select: { id: true, jd: true, company: true, title: true } });
 }
 
 export async function createTailoredVersionForJob(input: {
-  jobId: string;
+  target: { jobId: string; expectedJd: string } | { newJob: CreateJobInput };
   applicationId?: string;
-  resumeVersionId?: string;
-  resumeContent?: ResumeContent;
-  tailoredContent?: ResumeContent;
+  source: TailoringSource;
+  tailoredContent: ResumeContent;
   analysis: JobAnalysis;
-  optimizationMeta?: ResumeOptimizationMeta;
+  optimizationMeta: ResumeOptimizationMeta;
 }) {
-  await ensureSeedData();
-  const [job, application] = await Promise.all([
-    prisma.job.findUnique({ where: { id: input.jobId } }),
-    input.applicationId
-      ? prisma.application.findUnique({ where: { id: input.applicationId }, select: { jobId: true } })
-      : null,
-  ]);
-  if (!job) throw new Error("找不到目标岗位。");
-  if (input.applicationId && application?.jobId !== input.jobId) {
-    throw new Error("投递记录不属于该岗位。");
-  }
-  const source = await resolveResumeSource({
-    resumeVersionId: input.resumeVersionId,
-    resumeContent: input.resumeContent,
-  });
-  const baseResume = source.content;
-
-  const jobIdentity = {
-    company: preserveConfirmedJobLabel(job.company, input.analysis.company),
-    title: preserveConfirmedJobLabel(job.title, input.analysis.title),
-  };
-  const tailored = buildTailoredResumeVersion({
-    masterResume: baseResume,
-    job: { id: job.id, company: jobIdentity.company, title: jobIdentity.title },
-    analysis: input.analysis,
-  });
-  const content = attachTailoringBaseResume(input.tailoredContent ?? tailored.content, baseResume, input.optimizationMeta);
-  const versionName = input.optimizationMeta?.versionName?.trim() || tailored.name;
-  const versionSummary = input.optimizationMeta?.summary?.trim() || tailored.summary;
-
-  return prisma.$transaction(async (transaction) => {
-    await transaction.job.update({
-      where: { id: job.id },
-      data: {
-        analysis: input.analysis,
-        company: jobIdentity.company,
-        title: jobIdentity.title,
-      },
+  const base = input.source.content;
+  return prisma.$transaction(async (tx) => {
+    let resumeId: string;
+    if (input.source.versionId !== undefined) {
+      const original = await tx.resumeVersion.findUnique({
+        where: { id: input.source.versionId, resumeId: input.source.resumeId, deletedAt: null }, select: { id: true },
+      });
+      if (!original) throw new Error("找不到所选简历版本。");
+      resumeId = input.source.resumeId;
+    } else {
+      const name = deriveResumeVersionName(base);
+      const resume = await tx.resume.create({ data: { name } });
+      resumeId = resume.id;
+      await tx.resumeVersion.create({ data: { resumeId, name, summary: "导入后用于岗位优化的基础简历。", content: base } });
+    }
+    const job = "jobId" in input.target
+      ? await tx.job.findUnique({ where: { id: input.target.jobId } })
+      : await createJob(input.target.newJob, tx);
+    if (!job) throw new Error("找不到目标岗位。");
+    if ("jobId" in input.target && job.jd !== input.target.expectedJd) {
+      throw new Error("目标岗位的 JD 已变更，请重新生成。");
+    }
+    if (input.applicationId) {
+      const application = await tx.application.findUnique({ where: { id: input.applicationId, deletedAt: null }, select: { jobId: true } });
+      if (application?.jobId !== job.id) throw new Error("投递记录不属于该岗位。");
+    }
+    const company = preserveConfirmedJobLabel(job.company, input.analysis.company);
+    const title = preserveConfirmedJobLabel(job.title, input.analysis.title);
+    const tailored = buildTailoredResumeVersion({
+      masterResume: base, job: { id: job.id, company, title }, analysis: input.analysis,
     });
-    const version = await transaction.resumeVersion.create({
+    await tx.job.update({ where: { id: job.id }, data: { analysis: { ...input.analysis, company, title }, company, title } });
+    const version = await tx.resumeVersion.create({
       data: {
-        name: versionName,
-        summary: versionSummary,
-        content,
-        resumeId: source.resumeId,
-        jobId: job.id,
+        resumeId, jobId: job.id,
+        name: input.optimizationMeta.versionName.trim() || tailored.name,
+        summary: input.optimizationMeta.summary.trim() || tailored.summary,
+        content: attachTailoringBaseResume(input.tailoredContent, base, input.optimizationMeta),
       },
+      include: { job: true },
     });
     if (input.applicationId) {
-      await transaction.application.update({
-        where: { id: input.applicationId },
-        data: { resumeVersionId: version.id },
-      });
+      await tx.application.update({ where: { id: input.applicationId, deletedAt: null }, data: { resumeVersionId: version.id } });
     }
     return version;
   });
@@ -674,19 +622,34 @@ type CreateJobInput = {
   deadline?: string | null;
 };
 
-export async function createJob(input: CreateJobInput) {
-  await ensureSeedData();
-  // ponytail: exact-JD reuse is sufficient for a local personal database; add a normalized JD hash if this grows large.
-  const existing = await prisma.job.findFirst({ where: { jd: input.jd }, orderBy: { updatedAt: "desc" } });
-  if (existing) return existing;
+export async function createJob(input: CreateJobInput, transaction?: Prisma.TransactionClient): Promise<Job> {
+  if (!transaction) {
+    await ensureSeedData();
+    return prisma.$transaction((tx) => createJob(input, tx));
+  }
+  const company = input.company.trim();
+  const title = input.title.trim();
+  const jd = input.jd.trim();
+  if (company && title && !placeholderJobLabel.test(company) && !placeholderJobLabel.test(title)) {
+    const matches = await transaction.job.findMany({
+      where: {
+        company, title, jd,
+        ...(input.city && input.city !== "待填写" ? { city: input.city } : {}),
+        ...(input.link ? { link: input.link } : {}),
+      },
+      take: 2,
+    });
+    if (matches.length > 1) throw new Error("多个岗位符合这些资料。请先选择具体岗位或补充城市、招聘链接。");
+    if (matches.length) return matches[0];
+  }
   const analysis = analyzeJobInput(`${input.company} - ${input.title}\n${input.jd}`);
-  return prisma.job.create({
+  return transaction.job.create({
     data: {
-      company: input.company || analysis.company,
-      title: input.title || analysis.title,
+      company: company || analysis.company,
+      title: title || analysis.title,
       city: input.city ?? "待填写",
       source: input.source ?? "官网",
-      jd: input.jd,
+      jd,
       link: input.link ?? "",
       deadline: input.deadline ? new Date(input.deadline) : null,
       analysis,
@@ -1108,14 +1071,14 @@ async function resolveInterviewJob(
 ) {
   if (requestedJobId) {
     const requested = await prisma.job.findUnique({ where: { id: requestedJobId } });
-    if (requested) return requested;
+    if (!requested) throw new Error("找不到指定岗位，请重新选择。");
+    return requested;
   }
-  const byJd = await prisma.job.findFirst({ where: { jd: context.jd }, orderBy: { updatedAt: "desc" } });
-  if (byJd) return byJd;
-  const company = cleanJobLabel(context.company) || "目标公司";
-  const title = cleanJobLabel(context.title) || "目标岗位";
-  return prisma.job.create({
-    data: { company, title, city: "", source: "面试助手", jd: context.jd, link: "" },
+  return createJob({
+    company: cleanJobLabel(context.company) || "目标公司",
+    title: cleanJobLabel(context.title) || "目标岗位",
+    source: "面试助手",
+    jd: context.jd,
   });
 }
 
@@ -1229,9 +1192,10 @@ function cleanJobLabel(value?: string | null) {
   return text.length > 100 ? "" : text;
 }
 
+export const placeholderJobLabel = /^(?:待填写公司|待分析岗位|目标公司|目标岗位|未知公司|未知岗位|未识别公司|未识别岗位|target company|target role)$/iu;
+
 export function preserveConfirmedJobLabel(current: string, proposed?: string | null) {
-  const placeholder = /^(?:待填写公司|待分析岗位|目标公司|目标岗位|未知公司|未知岗位|未识别公司|未识别岗位)$/u;
-  if (current.trim() && !placeholder.test(current.trim())) return current;
+  if (current.trim() && !placeholderJobLabel.test(current.trim())) return current;
   return cleanJobLabel(proposed) || current;
 }
 

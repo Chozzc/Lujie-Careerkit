@@ -33,6 +33,22 @@ describe("ResumePreview", () => {
     expect(markup).toContain(`data-resume-render-mode="${mode}"`);
   });
 
+  it("respects hidden contact details in every template and restores them when shown", () => {
+    const draft = contentToJadeResume(sampleResumeVersions[0].content);
+    const personal = draft.sections.find((section) => section.type === "personal_info")!;
+    Object.assign(personal.content, { email: "hidden-contact@example.invalid", phone: "555-010-4242" });
+    for (const template of TEMPLATES) {
+      for (const visible of [false, true]) {
+        personal.visible = visible;
+        for (const mode of ["paged", "export"] as const) {
+          const html = renderToStaticMarkup(<ResumePreview resume={{ ...draft, template }} mode={mode} />);
+          expect(html.includes("hidden-contact@example.invalid"), template).toBe(visible);
+          expect(html.includes("555-010-4242"), template).toBe(visible);
+        }
+      }
+    }
+  });
+
   it("renders saved compact sections and all entry logos in every template", () => {
     const source = sampleResumeVersions.find((version) => version.id === "rv-baidu-ai-original")!.content;
     const original = contentToJadeResume({ ...source, awards: ["优秀学生干部", "校级一等奖学金"] });

@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   tailorResumeWithAI: vi.fn(),
   createTailoredVersionForJob: vi.fn(),
-  getTailoringBaseResume: vi.fn(),
+  getTailoringJob: vi.fn(),
+  getTailoringSource: vi.fn(),
 }));
 
 vi.mock("@/lib/ai-service", () => ({
@@ -11,7 +12,8 @@ vi.mock("@/lib/ai-service", () => ({
 }));
 vi.mock("@/lib/repository", () => ({
   createTailoredVersionForJob: mocks.createTailoredVersionForJob,
-  getTailoringBaseResume: mocks.getTailoringBaseResume,
+  getTailoringJob: mocks.getTailoringJob,
+  getTailoringSource: mocks.getTailoringSource,
 }));
 
 import { GET, POST } from "./route";
@@ -30,7 +32,8 @@ const analysis = {
 describe("resume tailoring route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getTailoringBaseResume.mockResolvedValue({ basics: { name: "陈同学" } });
+    mocks.getTailoringSource.mockResolvedValue({ content: { basics: { name: "陈同学" } } });
+    mocks.getTailoringJob.mockResolvedValue({ id: "job-1", jd: "已保存 JD", company: analysis.company, title: analysis.title });
   });
 
   it("does not create an optimized version when the model falls back", async () => {
@@ -50,7 +53,7 @@ describe("resume tailoring route", () => {
     const response = await GET();
 
     expect(response.status).toBe(204);
-    expect(mocks.getTailoringBaseResume).not.toHaveBeenCalled();
+    expect(mocks.getTailoringSource).not.toHaveBeenCalled();
     expect(mocks.tailorResumeWithAI).not.toHaveBeenCalled();
     expect(mocks.createTailoredVersionForJob).not.toHaveBeenCalled();
   });
@@ -98,13 +101,13 @@ describe("resume tailoring route", () => {
       }),
     );
     expect(mocks.createTailoredVersionForJob).toHaveBeenCalledWith(expect.objectContaining({
-      jobId: "job-1",
+      target: { jobId: "job-1", expectedJd: "已保存 JD" },
       analysis: expect.not.objectContaining({ matchScore: expect.anything() }),
     }));
   });
 
   it("returns 404 when the selected resume version no longer exists", async () => {
-    mocks.getTailoringBaseResume.mockRejectedValue(new Error("找不到所选简历版本。"));
+    mocks.getTailoringSource.mockRejectedValue(new Error("找不到所选简历版本。"));
 
     const response = await POST(jsonRequest({
       jobId: "job-1",

@@ -183,6 +183,7 @@ function buildThemeCSS(scopeId: string, theme: ThemeConfig, template: string): s
       width: ${logo.icon} !important;
       height: ${logo.icon} !important;
     }
+    ${s}[data-personal-info-hidden] h1 { display: none; }
     ${s} h1 {
       color: ${theme.primaryColor} !important;
       font-size: ${fs.h1} !important;
@@ -270,7 +271,8 @@ export function ResumePreview({ resume, mode = "standalone" }: ResumePreviewProp
 
   // ponytail: Keep preview and bitmap export on local/system fonts until font files are self-hosted and embedded.
   return (
-    <div data-theme-scope={scopeId} data-resume-render-mode={mode}>
+    <div data-theme-scope={scopeId} data-resume-render-mode={mode}
+      data-personal-info-hidden={resume.sections?.some((s) => s.type === "personal_info" && s.visible === false) || undefined}>
       <style dangerouslySetInnerHTML={{ __html: buildThemeCSS(scopeId, theme, safeResume.template) }} />
       <Template resume={safeResume} />
     </div>
@@ -278,7 +280,7 @@ export function ResumePreview({ resume, mode = "standalone" }: ResumePreviewProp
 }
 
 function normalizePreviewSections(sections: Resume["sections"]) {
-  return sections.map((section) => {
+  return sections.filter((section) => section.visible !== false).map((section) => {
     if (section.type === 'internship_experience') {
       return { ...section, type: 'work_experience' };
     }

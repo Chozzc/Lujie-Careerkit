@@ -10,7 +10,7 @@ import {
   createResumeVersion,
   createTailoredVersionForJob,
   getAppData,
-  getTailoringBaseResume,
+  getTailoringSource,
   updateResumeVersion,
 } from "@/lib/repository";
 
@@ -34,7 +34,7 @@ vi.mock("@/lib/repository", () => ({
   createResumeVersion: vi.fn(),
   createTailoredVersionForJob: vi.fn(),
   getAppData: vi.fn(),
-  getTailoringBaseResume: vi.fn(),
+  getTailoringSource: vi.fn(),
   updateResumeVersion: vi.fn(),
 }));
 
@@ -146,19 +146,19 @@ describe("Agent workflow tools", () => {
     vi.mocked(getAppData)
       .mockResolvedValueOnce(appData(job) as never)
       .mockResolvedValueOnce(appData(job) as never);
-    vi.mocked(getTailoringBaseResume).mockResolvedValue(resume as never);
+    vi.mocked(getTailoringSource).mockResolvedValue({ content: resume, versionId: "resume-1", resumeId: "family" });
     vi.mocked(tailorResumeWithAI).mockResolvedValue({
       source: "ai",
       data: resume,
       meta: { company: "示例公司", title: "后端工程师", keywords: [], summary: "已优化", changes: [], versionName: "定制简历" },
       message: "ok",
     } as never);
-    vi.mocked(createTailoredVersionForJob).mockResolvedValue(version("tailored-1", job.id) as never);
+    vi.mocked(createTailoredVersionForJob).mockResolvedValue({ ...version("tailored-1", job.id), job } as never);
 
     const result = await createJdTailoredResume({ resumeVersionId: "resume-1", jobId: job.id }, settings);
 
     expect(createJob).not.toHaveBeenCalled();
-    expect(createTailoredVersionForJob).toHaveBeenCalledWith(expect.objectContaining({ jobId: job.id, resumeVersionId: "resume-1" }));
+    expect(createTailoredVersionForJob).toHaveBeenCalledWith(expect.objectContaining({ target: { jobId: job.id, expectedJd: job.jd }, source: { content: resume, versionId: "resume-1", resumeId: "family" } }));
     expect(result.version.id).toBe("tailored-1");
     expect(result.href).toBe("/library/jobs/job-1");
   });
